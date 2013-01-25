@@ -41,6 +41,7 @@ Building
     (on Windows XP/Unix/Mono platforms - the service starts automatically)
 
 6. Run:
+
     ```mvn clean install```
 
     If the build fails and the output contains java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
@@ -51,7 +52,8 @@ Building
     Be aware that the "set" command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via "setx".
 
 7. Optionally generate Eclipse project files by running:
-    ```mvn eclise:eclipse``
+
+    ```mvn eclise:eclipse```
 
 8. Optionally import the projects in Eclipse as existing Maven projects
 
