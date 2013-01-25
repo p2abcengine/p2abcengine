@@ -43,7 +43,7 @@ Building
 
     * Windows 32 bit: ``set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=256m``
     * Windows 64 bit: ``set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m``
-    * Unix variants:  ``export MAVEN_OPTS='-Xmx1024m -Xms256m -XX:MaxPermSize=512m'``
+    * Unix variants:  ``export MAVEN_OPTS='-Xmx1024m -Xms256m -XX:MaxPermSize=512m' ``
 
     Be aware that the "set" command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via "setx".
 
