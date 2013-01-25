@@ -60,6 +60,7 @@ Building
 
 Usage
 ==========
-See the page on integration for information on how to integrate the ABCE. 
+See the page on integration for information on how to [integrate the ABCE][wikihome].
 
 [wikihome]: https://github.com/p2abcengine/p2abcengine/wiki
+[wikiintegration]: https://github.com/p2abcengine/p2abcengine/wiki/Integrating%20the%20ABC-Engine
