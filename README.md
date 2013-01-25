@@ -27,6 +27,7 @@ Building
 1. Find and install Maven 3.0.x from  http://maven.apache.org - if not already installed
 
 2. Change directory:
+
     ```cd java/ri/trunk```
 
 3. Place Identity Mixer jar in maven repository.
@@ -34,13 +35,15 @@ Building
 4. Place U-Prove binaries in dotNet/releases/1.0.0/
 
 5. On Windows 7 - start UProve Service:
+
     ```ABC4Trust-UProve.exe 32123```
+
     (on Windows XP/Unix/Mono platforms - the service starts automatically)
 
 6. Run:
     ```mvn clean install```
-    If the build fails and the output contains java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
 
+    If the build fails and the output contains java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
     * Windows 32 bit: ``set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=256m``
     * Windows 64 bit: ``set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m``
     * Unix variants:  ``export MAVEN_OPTS='-Xmx1024m -Xms256m -XX:MaxPermSize=512m' ``
