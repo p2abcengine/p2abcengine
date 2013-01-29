@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:SelectPresentationTokenDescription xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:ns2="http://abc4trust.eu/wp2/abcschemav1.0" xmlns="http://abc4trust.eu/wp2/abcschemav1.0" >
+	<ns2:PolicyDescriptions>
+		<entry>
+            <key>http://www.services.com/policies/new/customer/adult</key>
+            <value>
+                <abc:PolicyUID>http://www.services.com/policies/new/customer/adult</abc:PolicyUID>
+                <abc:Message>
+                	<abc:Nonce>4545</abc:Nonce>   <!-- not displayed to the user -->
+                	<abc:FriendlyPolicyName lang="en">Adult policy</abc:FriendlyPolicyName>
+                	<abc:FriendlyPolicyDescription lang="en">id card + visa or amex</abc:FriendlyPolicyDescription>
+                	<abc:ApplicationData></abc:ApplicationData>
+                </abc:Message>
+            </value>
+        </entry>       
+        <entry>
+            <key>http://www.services.com/policies/new/customer/young</key>
+            <value>
+                <abc:PolicyUID>http://www.services.com/policies/new/customer/young</abc:PolicyUID>
+                <abc:Message>
+                	<abc:Nonce></abc:Nonce>   <!-- not displayed to the user -->
+                	<abc:FriendlyPolicyName lang="en">Customer policy</abc:FriendlyPolicyName>
+                	<abc:FriendlyPolicyDescription lang="en">nym exclusive + id card</abc:FriendlyPolicyDescription>
+                	<abc:ApplicationData></abc:ApplicationData>
+                </abc:Message>
+            </value>
+        </entry>	
+	</ns2:PolicyDescriptions>
+    <ns2:CredentialDescriptions>
+        <entry>
+            <key>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</key>
+            <value>
+                <abc:CredentialUID>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</abc:CredentialUID>
+                <abc:FriendlyCredentialName lang="en">ID card MyCountry</abc:FriendlyCredentialName> <!-- to show -->
+                <abc:ImageReference>reference</abc:ImageReference>
+                <abc:CredentialSpecificationUID>http://my.country/identitycard/specification</abc:CredentialSpecificationUID>
+                <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0</abc:IssuerParametersUID>
+                <abc:Attribute>
+                    <abc:AttributeUID>-6973841425144228697</abc:AttributeUID>
+                    <abc:AttributeDescription Type="Birthday" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed">
+                      <abc:FriendlyAttributeName lang="en">Date of birth</abc:FriendlyAttributeName> <!-- to show -->
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">1970-02-01Z</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>-7820189279587932466</abc:AttributeUID>
+                    <abc:AttributeDescription Type="Lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">Last Name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Nexdoor</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>-5729939185712751854</abc:AttributeUID>
+                    <abc:AttributeDescription Type="Firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                         <abc:FriendlyAttributeName lang="en">First Name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Alice</abc:AttributeValue>
+                </abc:Attribute>
+            </value>
+        </entry>
+        <entry>
+            <key>b07b2aab-4b00-4b12-95d2-8b4c8fb79329</key>
+            <value>
+                <abc:CredentialUID>b07b2aab-4b00-4b12-95d2-8b4c8fb79329</abc:CredentialUID>
+                <abc:FriendlyCredentialName lang="en">ID card MyCountry</abc:FriendlyCredentialName> <!-- to show -->
+                <abc:ImageReference>reference</abc:ImageReference>
+                <abc:CredentialSpecificationUID>http://visa.com/creditcard/specification</abc:CredentialSpecificationUID>
+                <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                <abc:Attribute>
+                    <abc:AttributeUID>-7650899656004103383</abc:AttributeUID>
+                    <abc:AttributeDescription Type="CardNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed">
+                         <abc:FriendlyAttributeName lang="en">Last Name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:integer">42</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>2654003278634790403</abc:AttributeUID>
+                    <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">Name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Alice</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>4630887629667084853</abc:AttributeUID>
+                    <abc:AttributeDescription Type="Status" DataType="xs:anyURI" Encoding="urn:abc4trust:1.0:encoding:anyUri:sha-256">
+                          <abc:FriendlyAttributeName lang="en">Status</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">status</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>8092663474985403083</abc:AttributeUID>
+                    <abc:AttributeDescription Type="SecurityCode" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed">
+                         <abc:FriendlyAttributeName lang="en">Code</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">1</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>4590924838856394713</abc:AttributeUID>
+                    <abc:AttributeDescription Type="CardType" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">Type of the card</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Gold</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>-6451407851080853880</abc:AttributeUID>
+                    <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                          <abc:FriendlyAttributeName lang="en">Last Name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Nextdoor</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>-2398728429547822990</abc:AttributeUID>
+                    <abc:AttributeDescription Type="ExpirationDate" DataType="xs:dateTime" Encoding="urn:abc4trust:1.0:encoding:dateTime:unix:signed">
+                     <abc:FriendlyAttributeName lang="en">Expiration date</abc:FriendlyAttributeName>
+                     </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2014-02-01T00:00:00.196+01:00</abc:AttributeValue>
+                </abc:Attribute>
+            </value>
+        </entry>
+    </ns2:CredentialDescriptions>
+    <ns2:PseudonymDescriptions>
+        <entry>
+            <key>pseudonym/25w5vtt40a93vqi5</key>
+            <value>
+                <abc:PseudonymDescription Exclusive="false" Scope="http://www.services.com" PseudonymUID="pseudonym/25w5vtt40a93vqi5">
+           			<abc:PseudonymMetadata>
+           			    <abc:HumanReadableData></abc:HumanReadableData>  <!-- to ignore by UI will be removed from the schema soon -->
+           				<abc:FriendlyPseudonymDescription lang="en"></abc:FriendlyPseudonymDescription>
+           				<abc:Metadata></abc:Metadata>
+           			</abc:PseudonymMetadata>
+           		</abc:PseudonymDescription>
+            </value>
+        </entry>
+        <entry>
+            <key>pseudonym/25w5564564564566</key>
+            <value>
+                <abc:PseudonymDescription Exclusive="false" Scope="http://www.services.com" PseudonymUID="pseudonym/25w5vtt40a93vqi5">
+                   <abc:PseudonymMetadata>
+                        <abc:HumanReadableData></abc:HumanReadableData>   <!-- to ignore by UI will be removed from the schema soon -->
+           				<abc:FriendlyPseudonymDescription lang="en"></abc:FriendlyPseudonymDescription>
+           				<abc:Metadata></abc:Metadata>
+           			</abc:PseudonymMetadata>
+           		</abc:PseudonymDescription>
+            </value>
+        </entry>
+                <entry>
+            <key>pseudonym/25w5vtt456434534</key>
+            <value>
+                <abc:PseudonymDescription Exclusive="false" Scope="http://www.services.com" PseudonymUID="pseudonym/25w5vtt40a93vqi5">
+                     <abc:PseudonymMetadata>
+                        <abc:HumanReadableData></abc:HumanReadableData> <!-- to ignore by UI will be removed from the schema soon -->
+           				<abc:FriendlyPseudonymDescription lang="en"></abc:FriendlyPseudonymDescription>
+           				<abc:Metadata></abc:Metadata>
+           			</abc:PseudonymMetadata>
+           		</abc:PseudonymDescription>
+            </value>
+        </entry>        
+        <entry>
+            <key>pseudonym/25w5vtt40a93vqi5</key>
+            <value>
+                <abc:PseudonymDescription Exclusive="false" Scope="http://www.services.com" PseudonymUID="pseudonym/25w5vtt40a93vqi5">
+                    <abc:PseudonymMetadata>
+                        <abc:HumanReadableData></abc:HumanReadableData> <!-- to ignore by UI will be removed from the schema soon -->
+           				<abc:FriendlyPseudonymDescription lang="en"></abc:FriendlyPseudonymDescription>
+           				<abc:Metadata></abc:Metadata>
+           			</abc:PseudonymMetadata>
+           		</abc:PseudonymDescription>
+            </value>
+        </entry>
+        <entry>
+            <key>pseudonym/25w5vt3534534534</key>
+            <value>
+                <abc:PseudonymDescription Exclusive="true" Scope="http://www.services.com" PseudonymUID="pseudonym/25w5vtt40a93vqi5">
+                    <abc:PseudonymMetadata>
+                    	<abc:HumanReadableData></abc:HumanReadableData> <!-- to ignore by UI will be removed from the schema soon -->
+           				<abc:FriendlyPseudonymDescription lang="en"></abc:FriendlyPseudonymDescription>
+           				<abc:Metadata></abc:Metadata>
+           			</abc:PseudonymMetadata>
+           		</abc:PseudonymDescription>
+            </value>
+        </entry>
+    </ns2:PseudonymDescriptions>
+    <ns2:InspectorDescriptions>
+		<entry>
+            <key>http://admin.ch/inspector/pub_key_v1</key>
+            <value>
+                <abc:InspectorUID>http://admin.ch/inspector/pub_key_v1</abc:InspectorUID>
+                <abc:FriendlyInspectorDescription lang="en">blabla</abc:FriendlyInspectorDescription>
+            </value>
+        </entry>       
+        <entry>
+            <key>http://thebestbank.com/inspector/pub_key_v1</key>
+            <value>
+                <abc:InspectorUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorUID>
+                <abc:FriendlyInspectorDescription lang="en">The Best Bank Inspector. The best in the world.</abc:FriendlyInspectorDescription>
+            </value>
+        </entry>	
+	</ns2:InspectorDescriptions>  
+    <ns2:CandidatePresentationTokenList>
+        <ns2:CandidatePresentationToken>
+            <ns2:Token PolicyUID="http://www.services.com/policies/new/customer/adult" TokenUID="abc4trust.eu/token-uid/4t86kfddj5hdb06n"/>
+            <abc:FriendlyTokenDescription lang="en">this token reveals blabla</abc:FriendlyTokenDescription>
+            <ns2:CredentialUidList>
+                <ns2:CredentialUid>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</ns2:CredentialUid>
+                <ns2:CredentialUid>b07b2aab-4b00-4b12-95d2-8b4c8fb79329</ns2:CredentialUid>
+            </ns2:CredentialUidList>
+            <ns2:PseudonymChoiceList>
+                <ns2:URISet> <!-- one set -->
+                    <ns2:URI>pseudonym/25w5vtt40a93vqi5</ns2:URI>
+                    <ns2:URI>pseudonym/25w5564564564566</ns2:URI>
+                </ns2:URISet>
+                <ns2:URISet>
+                    <ns2:URI>pseudonym/25w5vtt456434534</ns2:URI>
+                    <ns2:URI>pseudonym/25w5vtt40a93vqi5</ns2:URI>
+                </ns2:URISet>
+            </ns2:PseudonymChoiceList>
+            <ns2:InspectorChoiceList> <!-- one from each set -->
+                <ns2:URISet>
+                    <ns2:URI>http://admin.ch/inspector/pub_key_v1</ns2:URI>
+                    <ns2:URI>http://thebestbank.com/inspector/pub_key_v1</ns2:URI>
+                </ns2:URISet>
+                <ns2:URISet>
+                    <ns2:URI>http://admin.ch/inspector/pub_key_v1</ns2:URI>
+                </ns2:URISet>
+            </ns2:InspectorChoiceList>
+        </ns2:CandidatePresentationToken>
+         <ns2:CandidatePresentationToken>
+            <ns2:Token PolicyUID="http://www.services.com/policies/new/customer/young" TokenUID="abc4trust.eu/token-uid/3a00hf8tfyzhhhmi"/>
+            <abc:FriendlyTokenDescription lang="en">this token reveals blabla</abc:FriendlyTokenDescription>
+            <ns2:CredentialUidList>
+                <ns2:CredentialUid>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</ns2:CredentialUid>
+            </ns2:CredentialUidList>
+            <ns2:PseudonymChoiceList>
+                <ns2:URISet>
+                    <ns2:URI>pseudonym/25w5vt3534534534</ns2:URI>
+                </ns2:URISet>
+            </ns2:PseudonymChoiceList>
+            <ns2:InspectorChoiceList/>
+        </ns2:CandidatePresentationToken>
+    </ns2:CandidatePresentationTokenList>
+</ns2:SelectPresentationTokenDescription>

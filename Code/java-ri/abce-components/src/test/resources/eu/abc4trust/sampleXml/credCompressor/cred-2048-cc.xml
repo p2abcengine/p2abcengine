@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:Credential xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <abc:CredentialDescription>
+        <abc:CredentialUID>IdmxCredential/3rrv4ellyy4ayz5e</abc:CredentialUID>
+        <abc:FriendlyCredentialName lang="en">Visa Credit Card</abc:FriendlyCredentialName>
+        <abc:FriendlyCredentialName lang="da">Visa Kreditkort</abc:FriendlyCredentialName>
+        <abc:ImageReference>file://///tmp/9f43ae05-b4a1-4d67-bcaa-955eefaed527.png</abc:ImageReference>
+        <abc:CredentialSpecificationUID>http://visa.com/creditcard/specification</abc:CredentialSpecificationUID>
+        <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:SecretReference>abc4trust://secret/4h98vdwf9oqm8rf7</abc:SecretReference>
+        <abc:Attribute>
+            <abc:AttributeUID>-2401538038823971644</abc:AttributeUID>
+            <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">http://admin.ch/passport/revocation/parameters</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>-4674297670788275207</abc:AttributeUID>
+            <abc:AttributeDescription Type="CardType" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">SwissExpress</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>6595935709923066617</abc:AttributeUID>
+            <abc:AttributeDescription Type="CardNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">555</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>-906144893611626776</abc:AttributeUID>
+            <abc:AttributeDescription Type="SecurityCode" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">42</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>8402595288590961725</abc:AttributeUID>
+            <abc:AttributeDescription Type="Status" DataType="xs:anyURI" Encoding="urn:abc4trust:1.0:encoding:anyUri:sha-256"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">#status</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>4256990702371429804</abc:AttributeUID>
+            <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>-8639238099347197112</abc:AttributeUID>
+            <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>-6362063199769097789</abc:AttributeUID>
+            <abc:AttributeDescription Type="ExpirationDate" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2022-02-02Z</abc:AttributeValue>
+        </abc:Attribute>
+    </abc:CredentialDescription>
+    <abc:CryptoParams>
+        <Credential:Credential xmlns:Credential="http://www.zurich.ibm.com/security/idemix" xmlns="http://www.zurich.ibm.com/security/idemix" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../xsd/Credential.xsd">
+            <SmartcardUid>abc4trust://secret/4h98vdwf9oqm8rf7</SmartcardUid>
+            <CredentialUidOnSmartcard>IdmxCredential/3rrv4ellyy4ayz5e</CredentialUidOnSmartcard>
+            <References>
+                <IssuerPublicKey>http://thebestbank.com/cc/issuancekey_v1.0</IssuerPublicKey>
+                <CredentialStructure>http://visa.com/creditcard/specification</CredentialStructure>
+            </References>
+            <Attributes>
+                <Attribute name="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle">
+                    <Value>53719845404509189104591393252297939653871223982592092293457700417555581083845</Value>
+                </Attribute>
+                <Attribute name="CardType">
+                    <Value>85058496558529021488853101269659755649607833082040554061516107610547122861273</Value>
+                </Attribute>
+                <Attribute name="Name">
+                    <Value>76355713903561865866741292988746191972523015098789458240077478826513114743258</Value>
+                </Attribute>
+                <Attribute name="LastName">
+                    <Value>114583452056665072175954169080091319264954316664989343060915483064825238311879</Value>
+                </Attribute>
+                <Attribute name="CardNumber">
+                    <Value>555</Value>
+                </Attribute>
+                <Attribute name="ExpirationDate">
+                    <Value>340282366920938463463374607431768230481</Value>
+                </Attribute>
+                <Attribute name="SecurityCode">
+                    <Value>340282366920938463463374607431768211498</Value>
+                </Attribute>
+                <Attribute name="Status">
+                    <Value>42121762783546269199362341276265920315476546655617484685155469842410299390413</Value>
+                </Attribute>
+            </Attributes>
+            <Signature>
+                <A>4555690439823097896752706233299773646567668586054472619700825069373942907945922718512419162255185700615495518982570351241455645631446889685825766341265336825973878002389334565697165284741711415752171897249691089871148994337886321429729787998104745285107770581444004484391867677791610659363192027397627539525983989325258863995340402433546047308254330260354983042680556638804519603112577766863909852823098497500316113789409376419124498651987212849507638337043469622913466547488932547952985627955855534513111079489025596258588352157584185114648567861623510762340241684699689462636655071694497896604089610681254594017809</A>
+                <e>259344723055062059907025491480697571938277889515152306249728583105665800713306759149981690559193987143022649746592582730156440333831076776957521937967997167616369863858463826801941</e>
+                <v>15631910401352735453252848855339528954118689127969252569405239946950324797002372755004908934059554851898306323877249559545400975939127024273369936982538952959217352679787799296089924638463616797128497862359609545597862421724225559635489556133040595692191267462890876370890963042572683640638862729223605995717636163265414401395445748224560636241144022125516233094441220834466917690392243521594271769612128860726578679131617467476898530672269217042001577445123425329829791009470110703143397254306401067013377980853228639181091448809747680828892971413720299638889199964526154816851368309287609622662900962632757161158643134228974411868880360324614743466990390895071723559830772106022574661732779857448189992805791709637493715023871639020153042344</v>
+            </Signature>
+            <Features/>
+        </Credential:Credential>
+    </abc:CryptoParams>
+</abc:Credential>
+

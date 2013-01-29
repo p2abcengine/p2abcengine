@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:selectPresentationTokenDescription xmlns:ns2="IdentitySelection_1_0" xmlns:ns3="http://abc4trust.eu/wp2/abcschemav1.0">
+    <ns2:credentialDescriptions>
+        <entry>
+            <key>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</key>
+            <value>
+                <ns3:CredentialUID>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</ns3:CredentialUID>
+                <ns3:CredentialSpecificationUID>http://my.country/identitycard/specification</ns3:CredentialSpecificationUID>
+                <ns3:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0</ns3:IssuerParametersUID>
+                <ns3:Attribute>
+                    <ns3:AttributeUID>lkadsfijg8itnf0</ns3:AttributeUID>
+                    <ns3:AttributeDescription Type="Firstname" DataType="xs:string" Encoding="sha256"/>
+                    <ns3:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Alice</ns3:AttributeValue>
+                </ns3:Attribute>
+                <ns3:Attribute>
+                    <ns3:AttributeUID>lkadsfijg8itnf0</ns3:AttributeUID>
+                    <ns3:AttributeDescription Type="Lastname" DataType="xs:string" Encoding="sha256"/>
+                    <ns3:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Nexdoor</ns3:AttributeValue>
+                </ns3:Attribute>
+                <ns3:Attribute>
+                    <ns3:AttributeUID>lkadsfijg8itnf0</ns3:AttributeUID>
+                    <ns3:AttributeDescription Type="Birthday" DataType="xs:date" Encoding="sha256"/>
+                    <ns3:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">1970-02-01+01:00</ns3:AttributeValue>
+                </ns3:Attribute>
+            </value>
+        </entry>
+    </ns2:credentialDescriptions>
+    <ns2:pseudonyms/>
+    <ns2:CandidatePresentationTokenList>
+        <ns2:CandidatePresentationToken>
+            <ns2:token PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard" TokenUID="abc4trust.eu/token-uid/2o013sbmjmekm09j">
+                <ns3:Message>
+                    <ns3:ApplicationData>
+        Todo: Write something interesting...
+      </ns3:ApplicationData>
+                </ns3:Message>
+                <ns3:Credential Alias="#identitycard">
+                    <ns3:CredentialSpecUID>http://my.country/identitycard/specification</ns3:CredentialSpecUID>
+                    <ns3:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0</ns3:IssuerParametersUID>
+                </ns3:Credential>
+                <ns3:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-less-than-or-equal">
+                    <ns3:Attribute CredentialAlias="#identitycard" AttributeType="Birthday"/>
+                    <ns3:ConstantValue xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">1994-01-06Z</ns3:ConstantValue>
+                </ns3:AttributePredicate>
+            </ns2:token>
+            <ns2:CredentialUidList>
+                <ns2:CredentialUid>9f37f02c-3e5f-44a7-9379-1b4889d7e6ce</ns2:CredentialUid>
+            </ns2:CredentialUidList>
+            <ns2:PseudonymChoiceList/>
+            <ns2:InspectorChoiceList/>
+        </ns2:CandidatePresentationToken>
+    </ns2:CandidatePresentationTokenList>
+</ns2:selectPresentationTokenDescription>
+
+
+
+{
+  "credentialDescriptions":{
+    "entry":{
+      "key":"9f37f02c-3e5f-44a7-9379-1b4889d7e6ce",
+      "value":{
+        "CredentialUID":"9f37f02c-3e5f-44a7-9379-1b4889d7e6ce",
+        "CredentialSpecificationUID":"http://my.country/identitycard/specification",
+        "IssuerParametersUID":"http://my.country/identitycard/issuancekey_v1.0",
+        "Attribute":[
+          {
+            "AttributeUID":"lkadsfijg8itnf0",
+            "AttributeDescription":{"@Type":"Firstname","@DataType":"xs:string","@Encoding":"sha256"},
+            "AttributeValue":{"@type":"xs:string","$":"Alice"}
+          },{
+            "AttributeUID":"lkadsfijg8itnf0",
+            "AttributeDescription":{"@Type":"Lastname","@DataType":"xs:string","@Encoding":"sha256"},
+            "AttributeValue":{"@type":"xs:string","$":"Nexdoor"}
+          },{
+            "AttributeUID":"lkadsfijg8itnf0",
+            "AttributeDescription":{"@Type":"Birthday","@DataType":"xs:date","@Encoding":"sha256"},
+            "AttributeValue":{"@type":"xs:string","$":"1970-02-01+01:00"}
+          }]
+      }
+    }
+  },
+  "pseudonyms":null,
+  "CandidatePresentationTokenList":{
+    "CandidatePresentationToken":{
+      "token":{
+        "@PolicyUID":"http://www.sweetdreamsuites.com/policies/booking/standard",
+        "@TokenUID":"abc4trust.eu/token-uid/mvjly3gj1mag4wz",
+        "Message":{"ApplicationData":"\n        Todo: Write something interesting...\n      "},
+        "Credential":{
+          "@Alias":"#identitycard",
+          "CredentialSpecUID":"http://my.country/identitycard/specification",
+          "IssuerParametersUID":"http://my.country/identitycard/issuancekey_v1.0"
+        },
+        "AttributePredicate":{
+          "@Function":"urn:oasis:names:tc:xacml:1.0:function:date-less-than-or-equal",
+          "Attribute":{
+            "@CredentialAlias":"#identitycard",
+            "@AttributeType":"Birthday"
+          },
+          "ConstantValue":"1994-01-06Z"
+        }
+      },
+      "CredentialUidList":{
+        "CredentialUid":"9f37f02c-3e5f-44a7-9379-1b4889d7e6ce"
+      },
+      "PseudonymChoiceList":null,
+      "InspectorChoiceList":null
+    }
+  }
+}
+

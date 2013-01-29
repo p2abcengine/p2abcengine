@@ -1,0 +1,104 @@
+{
+    "credentialDescriptions": {
+        "entry": {
+            "key": "9f37f02c-3e5f-44a7-9379-1b4889d7e6ce",
+            "value": {
+                "CredentialUID": "9f37f02c-3e5f-44a7-9379-1b4889d7e6ce",
+                "CredentialSpecificationUID": "http://my.country/identitycard/specification",
+                "IssuerParametersUID": "http://my.country/identitycard/issuancekey_v1.0",
+                "Attribute": [
+                    {
+                        "AttributeUID": "-6973841425144228697",
+                        "AttributeDescription": {
+                            "@Type": "Birthday",
+                            "@DataType": "xs:date",
+                            "@Encoding": "urn:abc4trust:1.0:encoding:date:unix:signed"
+                        },
+                        "AttributeValue": {
+                            "@type": "xs:string",
+                            "$": "1995-02-01Z"
+                        }
+                    },
+                    {
+                        "AttributeUID": "-7820189279587932466",
+                        "AttributeDescription": {
+                            "@Type": "Lastname",
+                            "@DataType": "xs:string",
+                            "@Encoding": "urn:abc4trust:1.0:encoding:string:sha-256"
+                        },
+                        "AttributeValue": {
+                            "@type": "xs:string",
+                            "$": "Dent"
+                        }
+                    },
+                    {
+                        "AttributeUID": "-5729939185712751854",
+                        "AttributeDescription": {
+                            "@Type": "Firstname",
+                            "@DataType": "xs:string",
+                            "@Encoding": "urn:abc4trust:1.0:encoding:string:sha-256"
+                        },
+                        "AttributeValue": {
+                            "@type": "xs:string",
+                            "$": "Stewart"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "pseudonyms": {
+        "entry": {
+            "key": "pseudonym/at1qtzxf0xbpt0a",
+            "value": {
+                "Pseudonym": {
+                    "@Exclusive": "true",
+                    "@Scope": "http://www.services.com",
+                    "@PseudonymUID": "pseudonym/at1qtzxf0xbpt0a"
+                },
+                "PseudonymMetadata": {
+                    "HumanReadableData": "MyHumanReadableData"
+                }
+            }
+        }
+    },
+    "CandidatePresentationTokenList": {
+        "CandidatePresentationToken": {
+            "Token": {
+                "@PolicyUID": "http://www.services.com/policies/new/customer/young",
+                "@TokenUID": "abc4trust.eu/token-uid/59go1b48wfp3f0u5",
+                "Message": {
+                    "ApplicationData": "\n        Authenticate as a new customer under the age of 18.\n      "
+                },
+                "Pseudonym": {
+                    "@Exclusive": "true",
+                    "@Scope": "http://www.services.com",
+                    "@Alias": "#accessPseudonym",
+                    "PseudonymValue": "Kis="
+                },
+                "Credential": {
+                    "@Alias": "#identitycard",
+                    "CredentialSpecUID": "http://my.country/identitycard/specification",
+                    "IssuerParametersUID": "http://my.country/identitycard/issuancekey_v1.0"
+                },
+                "AttributePredicate": {
+                    "@Function": "urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal",
+                    "Attribute": {
+                        "@CredentialAlias": "#identitycard",
+                        "@AttributeType": "Birthday"
+                    },
+                    "ConstantValue": "1994-01-06Z"
+                }
+            },
+            "CredentialUidList": {
+                "CredentialUid": "9f37f02c-3e5f-44a7-9379-1b4889d7e6ce"
+            },
+            "PseudonymChoiceList": {
+                "URISet": {
+                    "URI": "pseudonym/at1qtzxf0xbpt0a"
+                }
+            },
+            "InspectorChoiceList": null
+        }
+    }
+}
