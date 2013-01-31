@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:CredentialSpecification xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="Version 1.0" KeyBinding="true" Revocable="false">
+    <abc:SpecificationUID>http://visa.com/creditcard/specification</abc:SpecificationUID>
+    <abc:AttributeDescriptions MaxLength="53">
+        <abc:AttributeDescription Type="Status" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:prime">
+            <abc:FriendlyAttributeName lang="en">status</abc:FriendlyAttributeName>
+            <abc:AllowedValue>Gold</abc:AllowedValue>
+            <abc:AllowedValue>Silver</abc:AllowedValue>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="CardType" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+        <abc:AttributeDescription Type="SecurityCode" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+    </abc:AttributeDescriptions>
+</abc:CredentialSpecification>
+

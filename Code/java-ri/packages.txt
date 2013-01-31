@@ -1,0 +1,61 @@
+- Stax 1.0-2, http://stax.codehaus.org/, Apache License 2.0
+- EasyMock 3.1, http://easymock.org/, Apache License 2.0
+- Objenesis 1.2, http://code.google.com/p/objenesis/, Apache License 2.0
+- cglib 2.2, http://cglib.sourceforge.net/, Apache License 2.0
+- Google Guice 3.0, http://code.google.com/p/google-guice/, Apache License 2.0
+- Atinject 1 (javax.inject-1.jar), http://code.google.com/p/atinject/, Apache License 2.0
+- Apache Ant 1.6.5, http://ant.apache.org/, Apache License 2.0
+- bndlib 0.0.145, http://www.aqute.biz/Bnd/Bnd, Apache License 2.0
+- Apache Commons Configuration 1.6, http://commons.apache.org/configuration/, Apache License 2.0
+- Apache Commons IO 2.4, http://commons.apache.org/io/, Apache License 2.0
+- Apache Maven, http://maven.apache.org/, Apache License 2.0
+- Geronimo Annotation 1.0, http://geronimo.apache.org/, Apache License 2.0
+- geronimo-spec-jta 1.0.1B-RC4, http://vmgump.apache.org/gump/public/jta/geronimo-spec-jta/index.html, Apache License 2.0
+- Jettison 1.1, http://jettison.codehaus.org/, Apache License 2.0
+- Plexus Maven plugin, http://plexus.codehaus.org/plexus-maven-plugin/, Apache License 2.0
+- Maven Anno Mojo plugin 1.3.1, http://wiki.jfrog.org/confluence/display/OSS/Maven+Anno+Mojo, Apache License 2.0
+- JAXWS maven plugin 1.12, http://jax-ws-commons.java.net/jaxws-maven-plugin/, Apache License 2.0
+- Build Helper Maven Plugin 1.7, http://mojo.codehaus.org/build-helper-maven-plugin/, MIT
+- Maven JAXB plugin 0.8.0, http://confluence.highsource.org/display/MJIIP/Maven+JAXB2+Plugin, 3-clause BSD
+- JLine 0.9.1, http://jline.sourceforge.net/, BSD license
+- XStream 1.3.1, http://xstream.codehaus.org/, BSD License - see http://xstream.codehaus.org/license.html
+- Hamcrest 1.1, http://code.google.com/p/hamcrest/, BSD 2-Clause License
+- JAXB 2.2.4-1 + 2.2.3, http://jaxb.java.net/,  Dual license consisting of the CDDL v1.1 and GPL v2 with classpath exception.
+- Jersey 1.10, http://jersey.java.net/,  Dual license consisting of the CDDL v1.1 and GPL v2 with classpath exception.
+- Junit 4, http://www.junit.org/, Common Public License 1.0
+- AOP Alliance 1.0, http://aopalliance.sourceforge.net/, Public Domain
+- ASM 3.1, http://asm.ow2.org/, custom license, see http://asm.ow2.org/license.html
+- backport-util-concurrent 3.1, http://backport-jsr166.sourceforge.net/, Public Domain
+- Apache XML Commons Resolver 20050927, http://www.apache.org/dist/xerces/xml-commons/, unknown license for this old version (possible parts under Apache license, W3C licence (http://www.w3.org/Consortium/Legal/2002/copyright-documents-20021231) and public domain)
+- Jetty, Version 6.1.26, http://www.eclipse.org/jetty/, Dual licensed under the Apache License 2.0 and Eclipse Public License 1.0
+- Eclipse Core Resources, version 3.3.0-v20070604, http://www.eclipse.org/eclipse/platform-core/, Eclipse Public License Version 1.0
+- Jackson 1.8.3, http://jackson.codehaus.org/, (Dual Licensed: LGPL or Apache License 2.0)
+- Classworlds 1.1, http://classworlds.codehaus.org/, custom license, see http://classworlds.codehaus.org/license.html
+- XML Pull Parser 1.1.4c (XPP3), http://www.extreme.indiana.edu/xgws/xsoap/xpp/mxp1/, Indiana University Extreme! Lab Software License, version 1.1.1, BSD Style
+- Apache Felix 0.8.0, Subproject Gogo, http://felix.apache.org/, Apache License 2.0
+-Google Guice, http://code.google.com/p/google-guice/, Apache License 2.0 
+-JavaBeans Activation Framework 1.1, http://geronimo.apache.org/, Apache License 2.0 
+-Java Mail 1.4, http://geronimo.apache.org/, Apache License 2.0 
+- Eclipse Core, Version 4.2, http://www.eclipse.org/juno/, Eclipse Public License 1.0
+- Eclipse Equinox, Version 3.8.1, http://www.eclipse.org/equinox/, Eclipse Public License 1.0, Apache License 2.0
+- Eclipse OSGI: Eclipse Public License 1.0, Apache License 2.0 -> is part of/included in Eclipse Equinox 3.8.1, so it seems we can remove this dependency from the list
+- ICU - International Components for Unicode, version 4.4.2, http://site.icu-project.org/, ICU License - ICU 1.8.1 and later (http://source.icu-project.org/repos/icu/icu/trunk/license.html)
+- Eclipse Help, Version 4.2, Eclipse Public License 1.0, W3C Software License (http://www.w3.org/Consortium/Legal/copyright-software-19980720), http://www.eclipse.org/juno/
+- Eclipse Rich Ajax Platform, Version 1.5, http://www.eclipse.org/rap/, Eclipse Public License 1.0, Apache License 2.0, W3C Software License, Mozilla Public License version 1.1, BSD License see http://yuilibrary.com/license/
+- PLT Utilities 1.0, http://www.drjava.org/, BSD License; dependencies require also Eclipse Public License 1.0 and a (rather non-restrictive) custom license see http://drjava.sourceforge.net/license.shtml 
+- Apache Commons FileUpload 1.2.2, http://commons.apache.org/fileupload/, Apache License 2.0
+- Java Mail 1.4.1, http://glassfish.java.net/, CDDL 1.0
+
+
+
+===========================================================================================
+All the following packages are only used for building (they are all Maven related) and thus not distributed by us. A user's system would download them automatically when building. So do we really need them?
+
+
+- Apache Maven version 3.0.3, http://maven.apache.org/, Apache License 2.0
+- Plexus Maven plugin, versions 1.0.11  1.0.12  1.0.4  1.0.5  1.0.8  2.0.2  2.0.3  2.0.5 2.0.6  2.0.7  3.0.1  3.1, http://plexus.codehaus.org/plexus-maven-plugin/, Apache License 2.0 (all of these versions are downloaded)
+- Maven Anno Mojo plugin 1.3.1, http://wiki.jfrog.org/confluence/display/OSS/Maven+Anno+Mojo, Apache License 2.0
+- JAXWS maven plugin 1.12, http://jax-ws-commons.java.net/jaxws-maven-plugin/, Apache License 2.0 -> Version 1.12
+- Build Helper Maven Plugin 1.7, http://mojo.codehaus.org/build-helper-maven-plugin/, MIT -> Version 1.7
+- Maven JAXB plugin 0.8.0, http://confluence.highsource.org/display/MJIIP/Maven+JAXB2+Plugin, 3-clause BSD -> Version 0.8.0
+
