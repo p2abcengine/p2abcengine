@@ -3,7 +3,7 @@ p2abcengine
 
 This Privacy-Preserving Attribute-Based Credential Engine enables application developers to use Privacy-ABCs with all their features without having to consider the specifics of the underlying cryptographic algorithms—similar to as they do today for digital signatures, where they do not need to worry about the particulars of the RSA and DSA algorithms either.
 
-An introduction to the project is found on the wiki. See the [wiki][wikihome].
+An introduction to the project and links to further information is found on the [wiki][wikihome].
 
 Overview of Codebase
 ===========
