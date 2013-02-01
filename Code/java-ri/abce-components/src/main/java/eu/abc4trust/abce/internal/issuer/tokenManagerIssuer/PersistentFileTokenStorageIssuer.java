@@ -1,0 +1,150 @@
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
+//* eu.abc4trust.pabce.1.0                                            *
+//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
+//* US Government Users Restricted Rights - Use, duplication or       *
+//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
+//*/**/****************************************************************
+
+package eu.abc4trust.abce.internal.issuer.tokenManagerIssuer;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.net.URI;
+import java.util.List;
+
+import javax.xml.bind.DatatypeConverter;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
+import eu.abc4trust.util.StorageUtil;
+import eu.abc4trust.xml.IssuanceToken;
+import eu.abc4trust.xml.PseudonymInToken;
+
+/**
+ * Persistent file storage for Issuance tokens.
+ * 
+ * @author Raphael Dobers
+ */
+
+public class PersistentFileTokenStorageIssuer implements TokenStorageIssuer {
+
+    private final File tokensFile;
+    private final File pseudonymsFile;
+    private final File logFile;
+
+    @Inject
+    public PersistentFileTokenStorageIssuer(@Named("TokenStorageFile") File tokensFile, @Named("PseudonymsStorageFile") File pseudonymsFile, @Named("TokenLogFile") File logFile) {
+        super();
+        this.tokensFile = tokensFile;
+        this.pseudonymsFile = pseudonymsFile;
+        this.logFile = logFile;
+    }
+
+    @Override
+    public boolean checkForPseudonym(String primaryKey) throws IOException {
+
+        FileInputStream fis = new FileInputStream(this.pseudonymsFile);
+        long fileSize = this.pseudonymsFile.length();
+        if (fileSize < 4) {
+        	fis.close();
+            return false;
+        }
+        DataInputStream in = new DataInputStream(new BufferedInputStream(fis));
+
+        try {
+            while (true) {
+                String primaryKeyTemp = in.readUTF(); // readUTF itself will take care of separating the single keys...
+                if(primaryKeyTemp.equals(primaryKey)) {
+                	fis.close();
+                	in.close();
+                    return true;
+                }
+            }
+        } catch (EOFException ex) {
+        	fis.close();
+        	in.close();
+            return false;
+        }
+    }
+
+    @Override
+    public void addPseudonymPrimaryKey(String primaryKey) throws IOException {
+        FileOutputStream fos = new FileOutputStream(this.pseudonymsFile, true);
+        DataOutputStream out = new DataOutputStream(
+                new BufferedOutputStream(fos));
+
+        out.writeUTF(primaryKey); // writeUTF itself will take care of separating the single keys...
+        out.flush();
+        out.close();
+    }
+
+    @Override
+    public byte[] getToken(URI tokenuid) throws Exception {
+        return StorageUtil.getData(this.tokensFile, tokenuid);
+    }
+
+    @Override
+    public void addToken(URI tokenuid, byte[] token) throws IOException {
+        StorageUtil.appendData(this.tokensFile, tokenuid, token);
+    }
+
+	@Override
+	public boolean deleteToken(URI tokenuid) throws Exception {
+		
+		// first remove stored pseudonyms for this token
+		
+		byte[] result = getToken(tokenuid);
+		
+		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(result);
+		ObjectInput objectInput = new ObjectInputStream(byteArrayInputStream);
+		IssuanceToken tokenResult = (IssuanceToken)objectInput.readObject();
+
+		// Close the streams..
+		objectInput.close();
+		byteArrayInputStream.close();
+		
+		List<PseudonymInToken> pseudonyms = tokenResult.getIssuanceTokenDescription().getPresentationTokenDescription().getPseudonym();
+		
+		for(PseudonymInToken p: pseudonyms) {
+			String primaryKey = DatatypeConverter.printBase64Binary(p.getPseudonymValue());
+			StorageUtil.deleteData(this.pseudonymsFile, primaryKey);
+		}
+		
+		// Delete the IssuanceToken
+		StorageUtil.deleteData(this.tokensFile, tokenuid);
+		
+		return true;
+	}
+	
+	@Override 
+	public void addIssuanceLogEntry(URI entryUID, byte[] bytes) throws IOException{
+		StorageUtil.appendData(this.logFile, entryUID, bytes);
+	}
+
+	@Override
+	public byte[] getIssuanceLogEntry(URI entryUID) throws Exception{
+		return StorageUtil.getData(this.logFile, entryUID);
+	}
+	
+	@Override
+	public boolean deleteIssuanceLogEntry(URI entryUID) throws Exception{
+		StorageUtil.deleteData(this.logFile, entryUID);
+		return true;
+	}
+	
+}
