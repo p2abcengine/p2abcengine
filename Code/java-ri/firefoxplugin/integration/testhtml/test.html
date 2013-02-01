@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+	function triggerPlugin(){
+
+	var element = document.createElement("ABC4TrustDataElement");
+
+    	element.setAttribute("abc4trust_command", "displayChoices");
+    	element.setAttribute("input", "jsonlistofchoices");
+ 
+	document.documentElement.appendChild(element);
+
+	var evt = document.createEvent("Events");
+	evt.initEvent("ABC4TrustEvent", true, false);
+	element.dispatchEvent(evt);
+
+	}
+</script>
+</head>
+<body>
+some text<br><button type="button" onclick="triggerPlugin()">Start plugin</button><br><br>
+</Body>
+</html>
