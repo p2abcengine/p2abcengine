@@ -1,11 +1,23 @@
 p2abcengine
 ===========
 
+This Privacy-Preserving Attribute-Based Credential Engine enables application developers to use Privacy-ABCs with all their features without having to consider the specifics of the underlying cryptographic algorithmsÑsimilar to as they do today for digital signatures, where they do not need to worry about the particulars of the RSA and DSA algorithms either.
+
 An introduction to the project is found on the wiki. See the [wiki][wikihome].
 
 Overview of Codebase
 ===========
 
+We here provide a number of core components for authentication with privacy-preserving attribute-based credentials. These core components deal with the policy language that specifies the authentication requirements, a user interface that allows user to select 
+which credentials they want to use to satisfy the authentication policy and then 
+some components to generate and verify authentication tokens. 
+
+Building a full-fledged authentication and authorization solution requires a number of additional components such as credential storage or key management. We provide basic implementations of such components and of example application as well. While these components could be useful as well, you might have to replace them with your own ones to integrate the core components into your application.
+
+Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either U-Prove and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) (Version 2.4 or later) separately (some of the the features will only work if Identity Mixer is installed).
+For more information about the U-Prove SDK, please contact uprove@microsoft.com.
+
+For more details about the components and how to integrate them into an application we refer to the [Architecture](wiki/Architecture) page.
 
 
 How to Build
@@ -17,9 +29,8 @@ Java JDK 1.6 or higher is required for building the project.
 
 Microsoft .NET runtime *FULL Profile* version 4 or Mono runtime version > 2.8 is required for building the project (also when just building the Java tree).
 
-IBM Identity Mixer jar version 2-3-39. TODO, where can the jar be downloaded? 
-
-Microsoft U-Prove Binary. TODO, where can the binary be downloaded?
+[IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) jar (Version 2.4 or later).
+Microsoft U-Prove Binary. For more information about the U-Prove SDK, please contact uprove@microsoft.com.
 
 Building
 ----------
