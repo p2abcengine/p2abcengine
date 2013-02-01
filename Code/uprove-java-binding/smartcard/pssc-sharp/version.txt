@@ -1,0 +1,2 @@
+2.0.0.4 download from http://danm.de/files/src/csharp/pcsc-sharp/
+git-repo can be found here also.
