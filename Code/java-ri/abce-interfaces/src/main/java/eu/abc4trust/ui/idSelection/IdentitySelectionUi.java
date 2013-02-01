@@ -7,12 +7,13 @@
 
 package eu.abc4trust.ui.idSelection;
 
+import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.returnTypes.UiIssuanceArguments;
 import eu.abc4trust.returnTypes.UiIssuanceReturn;
 import eu.abc4trust.returnTypes.UiPresentationArguments;
 import eu.abc4trust.returnTypes.UiPresentationReturn;
 
 public interface IdentitySelectionUi {
-  public UiPresentationReturn selectPresentationTokenDescription(UiPresentationArguments args);
-  public UiIssuanceReturn selectIssuanceTokenDescription(UiIssuanceArguments args);
+  public UiPresentationReturn selectPresentationTokenDescription(UiPresentationArguments args) throws IdentitySelectionException;
+  public UiIssuanceReturn selectIssuanceTokenDescription(UiIssuanceArguments args) throws IdentitySelectionException;
 }

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+
+<!-- The unwrapped issuance policy of the file issuanceMessageWithPolicy.xml -->
+
+<abc:IssuancePolicy xmlns:abc='http://abc4trust.eu/wp2/abcschemav1.0' Version='1.0'
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID='my-policy-uid' />
+  <abc:CredentialTemplate>
+    <abc:CredentialSpecUID>spec1</abc:CredentialSpecUID>
+    <abc:IssuerParametersUID>issuerparams</abc:IssuerParametersUID>
+    <abc:UnknownAttributes />
+  </abc:CredentialTemplate>
+</abc:IssuancePolicy>

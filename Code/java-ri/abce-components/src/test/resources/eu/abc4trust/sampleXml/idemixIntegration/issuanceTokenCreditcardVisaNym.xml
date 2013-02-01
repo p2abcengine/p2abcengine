@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is an Issuance Token. -->
+   <abc:IssuanceToken xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+        <abc:IssuanceTokenDescription>
+            <abc:PresentationTokenDescription PolicyUID="http://visa.com/creditcard/issuance/policy" TokenUID="abc4t://token/45yp9bmxjzu07y9c">
+                <abc:Message>
+                    <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
+                </abc:Message>
+                 <abc:Pseudonym Scope="visa.com/creditcard" Exclusive="true" />
+            </abc:PresentationTokenDescription>
+            <abc:CredentialTemplate>
+                <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+                <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                <abc:UnknownAttributes/>
+            </abc:CredentialTemplate>
+        </abc:IssuanceTokenDescription>
+        <abc:CryptoEvidence/>
+    </abc:IssuanceToken>
