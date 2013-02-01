@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.zurich.ibm.com/security/idemix"
+	xmlns="http://www.zurich.ibm.com/security/idemix"
+	elementFormDefault="qualified">
+  
+  <xs:element name="Elements" type="ElementsType" />
+    
+  <xs:element name="SystemParameters">
+    <xs:complexType>
+    <xs:sequence>
+      <xs:element name="Elements" type="ElementsType" />
+    </xs:sequence>
+  </xs:complexType>
+  </xs:element>
+  
+  <xs:complexType name="ElementsType">
+    <xs:all>
+      <xs:element name="l_e" type="xs:positiveInteger" />
+      <xs:element name="l_ePrime" type="xs:positiveInteger" />
+      <xs:element name="l_Gamma" type="xs:positiveInteger" />
+      <xs:element name="l_H" type="xs:positiveInteger" />
+      <xs:element name="l_k" type="xs:positiveInteger" />
+      <xs:element name="l_m" type="xs:positiveInteger" />
+      <xs:element name="l_n" type="xs:positiveInteger" />
+      <xs:element name="l_Phi" type="xs:positiveInteger" />
+      <xs:element name="l_pt" type="xs:positiveInteger" />
+      <xs:element name="l_r" type="xs:positiveInteger" />
+      <xs:element name="l_res" type="xs:positiveInteger" />
+      <xs:element name="l_rho" type="xs:positiveInteger" />
+      <xs:element name="l_v" type="xs:positiveInteger" />
+      <xs:element name="l_enc" type="xs:positiveInteger" />
+    </xs:all>
+  </xs:complexType>
+
+</xs:schema>

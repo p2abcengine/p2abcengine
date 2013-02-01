@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.zurich.ibm.com/security/idemix" 
+	xmlns="http://www.zurich.ibm.com/security/idemix"
+	elementFormDefault="qualified">
+
+	<xs:simpleType name="BigIntegerType">
+		<xs:restriction base="xs:string">
+			<xs:whiteSpace value="collapse" />
+			<xs:pattern value="-?[0-9]+" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust presentation policy for... -->
+
+<abc:PresentationPolicyAlternatives 
+   xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  
+   Version="1.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+   xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="http://patras/policies/course/evaluation">
+    <abc:Message>
+      <abc:ApplicationData>Any application specific data should go here.</abc:ApplicationData>
+    </abc:Message>
+    <abc:Pseudonym Exclusive="true" Scope="urn:patras:evaluation" Alias="#nym"/>
+    <abc:Credential Alias="#universityCred">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://patras/university/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://patras/university/issuancekey_v1.0</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:Credential Alias="#courseCred" SameKeyBindingAs="#nym">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://patras/course/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://patras/course/issuancekey_v1.0</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+      <abc:Attribute CredentialAlias="#courseCred" AttributeType="CourseUid" />
+      <abc:ConstantValue>23330E</abc:ConstantValue>
+    </abc:AttributePredicate>
+    </abc:PresentationPolicy>
+ </abc:PresentationPolicyAlternatives>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+	<!--
+		This is a sample ABC4Trust 4th Issuance Message for an advanced Issuance
+		The Issuer (Bank) replies with a credential (student credit card), which is 
+		stored together with the credential description in the credential store.
+	-->
+
+<abc:IssuanceMessage xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Context="CardIssuance324234234"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+   <abc:CryptoParams>
+      <abc:TestCryptoParams>
+        <abc:Data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">
+            4654v76g57i6bghfgheru6tr$^$FUV7kibg7,hjuy6brju bgmjytrvfuyrj
+        </abc:Data>
+      </abc:TestCryptoParams>
+   </abc:CryptoParams>
+</abc:IssuanceMessage>

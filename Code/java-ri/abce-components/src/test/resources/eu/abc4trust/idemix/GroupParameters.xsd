@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.zurich.ibm.com/security/idemix"
+	xmlns="http://www.zurich.ibm.com/security/idemix"
+	elementFormDefault="qualified">
+  
+  <xs:element name="GroupParameters">	
+	<xs:complexType>
+  		<xs:all>
+  			<xs:element name="References" type="ReferencesType" />
+  			<xs:element name="Elements" type="ElementsType" />
+  		</xs:all>
+  	</xs:complexType>
+  </xs:element>
+  
+  <xs:complexType name="ReferencesType">
+  	<xs:all>
+  		<xs:element name="SystemParameters" type="xs:anyURI" />
+  	</xs:all>
+  </xs:complexType>
+  
+  <xs:simpleType name="BigIntegerType">
+  	<xs:restriction base="xs:string">
+  		<xs:whiteSpace value="collapse" />
+  		<xs:pattern value="-?[0-9]+" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:complexType name="ElementsType">
+  	<xs:all>
+  		<!--  <xs:element name="capGamma" type="BigIntegerType" /> -->
+        <xs:element name="Gamma" type="BigIntegerType" />
+  		<xs:element name="g" type="BigIntegerType" />
+  		<xs:element name="h" type="BigIntegerType" />
+  		<xs:element name="rho" type="BigIntegerType" />
+  	</xs:all>
+  </xs:complexType>
+
+</xs:schema>

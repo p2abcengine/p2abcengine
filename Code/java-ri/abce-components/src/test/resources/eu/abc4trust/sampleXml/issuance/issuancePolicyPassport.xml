@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust Issuance Policy for a passport. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="http://admin.ch/passport/issuance/policy"/>
+  <abc:CredentialTemplate>
+    <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+    <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+    <abc:UnknownAttributes/>
+  </abc:CredentialTemplate>
+</abc:IssuancePolicy>

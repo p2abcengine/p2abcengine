@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust presentation policy for... -->
+
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  Version="1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard">
+    <abc:Message>
+     <abc:Nonce>SGVsbG9Xb3JsZBo=</abc:Nonce>
+      <abc:FriendlyPolicyName lang="en">Policy: Got ID card</abc:FriendlyPolicyName>
+      <abc:FriendlyPolicyName lang="da">Policy: Har ID kort</abc:FriendlyPolicyName>
+      <abc:FriendlyPolicyDescription lang="en">Prove ownership of id card.</abc:FriendlyPolicyDescription>
+      <abc:FriendlyPolicyDescription lang="da">Bevis ejerskab af id kort.</abc:FriendlyPolicyDescription>
+      <abc:ApplicationData>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+    </abc:Message>
+    <abc:Credential Alias="#identitycard">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://my.country/identitycard/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0/idemix</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0/uprove</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+       <abc:DisclosedAttribute AttributeType="LastName" >
+      	<abc:InspectorAlternatives>
+      		<abc:InspectorPublicKeyUID>http://inspector.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+      	</abc:InspectorAlternatives>
+      	<abc:InspectionGrounds>Reveal last name for test</abc:InspectionGrounds>
+      </abc:DisclosedAttribute>
+      <abc:DisclosedAttribute AttributeType="FirstName" >
+      	<abc:InspectorAlternatives>
+      		<abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+      	</abc:InspectorAlternatives>
+      	<abc:InspectionGrounds>Reveal first name for test</abc:InspectionGrounds>
+      </abc:DisclosedAttribute>
+    </abc:Credential>
+    <!--<abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-less-than-or-equal">
+      <abc:Attribute CredentialAlias="#identitycard" AttributeType="Birthday" />
+      <abc:ConstantValue>1994-01-06Z</abc:ConstantValue>
+    </abc:AttributePredicate> -->
+  </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

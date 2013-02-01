@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  elementFormDefault="qualified"
+  targetNamespace="http://www.zurich.ibm.com/security/idemix"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:idemix="http://www.zurich.ibm.com/security/idemix">
+  <xs:element name="UpdateSpecification">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:BaseURI"/>
+        <xs:element ref="idemix:Attributes"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="BaseURI" type="xs:anyURI"/>
+  <xs:element name="Attributes">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="idemix:Attribute"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Attribute">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Interval"/>
+      </xs:sequence>
+      <xs:attribute name="name" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Interval">
+    <xs:complexType>
+      <xs:attribute name="amount" use="required" type="xs:integer"/>
+      <xs:attribute name="unit" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

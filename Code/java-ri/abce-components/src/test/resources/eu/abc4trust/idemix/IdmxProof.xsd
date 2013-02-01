@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.zurich.ibm.com/security/idemix" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:idemix="http://www.zurich.ibm.com/security/idemix">
+  <xs:element name="IdmxProof">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Challenge"/>
+        <xs:element ref="idemix:SmartcardNonce" minOccurs="0"/>
+        <xs:element ref="idemix:CommonValues"/>
+        <xs:element ref="idemix:Values"/>
+        <xs:element ref="idemix:VerifiableEncryptions"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Challenge" type="xs:integer"/>
+  <xs:element name="SmartcardNonce" type="xs:base64Binary"/>
+  <xs:element name="CommonValues">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="idemix:CommonValue"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CommonValue">
+    <xs:complexType mixed="true">
+      <xs:attribute name="key" use="required" type="xs:anyURI"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Values">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="idemix:Value"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Value">
+    <xs:complexType mixed="true">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="idemix:SValueCGAND"/>
+        <xs:element ref="idemix:SValueCGNOT"/>
+        <xs:element ref="idemix:SValueCGOR"/>
+        <xs:element ref="idemix:SValueIP"/>
+        <xs:element ref="idemix:SValueProveCL"/>
+      </xs:choice>
+      <xs:attribute name="key" use="required"/>
+      <xs:attribute name="type" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SValueCGAND">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:mHat_h"/>
+        <xs:element ref="idemix:rHat"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="mHat_h" type="xs:integer"/>
+  <xs:element name="rHat" type="xs:integer"/>
+  <xs:element name="SValueCGNOT">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:aHat"/>
+        <xs:element ref="idemix:bHat"/>
+        <xs:element ref="idemix:rHatPrime"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="aHat" type="xs:integer"/>
+  <xs:element name="bHat" type="xs:integer"/>
+  <xs:element name="rHatPrime" type="xs:integer"/>
+  <xs:element name="SValueCGOR">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:mHat_i"/>
+        <xs:element ref="idemix:alphaHat"/>
+        <xs:element ref="idemix:betaHat"/>
+        <xs:element ref="idemix:rHat_0"/>
+        <xs:element ref="idemix:rHat_1"/>
+        <xs:element ref="idemix:rHat_2"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="mHat_i" type="xs:integer"/>
+  <xs:element name="alphaHat" type="xs:integer"/>
+  <xs:element name="betaHat" type="xs:integer"/>
+  <xs:element name="SValueIP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:AlphaHat"/>
+        <xs:element ref="idemix:uHat_0"/>
+        <xs:element ref="idemix:uHat_1"/>
+        <xs:element ref="idemix:uHat_2"/>
+        <xs:element ref="idemix:uHat_3"/>
+        <xs:element ref="idemix:uHat_4"/>
+        <xs:element ref="idemix:rHat_0"/>
+        <xs:element ref="idemix:rHat_1"/>
+        <xs:element ref="idemix:rHat_2"/>
+        <xs:element ref="idemix:rHat_3"/>
+        <xs:element ref="idemix:rHat_4"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AlphaHat" type="xs:integer"/>
+  <xs:element name="uHat_0" type="xs:integer"/>
+  <xs:element name="uHat_1" type="xs:integer"/>
+  <xs:element name="uHat_2" type="xs:integer"/>
+  <xs:element name="uHat_3" type="xs:integer"/>
+  <xs:element name="uHat_4">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="rHat_3" type="xs:integer"/>
+  <xs:element name="rHat_4" type="xs:integer"/>
+  <xs:element name="SValueProveCL">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:eHat"/>
+        <xs:element ref="idemix:vHatPrime"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="eHat" type="xs:string"/>
+  <xs:element name="vHatPrime" type="xs:string"/>
+  <xs:element name="VerifiableEncryptions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="idemix:VerifiableEncryption"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="VerifiableEncryption">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Locations"/>
+        <xs:element ref="idemix:Elements"/>
+      </xs:sequence>
+      <xs:attribute name="key" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Locations">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:VEPublicKeyLocation"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="VEPublicKeyLocation" type="xs:anyURI"/>
+  <xs:element name="Elements">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Label"/>
+        <xs:element ref="idemix:u"/>
+        <xs:element ref="idemix:e"/>
+        <xs:element ref="idemix:v"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Label" type="xs:integer"/>
+  <xs:element name="u" type="xs:integer"/>
+  <xs:element name="e" type="xs:integer"/>
+  <xs:element name="v" type="xs:integer"/>
+  <xs:element name="rHat_0" type="xs:integer"/>
+  <xs:element name="rHat_1" type="xs:integer"/>
+  <xs:element name="rHat_2" type="xs:integer"/>
+</xs:schema>

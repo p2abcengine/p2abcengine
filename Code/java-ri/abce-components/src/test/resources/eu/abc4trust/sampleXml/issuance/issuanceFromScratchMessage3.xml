@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+	<!--
+		This is a sample ABC4Trust 3rd Issuance Message for an Issuance from scratch
+		The User sends back to the Issuer an Issuance token. 
+	-->
+
+<abc:IssuanceMessage xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Context="PasspostIssuance324234234"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+ <abc:IssuanceToken Version="Version 1.0">
+        <abc:IssuanceTokenDescription>
+        <abc:PresentationTokenDescription PolicyUID="http://swiss.gov/passport/issuance/policy">
+        </abc:PresentationTokenDescription>
+            <abc:CredentialTemplate>
+                <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+                <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+                <abc:UnknownAttributes></abc:UnknownAttributes>
+            </abc:CredentialTemplate>
+        </abc:IssuanceTokenDescription>
+        <abc:CryptoEvidence/>
+    </abc:IssuanceToken>
+</abc:IssuanceMessage>

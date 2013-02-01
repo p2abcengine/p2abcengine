@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is the issuance policy for issuance of the PATRAS attendance credential. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy
+    PolicyUID="http://patras/attendance/issuance/policy">
+    <abc:Credential Alias="#universityCred">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://patras/university/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://patras/university/issuancekey_v1.0</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:Credential Alias="#courseCred">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://patras/course/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://patras/course/issuancekey_v1.0</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+      <abc:Attribute CredentialAlias="#courseCred" AttributeType="CourseUid" />
+      <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">The-very-cool-course</abc:ConstantValue>
+    </abc:AttributePredicate>
+  </abc:PresentationPolicy>
+  <abc:CredentialTemplate SameKeyBindingAs="#universityCred">
+    <abc:CredentialSpecUID>http://patras/attendance/specification</abc:CredentialSpecUID>
+    <abc:IssuerParametersUID>http://patras/attendance/issuancekey_v1.0/1</abc:IssuerParametersUID>
+    <abc:UnknownAttributes>
+       <abc:CarriedOverAttribute TargetAttributeType="Matriculationnumber">
+          <abc:SourceCredentialInfo Alias="#universityCred" AttributeType="Matriculationnumber"/>
+       </abc:CarriedOverAttribute>
+    </abc:UnknownAttributes>
+  </abc:CredentialTemplate>
+</abc:IssuancePolicy>

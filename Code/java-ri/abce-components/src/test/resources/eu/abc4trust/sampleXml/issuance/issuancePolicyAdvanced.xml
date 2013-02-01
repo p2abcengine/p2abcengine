@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust 2nd Issuance Message for an advanced Issuance The Issuer (bank) replies 
+  to the User with the issuance policy, which requires user besides providing the passport data also prove 
+  that he possesses a non-revoked student card, valid for at least next 6 months, issued to the same person 
+  as his passport, the passport data is given in clear to the bank. The card will be bound to the same 
+  user secret as in the student ID. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="http://thebestbank.com/creditcards/issuance/policy">
+    <abc:Message>
+      <abc:Nonce>KNsRu9cGzkaeabogeRVV</abc:Nonce>
+      <abc:ApplicationData>
+        <abc:TestApplicationData>
+          <abc:Data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xsi:type="xs:string">Student Account and Credit Card Issuance Request</abc:Data>
+        </abc:TestApplicationData>
+      </abc:ApplicationData>
+    </abc:Message>
+    <abc:Credential Alias="#studentid">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://ethz.ch/studentid/specification</abc:CredentialSpecUID>
+        <abc:CredentialSpecUID>http://msu.ru/studentid/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://ethz.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+      <abc:DisclosedAttribute AttributeType="IssuedBy" />
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+      <abc:Attribute CredentialAlias="#studentid" AttributeType="Expires" />
+      <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:date">2002-06-06Z</abc:ConstantValue>
+    </abc:AttributePredicate>
+    <abc:VerifierDrivenRevocation>
+      <abc:RevocationParametersUID>http://ethz.ch/studentids/revocation/parameters</abc:RevocationParametersUID>
+      <abc:Attribute AttributeType="RevocationHandle" CredentialAlias="#studentid"/>
+    </abc:VerifierDrivenRevocation>
+  </abc:PresentationPolicy>
+  <abc:CredentialTemplate SameKeyBindingAs="#studentid">
+    <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+    <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+    <abc:UnknownAttributes>
+      <abc:CarriedOverAttribute TargetAttributeType="Name">
+        <abc:SourceCredentialInfo Alias="#studentid" AttributeType="Name"/>
+      </abc:CarriedOverAttribute>
+      <abc:CarriedOverAttribute TargetAttributeType="LastName">
+        <abc:SourceCredentialInfo Alias="#studentid" AttributeType="LastName"/>
+      </abc:CarriedOverAttribute>
+      <abc:CarriedOverAttribute TargetAttributeType="ExpirationDate">
+        <abc:SourceCredentialInfo Alias="#studentid" AttributeType="Expires"/>
+      </abc:CarriedOverAttribute>
+      <abc:JointlyRandomAttribute TargetAttributeType="CardNumber" />
+    </abc:UnknownAttributes>
+  </abc:CredentialTemplate>
+</abc:IssuancePolicy>

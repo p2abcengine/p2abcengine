@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<abc:SystemParameters xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    <uprove:KeyLength xmlns:uprove="urn:eu:abc4trust:systemparameters:uprove:0.1">2048</uprove:KeyLength>
+<!--  
+    <Int xmlns="">2048</Int>
+-->
+</abc:SystemParameters>
