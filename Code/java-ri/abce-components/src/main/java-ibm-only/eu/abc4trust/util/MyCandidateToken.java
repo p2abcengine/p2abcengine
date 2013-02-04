@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.returnTypes.SitdReturn;
 import eu.abc4trust.returnTypes.SptdReturn;
 import eu.abc4trust.returnTypes.UiIssuanceArguments;
@@ -238,7 +239,7 @@ public class MyCandidateToken {
   }
 
   public static MyUiPresentationReturn callPresentationUi(IdentitySelectionUi identitySelection,
-      List<MyCandidateToken> candidateTokens) {
+      List<MyCandidateToken> candidateTokens) throws IdentitySelectionException {
     UiPresentationArguments arg = new UiPresentationArguments();
     
     TokenCandidatePerPolicy tcpp = null;
@@ -402,7 +403,7 @@ public class MyCandidateToken {
   */
 
   public static MyUiIssuanceReturn callIssuanceUi(IdentitySelectionUi identitySelection,
-      List<MyCandidateToken> candidateTokens) {
+      List<MyCandidateToken> candidateTokens) throws IdentitySelectionException {
     UiIssuanceArguments arg = new UiIssuanceArguments();
     for(MyCandidateToken token: candidateTokens) {
       token.populate(arg.data, arg);

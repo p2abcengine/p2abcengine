@@ -18,6 +18,7 @@ import java.security.SecureRandom;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.returnTypes.ObjectFactoryReturnTypes;
 import eu.abc4trust.returnTypes.UiIssuanceArguments;
 import eu.abc4trust.returnTypes.UiIssuanceReturn;
@@ -36,7 +37,7 @@ public class IdentitySelectionUiPrinter implements IdentitySelectionUi {
   }
 
   @Override
-  public UiPresentationReturn selectPresentationTokenDescription(UiPresentationArguments args) {
+  public UiPresentationReturn selectPresentationTokenDescription(UiPresentationArguments args) throws IdentitySelectionException {
     BigInteger r = new BigInteger(30, new SecureRandom());
     String filename1 = PATH + "ids-p-" + r + "-q";
     String filename2 = PATH + "ids-p-" + r + "-r";
@@ -85,7 +86,7 @@ public class IdentitySelectionUiPrinter implements IdentitySelectionUi {
 
 
   @Override
-  public UiIssuanceReturn selectIssuanceTokenDescription(UiIssuanceArguments args) {
+  public UiIssuanceReturn selectIssuanceTokenDescription(UiIssuanceArguments args) throws IdentitySelectionException {
     BigInteger r = new BigInteger(30, new SecureRandom());
     String filename1 = PATH + "ids-i-" + r + "-q";
     String filename2 = PATH + "ids-i-" + r + "-r";
