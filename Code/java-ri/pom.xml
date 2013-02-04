@@ -147,42 +147,39 @@
   <!-- Repository - Only use our own -->
   <repositories>
     <repository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public</url>
+      <id>maven2-repository.dev.java.net</id>
+      <name>Java.net Maven 2 Repository</name>
+      <url>http://download.java.net/maven/2</url>
     </repository>
   </repositories>
   <!-- Plugin Repository - use default Maven for now -->
   <pluginRepositories>
     <pluginRepository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public</url>
-      <!--
       <id>maven2-repository.dev.java.net</id>
       <name>Java.net Maven 2 Repository</name>
       <url>http://download.java.net/maven/2</url>
-      -->
     </pluginRepository>
   </pluginRepositories>
   <!-- SCM -->
   <scm>
-    <connection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ri/trunk</connection>
-    <developerConnection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ri/trunk</developerConnection>
+    <connection>scm:git:git://github.com/p2abcengine/p2abcengine.git</connection>
+    <developerConnection>scm:git:git://github.com/p2abcengine/p2abcengine.git</developerConnection>
   </scm>
+  <!--
   <distributionManagement>
-    <downloadUrl>https://abc4trust.miracleas.dk/nexus/content/groups/public</downloadUrl>
+    <downloadUrl>somehost/nexus/content/groups/public</downloadUrl>
     <repository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.releases</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/releases/</url>
+      <id></id>
+      <name>nexus release</name>
+      <url>somehost/nexus/content/repositories/releases/</url>
     </repository>
     <snapshotRepository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.snapshots</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/snapshots/</url>
+      <id></id>
+      <name>nexus snapshots</name>
+      <url>somehost/nexus/content/repositories/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
+  -->
 
   <!-- BUILD -->
   <build>
@@ -194,7 +191,7 @@
           <version>2.2</version>
           <configuration>
             <tagNameFormat>@{project.version}</tagNameFormat>
-            <tagBase>https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ri/tags</tagBase>
+            <tagBase>https://somehost/svn/WP4_Reference_Implementation/java/ri/tags</tagBase>
           </configuration>
         </plugin>
         <!-- -->
