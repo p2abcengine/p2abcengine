@@ -14,7 +14,7 @@ some components to generate and verify authentication tokens.
 
 Building a full-fledged authentication and authorization solution requires a number of additional components such as credential storage or key management. We provide basic implementations of such components and of example application as well. While these components could be useful as well, you might have to replace them with your own ones to integrate the core components into your application.
 
-Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either U-Prove and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) (Version 2.4 or later) separately (some of the the features will only work if Identity Mixer is installed).
+Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either U-Prove and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) (Version 2.3.40) separately (some of the the features will only work if Identity Mixer is installed).
 For more information about the U-Prove SDK, please contact uprove@microsoft.com.
 
 For more details about the components and how to integrate them into an application we refer to the [Architecture](wiki/Architecture) page.
@@ -29,7 +29,7 @@ Java JDK 1.6 or higher is required for building the project.
 
 Microsoft .NET runtime *FULL Profile* version 4 or Mono runtime version > 2.8 is required for building the project (also when just building the Java tree).
 
-[IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) jar (Version 2.4 or later).
+[IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) jar (Version 2.3.40).
 Microsoft U-Prove Binary. For more information about the U-Prove SDK, please contact uprove@microsoft.com.
 
 Building
