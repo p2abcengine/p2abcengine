@@ -41,7 +41,8 @@ Building
 
     ```cd java/ri/trunk```
 
-3. Place Identity Mixer jar in maven repository.
+3. Decompress the file Dependencies/idemix-mvn.tar.gz in your local maven repository (in Linux: ~/.m2/repository).
+   Place the Identity Mixer jar file in the appropriate folder of the maven repository (~/.m2/repository/com/ibm/zurich/idmx/2-3-40/idmx-2-3-40.jar).
 
 4. Place U-Prove binaries in dotNet/releases/1.0.0/
 
