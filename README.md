@@ -17,7 +17,7 @@ Building a full-fledged authentication and authorization solution requires a num
 Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either U-Prove and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) (Version 2.3.40) separately (some of the the features will only work if Identity Mixer is installed).
 For more information about the U-Prove SDK, please contact uprove@microsoft.com.
 
-For more details about the components and how to integrate them into an application we refer to the [Architecture][wikihome/Architecture] page.
+For more details about the components and how to integrate them into an application we refer to the [Architecture][wikihome] page.
 
 
 How to Build
