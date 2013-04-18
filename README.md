@@ -30,9 +30,7 @@ Java JDK 1.6 or higher is required for building the project.
 
 Microsoft .NET runtime *FULL Profile* version 4 or Mono runtime version > 2.8 is required for building the project (also when just building the Java tree).
 
-[IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) jar (Version 2.3.40).
-
-[Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com) 
+[IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) jar (Version 2.3.40) & [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com).
 
 Building
 ----------
@@ -83,7 +81,7 @@ See the page on integration for information on how to [integrate the ABCE][wikii
 Acknowledgements
 ===============
 
-The  [architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) and the specification of the p2abcengine have been done in as part of the 
+The  [architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) and the specification of the p2abcengine have been done as part of the 
 [ABC4Trust](https://www.abc4trust.eu) project.  
 
 The code available here is by [Alexandra Institute](http://www.alexandra.dk/), [Miracle](https://http://www.miracleas.dk), and IBM Research–Zurich](http://www.zurich.ibm.com) with support of the [ABC4Trust](https://www.abc4trust.eu), [FI-ware](https://www.fi-ware.eu),  [FutureID](https://www.futureid.eu),
