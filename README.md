@@ -1,7 +1,7 @@
 p2abcengine
 ===========
 
-This Privacy-Preserving Attribute-Based Credential Engine enables application developers to use Privacy-ABCs with all their features without having to consider the specifics of the underlying cryptographic algorithmsï¿½similar to as they do today for digital signatures, where they do not need to worry about the particulars of the RSA and DSA algorithms either.
+This Privacy-Preserving Attribute-Based Credential Engine enables application developers to use Privacy-ABCs with all their features without having to consider the specifics of the underlying cryptographic algorithms, similar to as they do today for digital signatures, where they do not need to worry about the particulars of the RSA and DSA algorithms either.
 
 An introduction to the project and links to further information is found on the [wiki][wikihome].
 
@@ -16,7 +16,7 @@ Building a full-fledged authentication and authorization solution requires a num
 
 Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either [Microsoft U-Prove](http://uprovecsharp.codeplex.com) 
 and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) (Version 2.3.40) separately (some of the the features will only work if Identity Mixer is installed).
-For more information about the U-Prove SDK, please contact uprove@microsoft.com.
+
 
 For more details about the components and how to integrate them into an application we refer to the [Architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) page.
 
@@ -78,3 +78,15 @@ See the page on integration for information on how to [integrate the ABCE][wikii
 
 [wikihome]: https://github.com/p2abcengine/p2abcengine/wiki
 [wikiintegration]: https://github.com/p2abcengine/p2abcengine/wiki/Integrating%20the%20ABC-Engine
+
+
+Acknowledgements
+===============
+
+The  [architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) and the specification of the p2abcengine have been done in as part of the 
+[ABC4Trust](https://www.abc4trust.eu) project.  
+
+The code available here is by [Alexandra Institute](http://www.alexandra.dk/), [Miracle](https://http://www.miracleas.dk), and IBM ResearchÐZurich](http://www.zurich.ibm.com) with support of the [ABC4Trust](https://www.abc4trust.eu), [FI-ware](https://www.fi-ware.eu),  [FutureID](https://www.futureid.eu),
+and [PrimeLife](http://www.primelife.eu) projects.
+
+
