@@ -84,7 +84,7 @@ Acknowledgements
 The  [architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) and the specification of the p2abcengine have been done as part of the 
 [ABC4Trust](https://www.abc4trust.eu) project.  
 
-The code available here is by [Alexandra Institute](http://www.alexandra.dk/), [Miracle](https://http://www.miracleas.dk), and [IBM Research–Zurich](http://www.zurich.ibm.com) with support of the [ABC4Trust](https://www.abc4trust.eu), [FI-ware](https://www.fi-ware.eu),  [FutureID](https://www.futureid.eu),
+The code available here is by [Alexandra Institute](http://www.alexandra.dk/), [Miracle](https://http://www.miracleas.dk), and [IBM Research–Zurich](http://www.zurich.ibm.com) with support from the [ABC4Trust](https://www.abc4trust.eu), [FI-ware](https://www.fi-ware.eu),  [FutureID](https://www.futureid.eu),
 and [PrimeLife](http://www.primelife.eu) projects.
 
 
