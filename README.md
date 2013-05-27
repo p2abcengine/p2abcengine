@@ -24,24 +24,19 @@ For more details about the components and how to integrate them into an applicat
 How to Build
 ==========
 
-Requirements
-----------
-Java JDK 1.6 or higher is required for building the project.
+### Requirements
 
-Microsoft .NET runtime *FULL Profile* version 4 or Mono runtime version > 2.8 is required for building the project (also when just building the Java tree).
+The following components are required for building the project:
 
-[IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) jar (Version 2.3.40) & [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com).
+* Java Development Kit (JDK) 1.6 or higher (on Unix, e.g.: `sudo apt-get install openjdk-6-jdk`). Note that the Java Runtime Environment (JRE) is not sufficient.
 
-Building
-----------
+* [Maven 3.0.x](http://maven.apache.org) (on Unix, e.g.: `sudo apt-get install maven`)
 
-1. Find and install Maven 3.0.x from  http://maven.apache.org - if not already installed
+* Microsoft .NET runtime version 4 _FULL Profile_<br>
+  _or_<br>
+  [Mono](http://mono-project.com/) project version > 2.8 (in [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu), e.g., you need the package mono-complete: `sudo apt-get install mono-complete`).
 
-2. Change directory:
-
-    ```cd java/ri/trunk```
-
-3. [Download](https://prime.inf.tu-dresden.de/idemix/) IBM Identity Mixer binaries of version 2.3.40 (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
+* IBM Identity Mixer Version 2.3.40. [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
 ```
 mvn install:install-file \
    -DgroupId=com.ibm.zurich \
@@ -52,7 +47,7 @@ mvn install:install-file \
    -DgeneratePom=true
 ```
 
-4. [Download](http://drjava.sourceforge.net/) the latest DrJava binary (e.g., drjava-stable-20120818-r5686.jar) and install it into your local maven repository (make sure you use the right file name in the -Dfile argument):
+* PLT Utilities 1.0, which is part of the DrJava project. [Download](http://drjava.sourceforge.net/) the latest DrJava binary (e.g., drjava-stable-20120818-r5686.jar) and install it into your local maven repository (make sure you use the right file name in the -Dfile argument):
 ```
 mvn install:install-file \
    -DgroupId=plt \
@@ -63,30 +58,40 @@ mvn install:install-file \
    -DgeneratePom=true
 ```
 
+* [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com)
+
+### Building
+
+2. Change directory:
+
+    ```cd java-ri```
+
 4. Place U-Prove binaries in dotNet/releases/1.0.0/
 
 5. On Windows 7 - start UProve Service:
 
     ```ABC4Trust-UProve.exe 32123```
 
-    (on Windows XP/Unix/Mono platforms - the service starts automatically)
+    On Windows XP/Unix/Mono platforms, the service starts automatically.
 
-6. Run:
+6. Build the code:
 
     ```mvn clean install```
+    
+    If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
+    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
+      Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session.
+      To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.    
+    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
+      In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
 
-    If the build fails and the output contains java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
-    * Windows 32 bit: ``set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=256m``
-    * Windows 64 bit: ``set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m``
-    * Unix variants:  ``export MAVEN_OPTS='-Xmx1024m -Xms256m -XX:MaxPermSize=512m' ``
+### Eclipse Import
 
-    Be aware that the "set" command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via "setx".
+You can optionally use Maven to generate Eclipse project files (.project):
 
-7. Optionally generate Eclipse project files by running:
+```mvn eclise:eclipse```
 
-    ```mvn eclise:eclipse```
-
-8. Optionally import the projects in Eclipse as existing Maven projects
+The projects are generated in the individual module folders and can be imported in Eclipse as existing projects.
 
 
 Usage
