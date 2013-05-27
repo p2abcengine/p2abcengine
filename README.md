@@ -52,6 +52,17 @@ mvn install:install-file \
    -DgeneratePom=true
 ```
 
+4. [Download](http://drjava.sourceforge.net/) the latest DrJava binary (e.g., drjava-stable-20120818-r5686.jar) and install it into your local maven repository (make sure you use the right file name in the -Dfile argument):
+```
+mvn install:install-file \
+   -DgroupId=plt \
+   -DartifactId=plt \
+   -Dpackaging=jar \
+   -Dversion=1.0 \
+   -Dfile=drjava-stable-20120818-r5686.jar \
+   -DgeneratePom=true
+```
+
 4. Place U-Prove binaries in dotNet/releases/1.0.0/
 
 5. On Windows 7 - start UProve Service:
