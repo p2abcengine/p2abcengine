@@ -28,13 +28,19 @@ How to Build
 
 The following components are required for building the project:
 
-* Java Development Kit (JDK) 1.6 or higher (on Unix, e.g.: `sudo apt-get install openjdk-6-jdk`). Note that the Java Runtime Environment (JRE) is not sufficient.
+* Java Development Kit (JDK) 1.6 or higher. Note that the Java Runtime Environment (JRE) is not sufficient.
 
-* [Maven 3.0.x](http://maven.apache.org) (on Unix, e.g.: `sudo apt-get install maven`)
+  Unix: `sudo apt-get install openjdk-6-jdk`
+
+* [Maven 3.0.x](http://maven.apache.org)
+  
+  Unix: `sudo apt-get install maven`
 
 * Microsoft .NET runtime version 4 _FULL Profile_<br>
   _or_<br>
-  [Mono](http://mono-project.com/) project version > 2.8 (in [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu), e.g., you need the package mono-complete: `sudo apt-get install mono-complete`).
+  [Mono project](http://mono-project.com/) version > 2.8
+
+  [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (the mono-runtime package is not sufficient).
 
 * IBM Identity Mixer Version 2.3.40. [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
 ```
