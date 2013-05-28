@@ -77,7 +77,7 @@ mvn install:install-file \
 
 2. Change directory:
 
-    ```cd java-ri```
+    ```cd Code/java-ri```
 
 4. Place U-Prove binaries in dotNet/releases/1.0.0/
 
@@ -87,16 +87,20 @@ mvn install:install-file \
 
     On Windows XP/Unix/Mono platforms, the service starts automatically.
 
-6. Build the code:
-
-    ```mvn clean install```
+6. Build the code with the command
+   
+    ```mvn clean install -DskipTests```
     
-    If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
-    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
-      Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session.
-      To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.    
-    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
-      In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
+   If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
+   * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
+     Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session.
+     To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.    
+   * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
+     In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
+
+   Once the code can successfully be built, you can go a step further and also execute all unit tests:
+
+   ```mvn clean install```
 
 ### Eclipse Import
 
