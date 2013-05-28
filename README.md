@@ -36,13 +36,13 @@ The following components are required for building the project:
   
   Unix: `sudo apt-get install maven`
 
-* Microsoft .NET runtime version 4 _FULL Profile_<br>
-  _or_<br>
-  [Mono project](http://mono-project.com/) version > 2.8
+  Although we use Maven as build tool, there are two required libraries that are not available in
+  public Maven repositories. Therefore, in the following, we provide instructions on how these libraries
+  can be integrated with your local Maven repository.
 
-  [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (the mono-runtime package is not sufficient).
-
-* IBM Identity Mixer Version 2.3.40. [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
+* IBM Identity Mixer Version 2.3.40.
+  [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install
+  it into your local maven repository:
 ```
 mvn install:install-file \
    -DgroupId=com.ibm.zurich \
@@ -53,16 +53,23 @@ mvn install:install-file \
    -DgeneratePom=true
 ```
 
-* PLT Utilities 1.0, which is part of the DrJava project. [Download](http://drjava.sourceforge.net/) the latest DrJava binary (e.g., drjava-stable-20120818-r5686.jar) and install it into your local maven repository (make sure you use the right file name in the -Dfile argument):
+* PLT Utilities, which is a [component](http://drjava.sourceforge.net/components.shtml) of the [DrJava](http://drjava.sourceforge.net/) project.
+  [Download](https://drjava.svn.sourceforge.net/svnroot/drjava/trunk/drjava/lib/plt.jar) the binary (plt.jar) and install it into your local maven repository:
 ```
 mvn install:install-file \
    -DgroupId=plt \
    -DartifactId=plt \
    -Dpackaging=jar \
    -Dversion=1.0 \
-   -Dfile=drjava-stable-20120818-r5686.jar \
+   -Dfile=plt.jar \
    -DgeneratePom=true
 ```
+
+* Microsoft .NET runtime version 4 _FULL Profile_<br>
+  _or_<br>
+  [Mono project](http://mono-project.com/) version > 2.8
+
+  [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: the _mono-runtime_ package is not sufficient).
 
 * [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com)
 
