@@ -69,7 +69,7 @@ mvn install:install-file \
   _or_<br>
   [Mono project](http://mono-project.com/) version > 2.8
 
-  [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: the _mono-runtime_ package is not sufficient).
+  [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: Ubuntu does not come with Mono installed by default any more. Also the _mono-runtime_ package is not sufficient).
 
 * [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com)
 
