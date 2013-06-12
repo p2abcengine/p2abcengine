@@ -8,15 +8,11 @@ An introduction to the project and links to further information is found on the 
 Overview of Codebase
 ===========
 
-We here provide a number of core components for authentication with privacy-preserving attribute-based credentials. These core components deal with the policy language that specifies the authentication requirements, a user interface that allows user to select 
-which credentials they want to use to satisfy the authentication policy and then 
-some components to generate and verify authentication tokens. 
+We here provide a number of core components for authentication with privacy-preserving attribute-based credentials. These core components deal with the policy language that specifies the authentication requirements, a user interface that allows user to select which credentials they want to use to satisfy the authentication policy and then some components to generate and verify authentication tokens.
 
 Building a full-fledged authentication and authorization solution requires a number of additional components such as credential storage or key management. We provide basic implementations of such components and of example application as well. While these components could be useful as well, you might have to replace them with your own ones to integrate the core components into your application.
 
-Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either [Microsoft U-Prove](http://uprovecsharp.codeplex.com) 
-and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) separately (some of the the features will only work if Identity Mixer is installed).
-
+Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either [Microsoft U-Prove](http://uprovecsharp.codeplex.com) and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) separately (some of the the features will only work if Identity Mixer is installed).
 
 For more details about the components and how to integrate them into an application we refer to the [Architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) page.
 
@@ -36,13 +32,11 @@ The following components are required for building the project:
   
   Unix: `sudo apt-get install maven`
 
-  Although we use Maven as build tool, there are two required libraries that are not available in
-  public Maven repositories. Therefore, in the following, we provide instructions on how these libraries
-  can be integrated with your local Maven repository.
+  Although we use Maven as build tool, there are two required libraries that are not available in public Maven repositories. Therefore, in the following, we provide instructions on how these libraries can be integrated with your local Maven repository.
 
 * IBM Identity Mixer Version 2.3.40.
-  [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install
-  it into your local maven repository:
+  
+  [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
 ```
 mvn install:install-file \
    -DgroupId=com.ibm.zurich \
@@ -54,6 +48,7 @@ mvn install:install-file \
 ```
 
 * PLT Utilities, which is a [component](http://drjava.sourceforge.net/components.shtml) of the [DrJava](http://drjava.sourceforge.net/) project.
+  
   [Download](https://drjava.svn.sourceforge.net/svnroot/drjava/trunk/drjava/lib/plt.jar) the binary (plt.jar) and install it into your local maven repository:
 ```
 mvn install:install-file \
@@ -93,8 +88,7 @@ mvn install:install-file \
     
    If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
-     Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session.
-     To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.    
+     Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
      In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
 
