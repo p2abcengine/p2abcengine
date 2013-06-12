@@ -24,77 +24,77 @@ How to Build
 
 The following components are required for building the project:
 
-* Java Development Kit (JDK) 1.6 or higher. Note that the Java Runtime Environment (JRE) is not sufficient.
+*   Java Development Kit (JDK) 1.6 or higher. Note that the Java Runtime Environment (JRE) is not sufficient.
 
-  Unix: `sudo apt-get install openjdk-6-jdk`
+    Unix: `sudo apt-get install openjdk-6-jdk`
 
-* [Maven 3.0.x](http://maven.apache.org)
+*   [Maven 3.0.x](http://maven.apache.org)
+
+    Unix: `sudo apt-get install maven`
+    
+    Although we use Maven as build tool, there are two required libraries that are not available in public Maven repositories. Therefore, in the following, we provide instructions on how these libraries can be integrated with your local Maven repository.
+
+*   IBM Identity Mixer Version 2.3.40.
   
-  Unix: `sudo apt-get install maven`
+    [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
+    ```
+    mvn install:install-file \
+       -DgroupId=com.ibm.zurich \
+       -DartifactId=idmx \
+       -Dpackaging=jar \
+       -Dversion=2-3-40 \
+       -Dfile=com.ibm.zurich.idmx.2-3-40.jar \
+       -DgeneratePom=true
+    ```
 
-  Although we use Maven as build tool, there are two required libraries that are not available in public Maven repositories. Therefore, in the following, we provide instructions on how these libraries can be integrated with your local Maven repository.
-
-* IBM Identity Mixer Version 2.3.40.
+*   PLT Utilities, which is a [component](http://drjava.sourceforge.net/components.shtml) of the [DrJava](http://drjava.sourceforge.net/) project.
   
-  [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
-```
-mvn install:install-file \
-   -DgroupId=com.ibm.zurich \
-   -DartifactId=idmx \
-   -Dpackaging=jar \
-   -Dversion=2-3-40 \
-   -Dfile=com.ibm.zurich.idmx.2-3-40.jar \
-   -DgeneratePom=true
-```
+    [Download](https://drjava.svn.sourceforge.net/svnroot/drjava/trunk/drjava/lib/plt.jar) the binary (plt.jar) and install it into your local maven repository:
+    ```
+    mvn install:install-file \
+       -DgroupId=plt \
+       -DartifactId=plt \
+       -Dpackaging=jar \
+       -Dversion=1.0 \
+       -Dfile=plt.jar \
+       -DgeneratePom=true
+    ```
 
-* PLT Utilities, which is a [component](http://drjava.sourceforge.net/components.shtml) of the [DrJava](http://drjava.sourceforge.net/) project.
-  
-  [Download](https://drjava.svn.sourceforge.net/svnroot/drjava/trunk/drjava/lib/plt.jar) the binary (plt.jar) and install it into your local maven repository:
-```
-mvn install:install-file \
-   -DgroupId=plt \
-   -DartifactId=plt \
-   -Dpackaging=jar \
-   -Dversion=1.0 \
-   -Dfile=plt.jar \
-   -DgeneratePom=true
-```
+*   Microsoft .NET runtime version 4 _FULL Profile_<br>
+    _or_<br>
+    [Mono project](http://mono-project.com/) version > 2.8
 
-* Microsoft .NET runtime version 4 _FULL Profile_<br>
-  _or_<br>
-  [Mono project](http://mono-project.com/) version > 2.8
+    [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: Ubuntu does not come with Mono installed by default any more. Also the _mono-runtime_ package is not sufficient).
 
-  [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: Ubuntu does not come with Mono installed by default any more. Also the _mono-runtime_ package is not sufficient).
-
-* [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com)
+*   [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com)
 
 ### Building
 
-2. Change directory:
+2.  Change directory:
 
     ```cd Code/java-ri```
 
-4. Place U-Prove binaries in dotNet/releases/1.0.0/
+4.  Place U-Prove binaries in dotNet/releases/1.0.0/
 
-5. On Windows 7 - start UProve Service:
+5.  On Windows 7 - start UProve Service:
 
     ```ABC4Trust-UProve.exe 32123```
 
     On Windows XP/Unix/Mono platforms, the service starts automatically.
 
-6. Build the code with the command
+6.  Build the code with the command
    
     ```mvn clean install -DskipTests```
     
-   If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
-   * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
-     Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
-   * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
-     In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
+    If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
+    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
+      Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
+    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
+      In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
 
-   Once the code can successfully be built, you can go a step further and also execute all unit tests:
+    Once the code can successfully be built, you can go a step further and also execute all unit tests:
 
-   ```mvn clean install```
+    ```mvn clean install```
 
 ### Eclipse Import
 
