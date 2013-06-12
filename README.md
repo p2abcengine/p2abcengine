@@ -37,6 +37,7 @@ The following components are required for building the project:
 *   IBM Identity Mixer Version 2.3.40.
   
     [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
+    
     ```
     mvn install:install-file \
        -DgroupId=com.ibm.zurich \
@@ -50,6 +51,7 @@ The following components are required for building the project:
 *   PLT Utilities, which is a [component](http://drjava.sourceforge.net/components.shtml) of the [DrJava](http://drjava.sourceforge.net/) project.
   
     [Download](https://drjava.svn.sourceforge.net/svnroot/drjava/trunk/drjava/lib/plt.jar) the binary (plt.jar) and install it into your local maven repository:
+
     ```
     mvn install:install-file \
        -DgroupId=plt \
@@ -59,7 +61,7 @@ The following components are required for building the project:
        -Dfile=plt.jar \
        -DgeneratePom=true
     ```
-
+    
 *   Microsoft .NET runtime version 4 _FULL Profile_<br>
     _or_<br>
     [Mono project](http://mono-project.com/) version > 2.8
