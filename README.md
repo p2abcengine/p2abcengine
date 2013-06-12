@@ -62,9 +62,7 @@ The following components are required for building the project:
        -DgeneratePom=true
     ```
     
-*   Microsoft .NET runtime version 4 _FULL Profile_<br>
-    _or_<br>
-    [Mono project](http://mono-project.com/) version > 2.8
+*   Microsoft .NET runtime version 4 _FULL Profile_<br>__or__<br>[Mono project](http://mono-project.com/) version > 2.8
 
     [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: Ubuntu does not come with Mono installed by default any more. Also the _mono-runtime_ package is not sufficient).
 
@@ -89,10 +87,8 @@ The following components are required for building the project:
     ```mvn clean install -DskipTests```
     
     If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
-    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>
-      Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
-    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>
-      In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
+    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
+    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
 
     Once the code can successfully be built, you can go a step further and also execute all unit tests:
 
