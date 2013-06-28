@@ -23,3 +23,4 @@ C:\dev\ABC4Trust\wp4refsvn\java\ui\trunk\ie-active-x\ABC4TrustActiveX\bin\Debug\
 C:\dev\ABC4Trust\wp4refsvn\java\ui\trunk\ie-active-x\ABC4TrustActiveX\obj\Debug\ABC4TrustActiveX.PinForm.da.resources
 C:\dev\ABC4Trust\wp4refsvn\java\ui\trunk\ie-active-x\ABC4TrustActiveX\obj\Debug\da\ABC4TrustActiveX.resources.dll
 C:\dev\ABC4Trust\wp4refsvn\java\ui\trunk\ie-active-x\ABC4TrustActiveX\obj\Debug\ABC4TrustActiveX.ToolsForm.da.resources
+C:\dev\ABC4Trust\wp4refsvn\java\ui\trunk\ie-active-x\ABC4TrustActiveX\obj\Debug\ABC4TrustActiveX.csprojResolveAssemblyReference.cache

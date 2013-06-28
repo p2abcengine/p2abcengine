@@ -1,4 +1,15 @@
-﻿using System;
+﻿//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
+//* eu.abc4trust.pabce.1.0                                            *
+//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
+//* US Government Users Restricted Rights - Use, duplication or       *
+//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
+//*/**/****************************************************************
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -871,7 +882,7 @@ namespace ABC4TrustActiveX
                 {
                     var statusRequestStream = statusRequest.GetRequestStream();
 
-                    System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+                    System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
                     Byte[] statusBytes = encoding.GetBytes(success ? "1" : "0");
 
                     statusRequestStream.Write(statusBytes, 0, statusBytes.Length);
@@ -1257,7 +1268,8 @@ namespace ABC4TrustActiveX
             try
             {
                 abcToStream = abcRequest.GetRequestStream();
-                System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+
+                System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
                 Byte[] dataBytes = encoding.GetBytes(data);
 
                 abcToStream.Write(dataBytes, 0, dataBytes.Length);
@@ -1317,7 +1329,7 @@ namespace ABC4TrustActiveX
                 HttpWebResponse abcResponse = (HttpWebResponse)abcRequest.GetResponse();
                 Stream abcFromStream = abcResponse.GetResponseStream();
 
-                System.Text.ASCIIEncoding encoding = new System.Text.ASCIIEncoding();
+                System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
                 string data = "";
                 byte[] b = new byte[1];
                 while (abcFromStream.Read(b, 0, 1) != 0)
