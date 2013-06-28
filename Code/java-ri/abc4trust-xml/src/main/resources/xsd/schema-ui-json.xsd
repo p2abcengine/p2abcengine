@@ -180,13 +180,6 @@
     </xs:sequence>
   </xs:complexType>
   
-  <xs:element name="URISet" type="URISet"/>
-  <xs:complexType name="URISet">
-    <xs:sequence> 
-      <xs:element name="URI" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded"/>
-    </xs:sequence>
-  </xs:complexType>
-  
   <xs:element name="InspectorChoiceList" type="InspectorChoiceList"/>
   <xs:complexType name="InspectorChoiceList">
     <xs:sequence> 

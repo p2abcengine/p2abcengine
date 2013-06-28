@@ -1,0 +1,2951 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"  dir="ltr">
+<head>
+	<title style="visibility:hidden;" id="selectionTypeTitle_persentation_en">English Presentation Credential Selection</title>
+	<title style="visibility:hidden;" id="selectionTypeTitle_persentation_se">Swedish Presentation Credential Selection</title>
+	<title style="visibility:hidden;" id="selectionTypeTitle_persentation_da">Danish Presentation Credential Selection</title>
+
+	<title style="visibility:hidden;" id="selectionTypeTitle_issuance_en">English Issuance Credential Selection</title>
+	<title style="visibility:hidden;" id="selectionTypeTitle_issuance_se">Swedish Issuance Credential Selection</title>
+	<title style="visibility:hidden;" id="selectionTypeTitle_issuance_da">Danish Issuance Credential Selection</title>
+
+	<!-- ------------------------------------------------------------------------- -->
+	<!--                           porting Style CSS                               -->
+	<!-- ------------------------------------------------------------------------- -->
+	<style type="text/css">
+		/* bring in the claro theme */
+		@import "http://ajax.googleapis.com/ajax/libs/dojo/1.5/dijit/themes/claro/claro.css";
+
+		/* bring in the grid classes */
+		@import "http://ajax.googleapis.com/ajax/libs/dojo/1.5/dijit/themes/claro/layout/ContentPane.css";
+		@import "http://ajax.googleapis.com/ajax/libs/dojo/1.5/dijit/themes/claro/layout/TabContainer.css";
+	</style>
+
+	<!-- ------------------------------------------------------------------------- -->
+	<!--                                Loading Dojo                               -->
+	<!-- ------------------------------------------------------------------------- -->
+	<script src="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js" type="text/javascript" djConfig="parseOnLoad:true"></script>
+
+
+	<!-- ------------------------------------------------------------------------- -->
+	<!--            Loading Dojo library and define javascript function            -->
+	<!-- ------------------------------------------------------------------------- -->
+	<script src="chrome://abc4trust/content/idselect.js" type="text/javascript"></script>
+	<script type="text/javascript">
+		/* require necessary classes */
+		dojo.require('dijit.layout.TabContainer');
+		dojo.require('dijit.layout.ContentPane');
+		dojo.require('dijit.form.Button');
+		dojo.require('dijit.layout.BorderContainer');
+		
+		/*
+		dojo.ready(function()
+   		{
+   			alert("Dojo version " + dojo.version + " is loaded"); 
+   		});  
+		*/
+		
+		//----------------------
+		// Global variables
+		//----------------------
+		var previousNumCredentialsInPane = 0; 
+		var previousNumPseudonymSet = 0;
+		var numberOfPseudonymSet = 0;
+		
+		var previousNumInspectorChoice = 0;
+		var previousNumInspectorInSet = new Array();
+		var numberOfInspectorSet = 0;
+		
+		var allPseudonymSet = new Array();
+		
+		var prevNumCredentialGroup = 0; 
+		var prevMaxNumCredentialsInGroup = 0; 
+		
+		var currentSelectedPseudonymSetId;
+		var currentMatchedToken;
+		var totalNumberOfTokens;
+		
+		//------------------
+		// return value
+		//------------------
+		var returnTokenUID;
+		var returnPseudonymList = new Array(); 
+		var returnInspectorList = new Array(); 
+		var returnAttributeList = new Array(); 
+		var returnTokenIndex;
+		
+		var isSubmitted = 0;
+		
+		var simpleCredentialSelction = true; 
+		
+		
+		/* ====================================================================================== 
+		 * @name : onUnLoad()
+	     * @description : handle when user close the window 
+		 * ====================================================================================*/
+		function onUnLoad()
+		{
+			if(isSubmitted == 0)
+	    	{
+	    		submitCancel();
+	    	}	
+	    } 
+
+        		 
+		 
+		/* =======================================================================================
+		 * @name : triggerPlugin(tokenUID)
+		 * @description : Send Event to FireFox Plugin that presentation token has been selected
+		 * ======================================================================================*/
+		function triggerPlugin(tokenUID)
+        {
+        	var element = document.createElement("ABC4TrustDataElement");
+            element.setAttribute("abc4trust_command", "tokenSelected");
+            element.setAttribute("selected_token", tokenUID);
+         
+        	document.documentElement.appendChild(element);
+
+        	var evt = document.createEvent("Events");
+        	evt.initEvent("ABC4TrustEvent", true, false);
+        	element.dispatchEvent(evt);
+        }
+		
+		
+
+		/* =======================================================================================
+		 * @name : setTokenUID(tokenUID)
+		 * @description : set the presentation token UID which is selected
+		 * ======================================================================================*/
+		function setTokenUID(tokenUID)
+		{
+			if(tokenUID == null)
+			{	
+				alert("[INFO] No matched token");
+				var tokenContentPane = document.getElementById('TokenArea'); 
+				tokenContentPane.innerHTML = '';
+			}	
+			else 
+			{	
+				var tokenContentPane = document.getElementById('TokenArea'); 
+				var presentationToken = document.getElementById(tokenUID).value; 
+			
+				tokenContentPane.innerHTML = presentationToken;
+			
+				var selectedTokenUID = document.getElementById('selectedTokenUID');
+				selectedTokenUID.setAttribute('value', tokenUID);
+			}
+		};
+		
+		
+		
+		/* =================================================================================================================
+		 * @name : radioButtonClicked(credentialIndex, GroupIndex, currentNumCredendialsInGroup)
+		 * @description : radio button of credential has been clicked, i.e. credential is selected
+		 * ================================================================================================================*/
+		function radioButtonClicked(credentialIndex, GroupIndex, currentNumCredendialsInGroup) 
+		{
+			//alert("button clicked and credential index : " + credentialIndex + " and Group Index : " + GroupIndex + " and numCredInCurrentGroup : " + currentNumCredendialsInGroup); 
+			
+			//--------------------------------------------------------------
+			// check button status and toggle radio button if it necessary
+			//--------------------------------------------------------------
+			var embeddedButtonStatus = document.getElementById('RadioButtonStatus'+credentialIndex+'_inGroup_'+GroupIndex); //('RadioButtonStatus'+credentialIndex); 
+			var buttonStatus = document.getElementById('RadioButton'+credentialIndex+'_inGroup_'+GroupIndex).checked; 
+			
+			if(embeddedButtonStatus.value == 'unchecked' && buttonStatus == true )
+			{
+				embeddedButtonStatus.value = 'checked';
+			}
+			else if(embeddedButtonStatus.value == 'checked' && buttonStatus == true)
+			{
+				document.getElementById('RadioButton'+credentialIndex+'_inGroup_'+GroupIndex).checked = false;
+				embeddedButtonStatus.value = 'unchecked';
+			}
+			
+			
+			//-----------------------------------------------
+			// Deselect all other choices in the same pane 
+			//-----------------------------------------------
+			disableAllCredentialSelectionInGroup(credentialIndex, currentNumCredendialsInGroup, GroupIndex);
+			
+			
+			//------------------------------------------------------
+			// Find token which match with the radio button change
+			//------------------------------------------------------
+			var matchedToken = changeTokenSelection();
+			// alert("TEST : matchedToken " + matchedToken);
+			
+			//--------------------------------------------------------
+			// Get the token index of matchedToken 
+			//--------------------------------------------------------
+			getMatchedTokenIndex(matchedToken); 
+			
+			//---------------------------------------------------------------------
+			// Based on the changed token, update the Pseudonym and Inspector Pane
+			//---------------------------------------------------------------------
+			showPseudonymChoiceList(matchedToken); 
+			showInspectorChoiceList(matchedToken);
+			
+			
+			//----------------------------------------------------------------------------------------------------------------
+			// Based on the changed token, update the friendly description of Pseudonym and Inspector Presentation Token Pane
+			//----------------------------------------------------------------------------------------------------------------
+			showPreselectedPseudonymsIntoPane(matchedToken);
+			showPreselectedInspectorsIntoPane(matchedToken);
+			
+			//set the return token UID null 
+			if(matchedToken == null)
+			{	
+				//set null to token UID 
+				returnTokenUID = 'null';
+				currentMatchedToken = 'null';
+				
+				//set null to Pseudonym and Inspector UID 
+				returnPseudonymList = null; 
+				returnInspectorList = null;  
+			}	
+		}; 
+		
+		/* =================================================================================================================
+		 * @name : radioButtonClicked_GroupPane(policyTokenUID, credentialGroupIndex, credentialGroupCount)
+		 * @description : radio button of credential has been clicked, i.e. credential is selected
+		 * ================================================================================================================*/
+
+		function radioButtonClicked_GroupPane(policyTokenUID, credentialGroupIndex, credentialGroupCount) 
+		{
+			//alert("button clicked and credential index : " + credentialIndex + " and Group Index : " + GroupIndex + " and numCredInCurrentGroup : " + currentNumCredendialsInGroup); 
+			
+			//--------------------------------------------------------------
+			// check button status and toggle radio button if it necessary
+			//--------------------------------------------------------------
+			
+			var embeddedButtonStatus = document.getElementById('RadioButtonStatus_CredentialGroupIndex_' + credentialGroupIndex); //('RadioButtonStatus'+credentialIndex); 
+			var buttonStatus = document.getElementById('RadioButton_CredentialGroupIndex_' + credentialGroupIndex).checked; 
+			
+			if(embeddedButtonStatus.value == 'unchecked' && buttonStatus == true )
+			{
+				embeddedButtonStatus.value = 'checked';
+			}
+			else if(embeddedButtonStatus.value == 'checked' && buttonStatus == true)
+			{
+				document.getElementById('RadioButton_CredentialGroupIndex_' + credentialGroupIndex).checked = false;
+				embeddedButtonStatus.value = 'unchecked';
+			}
+			
+			
+			//-----------------------------------------------
+			// Deselect all other choices in the same pane 
+			//-----------------------------------------------
+//			disableAllCredentialSelectionInGroup(credentialIndex, currentNumCredendialsInGroup, GroupIndex);
+			
+			
+			//------------------------------------------------------
+			// Find token which match with the radio button change
+			//------------------------------------------------------
+			var matchedToken = policyTokenUID; // changeTokenSelection();
+			// alert("TEST : matchedToken " + matchedToken);
+			
+			//--------------------------------------------------------
+			// Get the token index of matchedToken 
+			//--------------------------------------------------------
+			getMatchedTokenIndex(matchedToken); 
+			
+			//---------------------------------------------------------------------
+			// Based on the changed token, update the Pseudonym and Inspector Pane
+			//---------------------------------------------------------------------
+			showPseudonymChoiceList(matchedToken); 
+			showInspectorChoiceList(matchedToken);
+			
+			
+			//----------------------------------------------------------------------------------------------------------------
+			// Based on the changed token, update the friendly description of Pseudonym and Inspector Presentation Token Pane
+			//----------------------------------------------------------------------------------------------------------------
+			showPreselectedPseudonymsIntoPane(matchedToken);
+			showPreselectedInspectorsIntoPane(matchedToken);
+			
+			//set the return token UID null 
+			if(matchedToken == null)
+			{	
+				//set null to token UID 
+				returnTokenUID = 'null';
+				currentMatchedToken = 'null';
+				
+				//set null to Pseudonym and Inspector UID 
+				returnPseudonymList = null; 
+				returnInspectorList = null;  
+			}	
+		}; 
+		
+		
+		/* =====================================================================================================
+		 * @name : getMatchedTokenIndex(matchedToken) 
+		 * @description : get token index of matched token 
+		 * ===================================================================================================*/
+		function getMatchedTokenIndex(matchedToken)
+		{
+	    	var matchedTokenIndex; 
+	    	//policyUIDforToken.setAttribute('id', i+'th_token');
+	    	for ( var i = 0; i < totalNumberOfTokens; i++ )
+	    	{
+	        	var token = document.getElementById(i+'th_token');
+	        	if(token != null)
+	        	{
+	        		var tokenUID = token.getAttribute('value');	
+	        		
+	        		if(matchedToken == tokenUID)
+	        		{
+	        			//alert("Found the index : " + i); 
+	        			returnTokenIndex = i;
+	        		}	
+	        	}	
+	    	}	
+	    	
+	    	return matchedTokenIndex ; 
+		};  
+		
+		
+		
+		/*======================================================================================================
+		 * @name : changeTokenSelection()
+		 * @description : When change the credential selection, initial selection for token has to be changed 
+		 *=====================================================================================================*/
+		function changeTokenSelection()
+		{
+			//------------------------------------------------------------
+			// selection of Token since selected credentials are changed
+			//------------------------------------------------------------
+			var selectedCredentials = new Array();
+			selectedCredentials = getCurrentSelectedCredentialsByAllGroup();
+			//alert("selectedCredentials : " + selectedCredentials);
+			
+			//-------------------------------------------------------------
+			// get Token based on user selection on credential
+			//-------------------------------------------------------------
+			var matchedToken = getSelectedToken(selectedCredentials); 
+			
+			// alert("matched Token : " + matchedToken);
+			
+			if(matchedToken != null)
+			{
+				currentMatchedToken = matchedToken; //save tokenUID in global variable
+				updateTokenPane(matchedToken); 
+			}
+			else
+			{
+				updateTokenPane(null);
+			}
+			
+			return matchedToken; 
+		};
+		
+		
+		
+		
+		/* =====================================================================================================
+		 * @name : updateTokenPane(matchedToken)
+		 * @description : update the token pane whenever user clicks the radio button 
+		 * ===================================================================================================*/
+		function updateTokenPane(matchedToken)
+		{
+			showFriendlyDescToken(matchedToken);
+		};
+		 
+		 
+		
+		
+		/* ====================================================================================================
+		 * @name : getCurrentSelectedCredentialsByAllGroup()
+		 * @description : get currently selecte credentials
+		 * ==================================================================================================*/
+		function getCurrentSelectedCredentialsByAllGroup()
+		{
+			var selectedGredentials = new Array(); 
+			//alert("prevNumCredentialGroup :" + prevNumCredentialGroup + "  prevMaxNumCredentialsInGroup : " + prevMaxNumCredentialsInGroup);
+			for(var GroupIndex = 0; GroupIndex < prevNumCredentialGroup; GroupIndex++) //by credential groups
+			{
+				for(var credentialIndex = 0; credentialIndex < prevMaxNumCredentialsInGroup; credentialIndex++)
+				{	
+					var buttonStatus = document.getElementById('RadioButtonStatus'+credentialIndex+'_inGroup_'+GroupIndex);
+					
+					if(buttonStatus != null)
+					{	
+						if(buttonStatus.value == 'checked')
+						{
+							var selectedCred = document.getElementById('RadioButton'+credentialIndex+'_inGroup_'+GroupIndex).value; 
+							//alert("TEST : " + selectedCred );
+							selectedGredentials[GroupIndex] = selectedCred;
+						}
+					}	
+				}
+			}	
+				
+			return selectedGredentials;	
+		} 
+		
+		
+
+		/* ===============================================================================================================
+		 * @name : disableAllCredentialSelectionInGroup(currentNumCredendialsInGroup) 
+		 * @description : Disable all radio button except current selection
+		 * =============================================================================================================*/
+		function disableAllCredentialSelectionInGroup(selectedCredentialIndex, currentNumCredendialsInGroup, GroupIndex)
+		{
+			for(var credentialIndex = 0; credentialIndex < currentNumCredendialsInGroup; credentialIndex++)
+			{	
+				if(credentialIndex != selectedCredentialIndex) //except the radio button selected
+				{	
+					var buttonStatus = document.getElementById('RadioButtonStatus'+credentialIndex+'_inGroup_'+GroupIndex);
+			
+					if(buttonStatus.value == 'checked')
+					{
+						document.getElementById('RadioButton'+credentialIndex+'_inGroup_'+GroupIndex).checked = false;
+						buttonStatus.value = 'unchecked';
+					}
+				}	
+			}
+		}; 
+		
+	
+		
+		/* =======================================================================================
+		 * @name : radioButtonForPseudonymClicked(pseudonymIndex)
+		 * @description : radio button of pseudonym has been clicked, i.e. credential is selected
+		 * ======================================================================================*/
+		function radioButtonForPseudonymClicked(pseudonymIndex)
+		{
+			//alert("pseudonymIndex " + pseudonymIndex + " has been clicked" );
+			 
+			//check button status and toggle radio button if it necessary
+			var embeddedButtonStatus = document.getElementById('RadioButtonStatusForPseudonym'+pseudonymIndex); 
+			var buttonStatus = document.getElementById('RadioButtonForPseudonym'+pseudonymIndex).checked; 
+				
+			if (embeddedButtonStatus.value == 'unchecked' && buttonStatus == true )
+			{
+				embeddedButtonStatus.value = 'checked';
+			}
+			else if(embeddedButtonStatus.value == 'checked' && buttonStatus == true)
+			{
+				document.getElementById('RadioButtonForPseudonym'+pseudonymIndex).checked = false;
+				embeddedButtonStatus.value = 'unchecked';
+			}
+			
+			//TODO : Save selected Pseudonym into array
+		} 
+		 
+		 
+		
+		
+		/* =======================================================================================
+		 * @name : searchMatchedToken(checkedCredentials, numCheckedButton)
+		 * @description : Given selected credentials, search the matched token
+		 * ======================================================================================*/
+		function searchMatchedToken(checkedCredentials, numCheckedButton)
+		{
+			//Get candidateTokens and how many tokens are 
+			var candidateTokens = document.getElementById('candidateTokens');
+			var tokenNum = candidateTokens.getElementsByTagName('input').length;
+			//alert("tokenNum : " + tokenNum);
+			var tokenCounted = new Array();
+			for( var z = 0; z < tokenNum; z++ ) //initialize
+			{
+				tokenCounted[z] = 0; 
+			}
+			
+			//alert('checkedCredentials.length : ' + checkedCredentials.length);
+			if(checkedCredentials.length > 0)
+			{
+				for( var k = 0; k < checkedCredentials.length; k++ )
+				{
+					for( var i = 0; i < tokenNum; i++ ) //For each token
+					{
+						var currentToken = candidateTokens.getElementsByTagName('input').item(i); 
+						var numCredentialsInToken = currentToken.getElementsByTagName('li').length;
+					
+						for( var j = 0; j < numCredentialsInToken ; j++ ) //For each credentials for a token
+						{
+							var includedCredential = currentToken.getElementsByTagName('li').item(j).innerHTML;
+						
+					    	if ( includedCredential == checkedCredentials[k] )	
+					    	{
+					    		tokenCounted[i] = tokenCounted[i] + 1; 
+					    	}
+						}
+					}
+				}
+			
+			
+				//check the tokenCounted array 
+				var selectedToken = null;
+				for( var q = 0; q < tokenNum; q++ )
+				{   
+					var tmpToken = candidateTokens.getElementsByTagName('input').item(q);
+					if( tokenCounted[q] == tmpToken.getElementsByTagName('li').length && (numCheckedButton == tmpToken.getElementsByTagName('li').length ) )
+					{
+						//alert("Found Token : " + tmpToken.value );
+				 		selectedToken = tmpToken;
+				 		return selectedToken;
+					}
+					else if ( tokenCounted[q] < tmpToken.getElementsByTagName('li').length  )
+					{
+						//alert("[DEBUG INFO] You have to select more credentials");
+					}
+					else 
+					{
+					
+					}	
+				}
+			}
+			else if(checkedCredentials == 0 && numCheckedButton == null) // i.e. 'No Credential' is selected
+			{
+				//alert("<No Credential> is selected");
+				
+				for( var i = 0; i < tokenNum; i++ ) //For each token
+				{
+					var currentToken = candidateTokens.getElementsByTagName('input').item(i); 
+					//alert("currentToken : " + currentToken );
+					var numCredentialsInToken = currentToken.getElementsByTagName('li').length;
+					
+					//alert(" numCredentialsInToken : " +  numCredentialsInToken );
+					
+					for( var j = 0; j < numCredentialsInToken ; j++ ) //For each credentials for a token
+					{
+						var includedCredential = currentToken.getElementsByTagName('li').item(j).innerHTML;
+						//alert("includedCredential : " + includedCredential);
+					    if ( includedCredential == 'no credential' )	
+					    {
+					    	selectedToken = candidateTokens.getElementsByTagName('input').item(i);
+					    	//alert("selectedToken : " + selectedToken);
+					    }
+					}
+				}
+			}
+			
+			return selectedToken; 
+		};
+		
+		
+		
+		/* =======================================================================================
+		 * @name : IsCredentialIncluded(checkedCredential)
+		 * @description : check whether a credential is part of token
+		 * ======================================================================================*/
+		function IsCredentialIncluded(checkedCredential)
+		{
+			var retVal = false;
+			
+			var candidateTokens = document.getElementById('candidateTokens');
+			
+			var tokenNum = candidateTokens.getElementsByTagName('input').length;
+			
+			for( var i = 0; i < tokenNum; i++ )
+			{
+				var currentToken = candidateTokens.getElementsByTagName('input').item(i); 
+				
+				var numCredentialsInToken = currentToken.getElementsByTagName('li').length;
+				
+				for(var j = 0; j < numCredentialsInToken ; j++ )
+				{
+					var includedCredential = currentToken.getElementsByTagName('li').item(j).innerHTML;
+					
+				    if ( includedCredential == checkedCredential )	
+				    {
+				    	//alert("[DEBUG INFO] includedCredential == checkedCredential ");
+				        return currentToken;  //if it contains, then immedately return
+				    }
+				    else
+				    {
+				    	//alert("[DEBUG INFO] includedCredential != checkedCredential ");
+				    	retVal = false;
+				    }	
+				}
+			}
+			return retVal;
+		};
+		
+		
+		
+	   /* =======================================================================================
+		* @name : submitResult()
+		* @description : when Submit button is pressed, the return JSON object should be return
+		* 
+		* Return JSON 
+			TokenCandidateUID,
+			TokenIndex,
+			List<PseudonymUID>,
+			List<InspectorUID>,
+			List<AttributeUID> = null
+		* ======================================================================================*/
+		function submitResult()
+		{
+			var returnJSON = formatReturnAsJSON(); 
+			//alert("submitting result : " + returnJSON);	
+			//var returnSampleJSON = 
+			//'{"TokenCandidateUID" : "selectedTokenUID", "TokenIndex": "index", "ChosenPseudonymUID" : ["chosenPseudonym_1", "chosenPseudonym_2" ], "ChosenInspectorUID" : ["chosenInspector_1", "chosenInspector_2" ], "ChosenAttributeUID" : null }';
+	
+			sendReturnJSON(returnJSON);
+			
+			isSubmitted = 1; //indicating the result has been submitted
+			
+			closepopupWindow(); 
+		}
+		
+			
+		
+		/* ===========================================================================================
+		 * @name : submitCancel()
+		 * @description : when Submit Cancel button is pressed, return the null and close the window 
+		 * ==========================================================================================*/
+		function submitCancel()
+		{
+			var returnPartForToken = '"TokenCandidateUID" : null';
+			var returnPartForTokenIndex = '"TokenIndex" : -1';
+			var returnPartForPseudonym = '"PseudonymsList" : []'; 
+			var returnPartForInspector = '"InspectorsList" : []'; 
+			var returnPartForAttribute = '"AttributeList" : []';
+			
+			var returnJSON = '{ "Canceled" : true,' + returnPartForToken + "," + returnPartForTokenIndex + "," + returnPartForPseudonym + "," + returnPartForInspector + "," + returnPartForAttribute + '}'; 
+			
+			//alert("submitting result : " + returnJSON);	
+		
+			sendReturnJSON(returnJSON);
+			
+			closepopupWindow(); 
+		}
+		 
+		
+
+		/* ===========================================================================================
+		 * @name : closepopupWindow()
+		 * @description : close the window 
+		 * ==========================================================================================*/ 
+		function closepopupWindow()
+		{
+		  //alert("I am closing window");
+		  if(false == window.closed)
+		  {
+			 window.close ();
+		  }
+		  else
+		  {
+		      alert('Window already closed!');
+		  }
+	    }
+			
+			
+		
+		/* ======================================================================================
+		 * @name : formatReturnAsJSON()
+		 * @description : formatting return value as JSON format
+		 * =====================================================================================*/
+		function formatReturnAsJSON()
+		{
+			 returnTokenUID = currentMatchedToken;
+			 
+			 /*//COMMENT : Don't access returnPseudonymList in case if it is null
+			 if(returnPseudonymList.length < 0)
+			 {
+				returnPseudonymList = null; 
+			 }	 
+			 
+			 if(returnInspectorList.length < 0)
+			 {
+				 returnInspectorList = null;
+			 }
+			 */
+			 
+			 returnAttributeList = "null";  //this is null at the moment
+			 
+			 //alert("Return value : " + "\n" + "[TokenUID] " + currentMatchedToken + "\n" + "[TokenIndex] " + returnTokenIndex + "\n" + "[Pseudonym List] " + returnPseudonymList + "\n" + "[Inspector List] " + returnInspectorList + "\n" + "[Attribute List] " + returnAttributeList);
+		
+			 //--------------------------------------------
+			 // Compose return JSON 
+			 //--------------------------------------------
+			 var returnPartForToken = '"TokenCandidateUID" : ';
+			 var returnPartForTokenIndex = '"TokenIndex" : ';
+			 var returnPartForPseudonym = '"PseudonymsList" : '; 
+			 var returnPartForInspector = '"InspectorsList" : '; 
+			 var returnPartForAttribute = '"AttributeList" : ';
+		
+			 //composing token to JSON format
+			 if(returnTokenUID == 'null')
+			 {
+				 returnPartForToken = returnPartForToken + "null";
+			 }
+			 else 
+			 {
+				 returnPartForToken = returnPartForToken + "\"" + returnTokenUID + "\"";
+			 }	
+			 
+			 //composing token index to JSON format
+			 if(returnTokenIndex == 'null')
+			 {
+				 returnPartForTokenIndex = returnPartForTokenIndex + "null";
+			 }
+			 else 
+			 {
+				 returnPartForTokenIndex = returnPartForTokenIndex + returnTokenIndex;
+			 }	
+			
+			 //composing Pseudonym to JSON format
+			 if(returnPseudonymList == null || returnPseudonymList.length == null || returnPseudonymList.length == 0)
+			 {
+				 returnPartForPseudonym = returnPartForPseudonym + "[]";	 
+			 }	 
+			 else if(returnPseudonymList.length > 0 && returnPseudonymList != null)
+			 {
+/*
+                 alert("Test RETURN : returnPseudonymList.length " + returnPseudonymList.length);
+				 if(returnPseudonymList.length == 1)
+				 {
+				 	returnPartForPseudonym =  returnPartForPseudonym + "[\"" + returnPseudonymList[0] + "\"]";
+				 }
+				 else if(returnPseudonymList.length > 1)
+				 {
+*/					 
+				 	//When Pseudonym is array (i.e. more than 2)
+				 	returnPartForPseudonym =  returnPartForPseudonym + "["; 
+				 	for(var i = 0; i < returnPseudonymList.length; i++ )
+				 	{
+						var pListItem = "\"" + returnPseudonymList[i]  + "\"";
+					 
+					 	if(i != (returnPseudonymList.length - 1))
+					    {
+							returnPartForPseudonym = returnPartForPseudonym + pListItem + ",";
+					 	}
+					 	else 
+					 	{
+							returnPartForPseudonym = returnPartForPseudonym + pListItem;
+					 	} 
+				 	}	
+				 	returnPartForPseudonym =  returnPartForPseudonym + "]"; 
+//				 }	
+			 }
+			 
+			 //composing Inspector to JSON format
+			 if(returnInspectorList == null || returnInspectorList.length == null || returnInspectorList.length == 0)
+			 {
+				 returnPartForInspector = returnPartForInspector + "[]";	 
+			 }
+			 else if(returnInspectorList.length > 0 && returnInspectorList != null)
+			 {
+/*
+				 if(returnInspectorList.length == 1)
+				 {
+					 returnPartForInspector =  returnPartForInspector + "\"" + returnInspectorList[0] + "\"";  
+				 }
+				 else if(returnInspectorList.length > 1)
+				 {
+*/				
+				 	returnPartForInspector =  returnPartForInspector + "["; 
+					for(var i = 0; i < returnInspectorList.length; i++ )
+					{
+						var pListItem = "\"" + returnInspectorList[i]  + "\"";
+						 
+						if(i != (returnInspectorList.length - 1))
+						{
+							returnPartForInspector = returnPartForInspector + pListItem + ",";
+						}
+						else 
+						{
+							returnPartForInspector = returnPartForInspector + pListItem;
+						} 
+					}	
+					returnPartForInspector =  returnPartForInspector + "]"; 
+//				 }	 
+			 }
+			 
+			 //composing Attribute to JSON format
+			 //COMMENT : At the moment, we set it as null for Attribute list
+			 returnPartForAttribute = returnPartForAttribute + "{}";
+			 
+			 //collect all together
+			 var returnJSON = '{' + returnPartForToken + "," + returnPartForTokenIndex + "," +returnPartForPseudonym + "," + returnPartForInspector + "," + returnPartForAttribute + '}'; 
+			 // alert("Testing return value =>" + returnJSON);	 
+			 
+			 return returnJSON;
+		} 
+			
+			
+			
+		/* =======================================================================================
+		 * @name : sendReturnJSON(returnJSON)
+		 * @description : return the JSON value to plugin
+		 * ======================================================================================*/
+		function sendReturnJSON(returnSampleJSON)
+		{
+			var selectionTypeElement = document.getElementById('selectionType');
+			// alert("selectionType : " + selectionType.getAttribute('value'));
+			var selectionType = selectionTypeElement.getAttribute('value');
+			
+			var element = document.createElement("ABC4TrustDataElement");
+	        element.setAttribute("abc4trust_command", "tokenSelected_" + selectionType);
+	        element.setAttribute("return", returnSampleJSON);
+	        element.setAttribute("selectionType", selectionType);
+	         
+			element.setAttribute("UIWindow", window);
+			
+	        document.documentElement.appendChild(element);
+
+	        var evt = document.createEvent("Events");
+	        evt.initEvent("ABC4TrustEvent", true, false);
+	        element.dispatchEvent(evt);
+	        
+	   	} 
+		 
+		 
+		/* =====================================================================================================
+		 * @name : radioButtonClickedForNoCredential(numberOfCredentials)
+	     * @description : Toggle radio button 	 
+		 * ====================================================================================================*/
+		function radioButtonClickedForNoCredential(numberOfCredentials)
+		{
+	    	//Check 'No Credential Selection' button status and toggle radio button if it necessary
+			var embeddedButtonStatus = document.getElementById('RadioButtonStatusForNoCredential'); 
+			var buttonStatus = document.getElementById('RadioButtonForNoCredential').checked; 
+					
+			if (embeddedButtonStatus.value == 'unchecked' && buttonStatus == true )
+			{
+				embeddedButtonStatus.value = 'checked';
+			}
+			else if(embeddedButtonStatus.value == 'checked' && buttonStatus == true)
+			{
+				document.getElementById('RadioButtonForNoCredential').checked = false;
+				embeddedButtonStatus.value = 'unchecked';
+			}
+			
+			//Disable all previously selected token 
+			disableAllCredentialSelection(numberOfCredentials);
+			
+			//Check token which doesn't have credential list
+			/*
+			var foundToken = searchMatchedToken(0, null);//checkedCredentials, numCheckedButton);
+		
+			if(foundToken == null)
+			{
+				//alert("[DEBUG INFO] No Token Information!");
+				setTokenUID(null);
+			}	
+			else
+			{	
+				setTokenUID(foundToken.id);
+			}
+			*/
+
+		};
+		
+		
+		
+		/* ===================================================================================================
+		 * @name : PolicyRadioButtonClicked(policyUID, numberOfPolicies)
+		 * @description : Toggle Policy Radio Button
+		 * ==================================================================================================*/
+		function PolicyRadioButtonClicked(policyIndex, numberOfPolicies)
+		{
+			// alert("Number of Policies : " + numberOfPolicies);
+
+			//----------------------------------------------------------------
+			// Initialize all return value since the policy changes 
+			//----------------------------------------------------------------
+			returnTokenUID = 'null';
+			returnPseudonymList = new Array(); 
+			returnInspectorList = new Array(); 
+			returnAttributeList = new Array(); 
+			//alert("TEST : returnInspectorList in Policy Button Clicked " + returnInspectorList );
+			
+			//----------------------------------------------------------------
+			//  check button status and toggle radio button if it necessary
+			//----------------------------------------------------------------
+			var embeddedPolicyButtonStatus = document.getElementById('PolicyRadioButtonStatus'+policyIndex); 
+			var policyInformationElement = document.getElementById('PolicyRadioButton'+policyIndex);
+			var policybuttonStatus = policyInformationElement.checked; 
+			var PolicyUID = policyInformationElement.value; 
+			//alert("check policy UID : " + PolicyUID);
+				
+			if (embeddedPolicyButtonStatus.value == 'unchecked' && policybuttonStatus == true )
+			{
+				embeddedPolicyButtonStatus.value = 'checked';
+			}
+			else if(embeddedPolicyButtonStatus.value == 'checked' && policybuttonStatus == true)
+			{
+				document.getElementById('PolicyRadioButton'+policyIndex).checked = false;
+				embeddedPolicyButtonStatus.value = 'unchecked';
+			}
+			
+			var friendlyPolicyDescriptionElement = document.getElementById('friendlyPolicyDescription');
+			friendlyPolicyDescriptionElement.innerHTML = policyInformationElement.title;
+			
+			//----------------------------------------------------
+			// Deselect other policy selection radio button
+			//----------------------------------------------------
+			disableAllOtherPolicySelection(policyIndex, numberOfPolicies);
+
+			//----------------------------------------------
+			// Get all possible tokens for selected Policy  
+			//---------------------------------------------- 
+			var policyTokenList = getTokenListForToken(PolicyUID);
+			var tokenToCredentialsList = new Array(); //each token and its credentials 
+		
+			//For each token, check credentials 
+			for(var i = 0; i < policyTokenList.length; i++ )
+			{
+				var token = document.getElementById(policyTokenList[i]);
+				var tokenInfo = token.getAttribute('value');
+				var numCredential = token.getAttribute('numCredentials');
+				var credentials = new Array(); //HAVE to instantiate here!!! 
+		
+				//---------------------------------------
+				// Show all credentials info from Token
+				//---------------------------------------
+				var credentialList = token.getElementsByTagName('li');
+				// alert("all credentials for token : credentialList : " + credentialList.length + " - numCredential : " + numCredential);
+				for(var j = 0; j < credentialList.length; j++)
+				{
+					// alert("credential : " + credentialList[j].getAttribute('value'));
+					credentials[j] = credentialList[j].getAttribute('value');
+				}
+				tokenToCredentialsList[i] = credentials; //for token, save credential array
+			}	
+
+			// alert("tokenToCredentialsList : " + tokenToCredentialsList);
+			if(tokenToCredentialsList.length == null || tokenToCredentialsList.length == 0) //token contains null credential list
+			{
+				//TODO : handle null credentials
+				alert("TODO : handle null credentials");
+			}
+			else 
+			{
+				if(! simpleCredentialSelction) {
+					// OLD CODE FOR SETTING UP CREDENTIALS...
+
+/*				
+				//----------------------------------------------------------------------------------
+				// Make Credential group across the tokens (duplicate credentials are not appeared)
+				//----------------------------------------------------------------------------------
+				var numCredentialGroup = tokenToCredentialsList.length; // credentials.length;
+				var allCredentialGroups = new Array();
+
+				alert("Make Credential group across the tokens (duplicate credentials are not appeared) " + numCredentialGroup);
+
+
+				for(var i = 0; i < numCredentialGroup; i++)
+				{	
+					var credentialsGroup = new Array();
+				
+					alert(" - number of credentials in this group ? " + tokenToCredentialsList[i].length);
+					var count = 0;
+					for(var j = 0; j < tokenToCredentialsList[i].length ; j++ )
+					{
+						var isExist = isAlreadyInArray(credentialsGroup, tokenToCredentialsList[i][j]);
+						alert(" - in loop : i , j - exists " + i + " : " + j + " : " + isExist + " : " + credentialsGroup + " : " + tokenToCredentialsList[i][j]);
+						if(isExist == 0)
+						{
+							credentialsGroup[count] = tokenToCredentialsList[i][j];
+							count = count + 1;
+						}	
+					}
+
+					allCredentialGroups[i] = credentialsGroup; //make group 
+				}
+			}
+*/
+
+// NOTE THIS IS WRONG!!!!
+				
+					//----------------------------------------------------------------------------------
+					// Make Credential group across the tokens (duplicate credentials are not appeared)
+					//----------------------------------------------------------------------------------
+					var numCredentialGroup = tokenToCredentialsList.length; // credentials.length;
+					var allCredentialGroups = new Array();
+
+					// alert("Make Credential group across the tokens (duplicate credentials are not appeared) " + numCredentialGroup);
+					
+					for(var i = 0; i < numCredentialGroup; i++)
+					{	
+				
+						// alert(" - number of credentials in this group ? " + tokenToCredentialsList[i].length);
+						var count = 0;
+						for(var j = 0; j < tokenToCredentialsList[i].length ; j++ )
+						{
+							var credentialsGroup = new Array();
+							var isExist = isAlreadyInArray(credentialsGroup, tokenToCredentialsList[i][j]);
+							// alert(" - in loop : i , j - exists " + i + " : " + j + " : " + isExist + " : " + credentialsGroup + " : " + tokenToCredentialsList[i][j]);
+							if(isExist == 0)
+							{
+								credentialsGroup[0] = tokenToCredentialsList[i][j];
+								allCredentialGroups[count] = credentialsGroup; //make group 
+								count = count + 1;
+
+							}	
+						}
+					}
+				}
+			}
+			
+			//----------------------------------------------------
+			// Show credentials by group into Credential Pane 
+			//----------------------------------------------------
+			removeCredentialElements();
+			// 1
+			// alert("numCredentialGroup : " + numCredentialGroup);
+			var preselectedToken;
+			
+			if(! simpleCredentialSelction) {
+				AddCredentialsIntoPane(allCredentialGroups); // tokenToCredentialsList); // allCredentialGroups);
+
+				//------------------------------------------------------------
+				// Pre-selection of Token since credentials are pre-selected
+				//------------------------------------------------------------
+				var selectedCredentials = new Array();
+				selectedCredentials = getPreselectedCredentialsByAllGroup(policyIndex);
+
+
+				//--------------------------------------------------------------------------------------------------------
+				// get Token based on pre-selected credential, based on this token show pseudonym and inspector choices
+				//--------------------------------------------------------------------------------------------------------
+				var preselectedToken = getPreselectedToken(selectedCredentials); 
+			} else {
+				AddCredentialsIntoPane_PreGrouped(policyTokenList, tokenToCredentialsList); // tokenToCredentialsList); // allCredentialGroups);
+				// select first token / credential group
+				preselectedToken = policyTokenList[0];
+			}
+			
+			currentMatchedToken = preselectedToken; //save it in global value
+			
+			// alert("preselected token is : " + preselectedToken );
+			
+			//--------------------------------------------------------
+			// Get the token index of matchedToken 
+			//--------------------------------------------------------
+			getMatchedTokenIndex(preselectedToken); 
+			
+			showPseudonymChoiceList(preselectedToken); 
+			
+			showInspectorChoiceList(preselectedToken);
+			
+			showPreselectedTokenIntoPane(preselectedToken);
+			
+			showPreselectedPseudonymsIntoPane(preselectedToken);
+			
+			showPreselectedInspectorsIntoPane(preselectedToken);
+
+		}; 
+		
+		
+		
+		/* ======================================================================================
+		 * @name : showPreselectedInspectorsIntoPane(preselectedToken)
+		 * @description : show the pre-selected Inspector information into token pane		 
+		 * =====================================================================================*/
+		function showPreselectedInspectorsIntoPane(tokenUID)
+		{
+		  if(tokenUID != null)
+		  {	  
+			//---------------------------------------------
+			// check all radio button of Inspector sets	 
+			//---------------------------------------------
+			var setId = numberOfInspectorSet;
+			var selectedSet = new Array(); 
+			for(var i = 0; i < setId; i++)
+			{	
+				//alert("previousNumInspectorInSet[setId] : " + previousNumInspectorInSet[i]);
+				
+				for(var pIndex = 0; pIndex < previousNumInspectorInSet[i] ; pIndex++) 
+				{	
+					var inspectorSetButtonStatus = document.getElementById('InspectorChoiceRadioButtonStatus_' + i + '_' + pIndex);
+					//alert("inspectorSetButtonStatus : " + inspectorSetButtonStatus.getAttribute('value'));
+					if(inspectorSetButtonStatus.getAttribute('value') == 'checked')
+					{
+						//document.getElementById('InspectorChoiceRadioButton_'+setId+'_'+pIndex).checked = false;
+						//inspectorSetButtonStatus.value = 'unchecked';
+						//alert("set " + i + " index " + pIndex + " is selected");
+						selectedSet[i] = pIndex; 
+						//alert("selectedSet[i] : " + selectedSet[i]);
+					}
+				}	
+			}
+			
+			//alert("TEST : " + selectedSet);
+			
+			//----------------------------------------------
+			// get inspector's friendly description 
+			//----------------------------------------------
+			var InspectorInfoNode = document.getElementById('inspector_for_'+tokenUID);
+			var arraySet = InspectorInfoNode.getElementsByTagName('ul');
+			var descToAdd = '';
+			for(var i = 0; i < arraySet.length; i++)
+			{
+				var URIListItem = arraySet[i].getElementsByTagName('li');
+					
+				for(var j = 0; j < URIListItem.length; j++)
+				{
+					if(selectedSet[i] == j)
+					{	
+						var currDesc = URIListItem[j].getAttribute('friendlyDesc', arraySet[i][j]);
+						descToAdd = descToAdd + currDesc + '<br>';
+						
+						var currVal = URIListItem[j].getAttribute('value', arraySet[i][j]);
+						returnInspectorList[i] = currVal;  
+					}	
+				}
+			}
+			
+			//alert("TEST for Return Inspector : " + returnInspectorList );
+			//alert("Testing here Embedding Inspector : " + descToAdd );
+		
+			
+			//----------------------------------------------
+			// Add into the presentation token pane
+			//----------------------------------------------
+			var tokenContentPane = document.getElementById('TokenArea'); 
+			var previousInnerHTML = tokenContentPane.innerHTML;
+			
+			tokenContentPane.innerHTML = previousInnerHTML + '<p id=\'inspectorInfoInTokenPane\'><br><br> <b>Inspector Information</b><br>' + descToAdd + '</p>';
+		 }
+		 else if(tokenUID == null)
+		 {
+			 //don't do anything
+		 }	  
+			
+		}; 
+		
+		 
+		
+		/* ======================================================================================
+		 * @name : showPreselectedPseudonymsIntoPane(tokenUID)
+		 * @description : show the preselected pseudonym information into token pane
+		 * ====================================================================================*/
+		function showPreselectedPseudonymsIntoPane(tokenUID)
+		{
+		  if(tokenUID != null)
+		  {	
+			//---------------------------------------------
+			// check all radio button of pseudonym set	 
+			//---------------------------------------------
+			for(var pIndex = 0; pIndex < numberOfPseudonymSet; pIndex++)
+			{	
+				var pseudonymSetButtonStatus = document.getElementById('PseudonymRadioButtonStatus_' + pIndex);
+				
+				if(pseudonymSetButtonStatus.value == 'checked') // && selectedPseudonymSetIndex != pIndex)
+				{
+					//document.getElementById('PseudonymRadioButton_'+pIndex).checked = false;
+					//pseudonymSetButtonStatus.value = 'unchecked';
+					//alert("Now " + pIndex + "th Pseudonym Set is selected ");
+					currentSelectedPseudonymSetId = pIndex;
+				}
+			}
+			
+			//----------------------------------------------------------------
+			//  PseudonymInfo for 'currentSelectedPseudonymSetId' is shown
+			//----------------------------------------------------------------
+			var pseudonymChoiceList = document.getElementById('pseudonym_for_'+tokenUID);
+			var pseudonymSets = pseudonymChoiceList.getElementsByTagName('ul');
+	
+			//var allPseudonymSet = new Array();
+			var pseudonymSetItemDescs = new Array();
+			var id; 
+			previousNumPseudonymSet = pseudonymSets.length;
+			numberOfPseudonymSet = pseudonymSets.length;
+
+			for(var i = 0 ; i < pseudonymSets.length ; i++)
+			{
+				var pseudonymSetItems = pseudonymSets[i].getElementsByTagName('li');
+				id = i;
+				
+				var PseudonymSubset = new Array(); 
+				
+				if(i == currentSelectedPseudonymSetId) //if j is the currently selected 
+				{	
+					for(var j = 0; j < pseudonymSetItems.length ; j++)
+					{	
+						PseudonymSubset[j] = pseudonymSetItems[j].getAttribute('value');  //save for return 
+						pseudonymSetItemDescs[j] = pseudonymSetItems[j].getAttribute('friendlyDesc');
+					}
+					
+					//alert("Test Here : " + PseudonymSubset );
+					//Initial setting to return value because this is initial pseudonym setting
+					returnPseudonymList = PseudonymSubset; 
+				}
+				//allPseudonymSet[i] = PseudonymSubset;
+		    
+				//alert("currently selected pseudonym set description : " + pseudonymSetItemDescs);
+			} 
+			
+		
+			//----------------------------------------------
+			// Add into the presentation token pane
+			//----------------------------------------------
+			var tokenContentPane = document.getElementById('TokenArea'); 
+			var previousInnerHTML = tokenContentPane.innerHTML;
+			
+			//tokenContentPane.innerHTML = previousInnerHTML + '<br><br> <b>Pseudonym Information</b><br>' + pseudonymSetItemDescs;
+			var htmlTobeAdded = '';
+			for(var i = 0; i < pseudonymSetItemDescs.length; i++ )
+			{
+				htmlTobeAdded = htmlTobeAdded + pseudonymSetItemDescs[i] + '<br>';
+			}	
+			
+			tokenContentPane.innerHTML = previousInnerHTML + '<p id=\'pseudonymInfoInTokenPane\'><br><br> <b>Pseudonym Information</b><br>' + htmlTobeAdded + '</p>';
+		  }
+		  else if(tokenUID == null)
+		  {
+			  //don't show anything
+		  }	  
+		}; 
+		
+		
+		
+		/* ======================================================================================
+		 * @name : showPreselectedTokenIntoPane(preselectedToken)
+		 * @description : Based on the preselected token, show this information into token pane
+		 * =====================================================================================*/
+		function showPreselectedTokenIntoPane(preselectedToken)
+		{
+			 showFriendlyDescToken(preselectedToken); 
+			 
+			 //TODO : also show the pseudonym and inspector information
+		}; 
+		 
+		 
+		 
+		
+		/* ==================================================================================================
+		 * @name : getPreselectedToken(selectedCredentials)
+		 * @description : get Token based on pre-selected 
+		 * =================================================================================================*/
+		function getPreselectedToken(selectedCredentials)
+		{
+			 var preselectedToken; 
+			 //alert("TEST HERE: " + selectedCredentials);
+			
+			 var numToken = getNumToken();
+			 var checksum = 1;
+			 
+			 //traverse all token and its credentials
+			 for(var i = 0; i < numToken; i++)
+			 {
+				var credentialList = new Array();
+				var tokenUID = document.getElementById(i+'th_token').getAttribute('value');
+				//alert("tokenUID : " + tokenUID);
+				
+				var token = document.getElementById(tokenUID);
+				var credentialListInToken = token.getElementsByTagName('li');
+				//alert("credentialListInToken.length : " + credentialListInToken.length);
+				
+				for(var j = 0; j < credentialListInToken.length; j++ )
+				{
+					var credUID = credentialListInToken[j].getAttribute('value');
+					credentialList[j] = credUID; 
+					//alert("TEST : " + credUID);
+				}
+				
+				//check the 'selectedCredentials' and 'credentialList' is same or not
+				if(selectedCredentials.length == credentialList.length)
+				{	
+					for(var k = 0; k < selectedCredentials.length; k++ )
+					{
+						if(selectedCredentials[k] == credentialList[k])
+						{
+							checksum = checksum * 1; 
+						}
+						else
+						{
+							checksum  = checksum * 0; 
+						}	
+					}
+					
+					if(checksum == 1)
+					{
+						preselectedToken = tokenUID;
+					}
+					else if(checksum == 0)
+					{
+						//token doesn't match 
+					}	
+						
+				}	
+			 }	 
+			
+			 // alert("preselectedToken : " + preselectedToken);
+			 return preselectedToken;
+		} 
+		 
+		
+		/* ==================================================================================================
+		 * @name : getSelectedToken(selectedCredentials)
+		 * @description : get Token based on change on credentials
+		 * =================================================================================================*/
+		function getSelectedToken(selectedCredentials)
+		{
+			// alert("inside getSelectedToken..." + selectedCredentials );
+			var matchedToken; 
+				
+			var numToken = getNumToken();
+			//var checksum = 1;
+				 
+			//traverse all token and its credentials
+			// alert(" - numToken " + numToken );
+			for(var i = 0; i < numToken; i++)
+			{
+				var checksum = 1;
+				
+				var credentialList = new Array();
+				var tokenUID = document.getElementById(i+'th_token').getAttribute('value');
+				//alert("tokenUID : " + tokenUID);
+					
+				var token = document.getElementById(tokenUID);
+				var credentialListInToken = token.getElementsByTagName('li');
+				// alert("credentialListInToken.length : " + credentialListInToken.length);
+					
+				for(var j = 0; j < credentialListInToken.length; j++ )
+				{
+					var credUID = credentialListInToken[j].getAttribute('value');
+					credentialList[j] = credUID; 
+					// alert("TEST : " + credUID);
+				}
+				
+				//check the 'selectedCredentials' and 'credentialList' is same or not
+				if(selectedCredentials.length == credentialList.length)
+				{	
+					//alert("comparing.."); 
+					for(var k = 0; k < selectedCredentials.length; k++ )
+					{
+						if(selectedCredentials[k] == credentialList[k])
+						{
+							//alert("selectedCredentials[k] : " + selectedCredentials[k] + "  credentialList[k] : " + credentialList[k]);
+							checksum = checksum * 1; 
+						}
+						else
+						{
+							checksum  = checksum * 0; 
+						}	
+					}
+						
+					if(checksum == 1)
+					{
+						//alert("Matched!");
+						matchedToken = tokenUID;
+						
+						return matchedToken;
+					}
+					else if(checksum == 0)
+					{
+						//token doesn't match 
+						matchedToken = null;//"NO_MATCH";
+					}	
+				}	
+			}
+			
+			return matchedToken;
+		} 
+		
+	
+		 
+		/* =================================================================================================
+		 * @name : getNumToken()
+		 * @description : get total number of token in JSON 
+		 * ===============================================================================================*/
+		function getNumToken()
+		{
+			 var root = document.getElementById('candidateTokens');
+			 var children = root.getElementsByTagName('input');
+			 //alert("children.length : " + children.length);
+			 for(var i = 0 ; i < children.length; i++ )
+			 {
+				 if(children[i] != null)
+				 {	 
+				 	var numToken = children[i].getAttribute('totalNumToken');
+				 	if(numToken != null)
+				 	{
+				 		//alert("numToken : " + numToken);
+				 		return numToken; 
+				 	}
+				 }	
+			 }	 
+		} 
+		 
+		 
+		
+		/* ==================================================================================================
+		 * @name : getPreselectedCredentialsByAllGroup()
+		 * @description : get all credentials which pre-selected
+		 * =================================================================================================*/
+		function getPreselectedCredentialsByAllGroup()
+		{
+			var selectedCredentials = new Array();
+			var credentialIndex = 0; 
+			
+			for( var i = 0; i < prevMaxNumCredentialsInGroup; i++ )
+			{	
+				var credNode = document.getElementById('RadioButton'+credentialIndex+'_inGroup_'+i);
+				if(credNode != null)
+				{
+					var credentialUID = credNode.getAttribute('value');
+					selectedCredentials[i] = credentialUID; 
+				//	alert("credentialUID : " + selectedCredentials[i]);//credentialUID);
+				}
+				else
+				{
+					//alert("credential pane is not existing");
+				}	
+			}	
+			
+			//alert("TEST : " + selectedCredentials);
+			return selectedCredentials;
+		}
+		
+		
+		
+		/* ===================================================================================================
+		 * isAlreadyInArray(credentialsGroup, currentCredential )
+		 *
+		 * ==================================================================================================*/
+		function isAlreadyInArray(credentialsGroup, currentCredential)
+		{
+			var isExist = 0; 
+			
+			for(var i = 0; i < credentialsGroup.length; i++)
+			{
+				if(credentialsGroup[i] == currentCredential)
+				{
+					isExist = 1; 
+				//	alert("already exist");
+				}	
+			}	
+			
+			return isExist;
+		};
+		
+		
+		
+		 /* ====================================================================================================
+		  * @name : AddCredentialsIntoPane(allCredentialGroups)
+		  * @description : add credentials for each group
+		  * ==================================================================================================*/
+		 function AddCredentialsIntoPane(allCredentialGroups)
+		 {
+			prevNumCredentialGroup = allCredentialGroups.length; //for remove elements  
+			
+			// alert("AddCredentialsIntoPane : allCredentialGroups : " + allCredentialGroups + " : " + allCredentialGroups.length);
+			for(var i = 0; i < allCredentialGroups.length; i++)
+			{
+				var credentialsGroup = allCredentialGroups[i]; 
+				
+				// alert("AddCredentialsIntoPane : credentialsGroup : " + credentialsGroup.length);
+				
+				credentialPaneNode = document.getElementById('credentialPane');
+				
+				if(prevMaxNumCredentialsInGroup < credentialsGroup.length) //for remove elements
+				{
+					prevMaxNumCredentialsInGroup = credentialsGroup.length;
+				}
+				
+				
+				// alert("# of credentialsGroup's" + credentialsGroup.length);
+				for(var j = 0; j < credentialsGroup.length; j++)
+				{	
+					var currentNumCredendialsInGroup = credentialsGroup.length; 
+					//Get embedded value 
+					// alert("credentialsGroup[j] : " + credentialsGroup[j] + " : " + j + " : " + credentialsGroup.length);
+
+					//Add to Credential Information into UI
+					var elementID = 'credential'+j+'_inGroup_'+i; //i : category index
+					var credentialIndex = j; 
+					var credentialPane = document.createElement('div');//('p'); //COMMENT : 'p' makes one line separation 
+					var credentialUID = credentialsGroup[j]; //CredentialUID;
+					credentialPane.setAttribute('id', elementID);
+					credentialPaneNode.appendChild(credentialPane);
+				
+					var id = 'credentialIndex'+ elementID;
+					var credentialDescriptionPane = createPaneForCredential(id, credentialUID);
+					credentialPane.appendChild(credentialDescriptionPane);
+					
+					addRadioButton(credentialPane/*node*/, j, credentialUID, i, currentNumCredendialsInGroup);
+					
+				}	
+				
+				//put one line in between to separate Groups 
+				var brTag = document.createElement('br');
+				brTag.setAttribute('id', 'br4CredentialGroup');
+				credentialPane.appendChild(brTag);
+				credentialPane.appendChild(brTag);
+			}	
+		};
+			
+		 /* ====================================================================================================
+		  * @name : AddCredentialsIntoPane_PreGrouped(policyTokenList, allCredentialGroups)
+		  * @description : add credentials for each group
+		  * ==================================================================================================*/
+		 function AddCredentialsIntoPane_PreGrouped(policyTokenList, allCredentialGroups)
+		 {
+			//alert("AddCredentialsIntoPane_PreGrouped " + policyTokenList + " : " + allCredentialGroups);
+			prevNumCredentialGroup = allCredentialGroups.length; //for remove elements  
+			
+			// alert("AddCredentialsIntoPane : allCredentialGroups : " + allCredentialGroups + " : " + allCredentialGroups.length);
+			for(var i = 0; i < allCredentialGroups.length; i++)
+			{
+				var credentialsGroup = allCredentialGroups[i]; 
+				
+				// alert("AddCredentialsIntoPane - policyToken : " + policyTokenList[i] + " - credentialsGroup : " + credentialsGroup.length);
+				
+				credentialPaneNode = document.getElementById('credentialPane');
+				
+				if(prevMaxNumCredentialsInGroup < credentialsGroup.length) //for remove elements
+				{
+					prevMaxNumCredentialsInGroup = credentialsGroup.length;
+				}
+				
+				
+				//Create Group Pane - where all credentails are added
+				var groupElementID = 'credential_group_'+i; //i : category index
+				var policyTokenUID = policyTokenList[i];
+				var credentialGroupPane = document.createElement('div');//('p'); //COMMENT : 'p' makes one line separation 
+				credentialGroupPane.setAttribute('id', groupElementID);
+				credentialGroupPane.setAttribute('uidListForGroupid', credentialsGroup);
+				credentialGroupPane.setAttribute('policyTokenUID', policyTokenUID);
+				credentialPaneNode.appendChild(credentialGroupPane);
+
+				// alert("# of credentialsGroup's" + credentialsGroup.length);
+				for(var j = 0; j < credentialsGroup.length; j++)
+				{	
+					var currentNumCredendialsInGroup = credentialsGroup.length; 
+					
+					var credentialUID = credentialsGroup[j];
+					//Get embedded value 
+					// alert("credentialsGroup[j] : " + credentialsGroup[j] + " : " + j + " : " + credentialsGroup.length);
+
+					var id = 'credentialGroupIndex_'+ policyTokenUID + "_" + credentialUID;
+					var credentialPane = createPaneForCredential(id, credentialUID);
+					credentialGroupPane.appendChild(credentialPane);
+
+				}	
+				addRadioButtonToGroupPane(credentialGroupPane, policyTokenUID, i, allCredentialGroups.length);
+				
+				//put one line in between to separate Groups 
+				var brTag = document.createElement('br');
+				brTag.setAttribute('id', 'br4CredentialGroup');
+				credentialGroupPane.appendChild(brTag);
+				credentialGroupPane.appendChild(brTag);
+			}	
+		};
+		
+		
+		
+		/* ===================================================================================================
+		 * @name : removeCredentialElements()
+		 * @description : remove credential information from 'Credential Options' 
+		 * ==================================================================================================*/
+		function removeCredentialElements()
+		{
+			//alert("Removing existing credentials");
+			
+			var credentialPaneNode = document.getElementById('credentialPane');
+			for(var i = 0; i < prevNumCredentialGroup; i++)
+			{
+				if(simpleCredentialSelction) {
+					var elementID = 'credential_group_'+i;
+					var currentCredentialNode = document.getElementById(elementID);
+					if(currentCredentialNode != null)
+					{	
+						credentialPaneNode.removeChild(currentCredentialNode);
+					}
+				} else {
+					for(var j = 0; j < prevMaxNumCredentialsInGroup; j++ )
+					{
+						var elementID = 'credential'+j+'_inGroup_'+i;
+						var currentCredentialNode = document.getElementById(elementID);
+						if(currentCredentialNode != null)
+						{	
+							//alert("currentCredentialNode : " + currentCredentialNode);
+							credentialPaneNode.removeChild(currentCredentialNode);
+						}	
+					}	 
+				}
+			}
+		}; 
+	
+		
+		
+		
+		/* ===================================================================================================
+		 * @name : getTokenListForToken(PolicyUID)
+		 * @description : get all tokens which following the Policy 
+		 * =================================================================================================*/
+		function getTokenListForToken(PolicyUID)
+		{
+			
+			//alert("getTokenListForToken " + PolicyUID);
+			//--------------------------- 
+			// Get total number of token
+			//---------------------------
+			var firstToken = document.getElementById('0th_token');
+			var totalNumToken = -1; 
+			if(firstToken != null)
+			{
+				var tokenUID = firstToken.getAttribute('value');
+				var policyUID = firstToken.getAttribute('policyUID');
+				totalNumToken = firstToken.getAttribute('totalNumToken');
+				
+				totalNumberOfTokens = totalNumToken; 
+
+				//alert("firstToken - token UID : " + tokenUID + "\n - policyUID + " + policyUID + "\n - totalNumToken : " + totalNumToken);
+			}
+			else 
+			{
+				alert("firstToken is null");
+			}
+			
+			//----------------------------------
+			//  make array of policyTokenList
+			//----------------------------------
+			var policyTokenList = new Array(); 
+			var j = 0; //index of policyTokenList
+			
+			if(totalNumToken >= 1) //if there are more than 1 token 
+			{	
+				for(var i = 0; i < totalNumToken; i++ )
+				{
+					var token = document.getElementById(i+'th_token');
+					var policy = token.getAttribute('policyUID');
+					var tokenUID = token.getAttribute('value');
+				
+					if(PolicyUID == policy)
+					{
+						policyTokenList[j] = tokenUID; 
+						j++;
+					}
+				}
+			}
+			else if(totalNumToken == -1)
+			{
+				var token = document.getElementById('only_token');
+				var policy = token.getAttribute('policyUID');
+				var tokenUID = token.getAttribute('value');
+			
+				alert("only_token : " + token + " : " + PolicyUID + " " + policy);
+				
+				if(PolicyUID == policy)
+				{
+					policyTokenList[0] = tokenUID; 
+					alert(" - include this token in list");
+				}
+			}	
+			
+			return policyTokenList;
+		}; 
+		 
+		 
+		
+		
+		/* ===================================================================================================
+		 * @name : showFriendlyDescToken(tokenUID)
+		 * @description : show friendly description of presentation token 
+		 * =================================================================================================*/
+		function showFriendlyDescToken(tokenUID)
+		{
+			// alert("showFriendlyDescToken - for token : " + tokenUID);
+			if(tokenUID == null)
+			{	
+				//alert("[INFO] No matched token");
+				var tokenContentPane = document.getElementById('TokenArea'); 
+				tokenContentPane.innerHTML = "<font color=red>No Matched Presentation Token. The current credential combination is not matched with any token.</font>";
+				
+				// NOTE : DOJO Button
+				dijit.byId("submitButton").setAttribute('disabled',true);
+			}	
+			else 
+			{	
+				var tokenContentPane = document.getElementById('TokenArea'); 
+				tokenContentPane.innerHTML = ''; //delete previous one
+				
+				var presentationTokenDesc = document.getElementById(tokenUID).value; 
+				//alert("presentationTokenDesc : " + presentationTokenDesc);
+				tokenContentPane.innerHTML = presentationTokenDesc;
+			
+				//var selectedTokenUID = document.getElementById('selectedTokenUID');
+				//selectedTokenUID.setAttribute('value', tokenUID);
+
+				// NOTE : DOJO Button
+				dijit.byId("submitButton").setAttribute('disabled',false);
+			}
+		} 
+		
+		 
+		/* ===================================================================================================
+		 * @name : showInspectorChoiceList(tokenUID)
+		 * @description : show the InspectorChoiceList by token  
+		 * =================================================================================================*/
+		function showInspectorChoiceList(tokenUID)
+		{
+			// alert("showInspectorChoiceList -  for token : " + tokenUID);
+			
+			//initialize the inspector list to prevent having previous setting
+			returnInspectorList = new Array();  
+			
+			//-----------------------------
+			//   Delete previous content
+			//-----------------------------
+			//Deleting Pseudonym choice set previously posted
+			//alert("TEST : Deleting previous Inspectors ");
+			var node = document.getElementById('InspectorPane');
+			if(node != null && numberOfInspectorSet > 0) //previousNumInspectorChoice > 0)
+			{	
+				for(var j = 0; j < numberOfInspectorSet; j++)
+				{
+					for(var i = 0; i < previousNumInspectorInSet[j]; i++)
+					{	
+						var inspectorPane = document.getElementById('inspectorPane_'+j+'_'+i);	
+						if(inspectorPane != null)
+						{	
+							node.removeChild(inspectorPane);
+						}	
+					}
+				}
+			}
+				
+			//Also Inpsector Choice list was null, but still pane was there 
+			var inspectorPane_for_NoChoice = document.getElementById('inspectorPane_-1_-1');
+			if(inspectorPane_for_NoChoice != null)
+			{
+				//alert("inspectorPane_for_NoChoice was there");
+				node.removeChild(inspectorPane_for_NoChoice); 
+			}
+			else if(inspectorPane_for_NoChoice == null)
+			{
+				//TODO : [Bug] Why this alert shows all the time? 
+				//alert("inspectorPane_for_NoChoice is NULL");
+			}
+				
+			//Delete <br> tag from previous selection
+			//'br4Inspector'
+			var brTag = document.getElementById('br4Inspector');
+			if(brTag != null) //if there was previous inspector choice in the pane
+			{
+				node.removeChild(brTag);
+			}	
+				
+			if(tokenUID != null)	
+			{	
+				//----------------------------------------------------------
+				//   Showing current corresponding Inspector Choice List
+				//----------------------------------------------------------
+				var inspectorChoiceList = document.getElementById('inspector_for_'+tokenUID);
+				//alert("inspectorChoiceList : " + inspectorChoiceList);
+				var inspectorSets = inspectorChoiceList.getElementsByTagName('ul');
+							
+				if(inspectorChoiceList == null)
+				{	
+					alert("Inspector Choice List is null");
+					/*
+					var node = document.getElementById('InspectorPane');
+					if(node != null)
+					{	
+						var newContentPane = document.createElement('div');
+						newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+						newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:230px; height:100px; margin-left:2px');
+						newContentPane.setAttribute('id', 'inspectorPane_0');//newContentPane.setAttribute('id', 'inspectorPane_'+id);
+						newContentPane.setAttribute('align', 'center');
+						
+						newContentPane.appendChild(document.createTextNode('Inspector Choice List does not exist'));
+						node.appendChild(newContentPane);
+					}
+					*/
+				}	
+				else if(inspectorChoiceList != null && inspectorSets != null && inspectorSets.length != 0)
+				{	
+				//	alert("inspectorSets.length : " + inspectorSets.length);
+					var inspectorSetItemNames = '';
+					var setId; 
+					var itemId; //itemId in the set 
+				//	previousNumInspectorSet = inspectorSets.length;
+					numberOfInspectorSet = inspectorSets.length;
+					
+					for(var i = 0 ; i < inspectorSets.length ; i++)
+					{
+						var inspectorSetItems = inspectorSets[i].getElementsByTagName('li');
+						setId = i;
+						//previousNumInspectorChoice = previousNumInspectorChoice + inspectorSetItems.length;
+						previousNumInspectorInSet[i] = inspectorSetItems.length;
+						
+						for(var j = 0; j < inspectorSetItems.length ; j++)
+						{	
+						//	alert("Inspector list item id : " + inspectorSetItems[j].getAttribute('id') );
+						//	alert("Inspector list item value : " + inspectorSetItems[j].getAttribute('value') );
+						
+							//inspectorSetItemNames = inspectorSetItemNames + inspectorSetItems[j].getAttribute('value') + '\n'; 
+							//inspectorSetItemNames = inspectorSetItems[j].getAttribute('value');
+							inspectorSetItemNames = inspectorSetItems[j].getAttribute('friendlyDesc');
+							//alert("TEST HERE : " + inspectorSetItemNames );
+							itemId = j;
+							addInspectorChoiceList(setId, itemId, inspectorSetItemNames, tokenUID);
+						}
+						
+						//Give one line space between PseudonymSet
+						var node = document.getElementById('InspectorPane');
+						//node.appendChild(document.createElement('br'));
+						var brTag = addBrTagforInspectorChoice();
+						node.appendChild(brTag);
+						
+						inspectorSetItemNames = null;
+					}	
+				}
+				else if(inspectorChoiceList != null && inspectorSets.length == 0)
+				{
+					// alert("showInspectorChoiceList - ?? The error case ? : " + tokenUID);
+					
+					//alert("inspectorSets.length == 0, i.e. there is no inspector URISet");
+					//previousNumInspectorSet = inspectorSets.length; //even though there is no choice list, but HTML pane is there. So, should remove it.
+					//previousNumInspectorInSet[0] = 0; //COMMENT : Not sure this is necessary
+					var node = document.getElementById('InspectorPane');
+					if(node != null)
+					{	
+						var newContentPane = document.createElement('div');
+						newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+						newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:260px; height:80px; margin-left:2px');
+						newContentPane.setAttribute('id', 'inspectorPane_-1_-1');//newContentPane.setAttribute('id', 'inspectorPane_'+id);
+						newContentPane.setAttribute('align', 'center');
+						
+						newContentPane.appendChild(document.createTextNode('Inspector Choice List does not exist'));
+						node.appendChild(newContentPane);
+						
+						//newContentPane.appendChild(document.createElement('br'));
+						var brTag = addBrTagforInspectorChoice();
+						newContentPane.appendChild(brTag);
+						
+						var setId = -1;//'NoSet'; //'inspectorPane_NoList'
+						var itemId= -1; //'NoItem';
+						var choiceID = setId+'_'+itemId;
+						addInspectorChoiceRadioButton(setId, itemId, newContentPane);
+						
+						previousNumInspectorChoice = 0;
+						numberOfInspectorSet = 0;
+					}
+				}
+			  }	
+			};
+			
+		
+
+			 /* ==========================================================================================
+			  * @name : addInspectorChoiceList(setId, itemId, value, tokenUID)
+			  * @description : adding InspectorChoiceList into Pseudonym Options Pane
+			  * =========================================================================================*/
+			 function addInspectorChoiceList(setId, itemId, value, tokenUID)
+			 {
+			 	var node = document.getElementById('InspectorPane');
+				if(node != null)
+				{	
+					var newContentPane = document.createElement('div');
+					newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+					newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:260px; height:80px; margin-left:2px');
+					newContentPane.setAttribute('id', 'inspectorPane_'+setId+'_'+itemId);
+					newContentPane.setAttribute('align', 'center');
+					
+					//newContentPane.appendChild(document.createTextNode('Set Index : ' + setId ));
+					newContentPane.appendChild(document.createElement('br'));
+					newContentPane.appendChild(document.createTextNode(value));
+					
+					newContentPane.appendChild(document.createElement('br'));
+					
+					//TODO : Different rule than Pseudonym 
+					var choiceID = setId+'_'+itemId; 
+					addInspectorChoiceRadioButton(setId, itemId, newContentPane ); //choiceID, newContentPane);
+				
+					node.appendChild(newContentPane);
+					
+					return newContentPane; //return newly created node
+				}
+				else
+				{
+					alert("InspectorPane is null");
+				}	
+			 };
+			 
+					
+		
+		 /* ===========================================================================================
+		  * @name : addBrTagforInspectorChoice()
+		  * @description : adding one <br> tag
+		  * ==========================================================================================*/
+		 function addBrTagforInspectorChoice()
+		 {
+			var brTag = document.createElement('br');
+			brTag.setAttribute('id', 'br4Inspector');
+			
+			return brTag;
+		 }
+		 
+		 
+		  
+		 /* -----------------------------------------------------------------------------------------------
+		  * @name : addInspectorChoiceRadioButton(setId, itemId, parentElement)
+		  * @decription : add Radio Button to select InspectorChoice
+		  * ----------------------------------------------------------------------------------------------*/
+		function addInspectorChoiceRadioButton(setId, itemId, parentElement)
+		{
+			var choiceID = setId+'_'+itemId;
+			if(parentElement != null)
+			{
+				//create newline 
+				var brElement = document.createElement('br');
+					
+				//create div element
+				var divElement = document.createElement('div');
+				divElement.setAttribute('align', 'center');
+			  
+				//create RadioButton
+				var inputElement = document.createElement('input');
+				inputElement.setAttribute('type', 'radio');
+				inputElement.setAttribute('dojoType', 'dijit.form.RadioButton');
+				inputElement.setAttribute('value', choiceID);
+				inputElement.setAttribute('id', 'InspectorChoiceRadioButton_'+choiceID);
+				if(itemId == 0) //initialization - preselection
+				{
+					inputElement.checked = true;
+				}
+				else if(setId == -1 && itemId == -1) //-1 means null inspector
+				{
+					inputElement.checked = true;
+					returnInspectorList = null; //in this case, the return value is null
+				}	
+				inputElement.setAttribute('onclick', 'inspectorChoiceRadioButtonClicked(' + setId + ',' + itemId + ',' + numberOfInspectorSet +')'); //add event of RatioButton
+				
+				//hack for toggle radtiobutton
+				var radioButtonStatus = document.createElement('input');
+				radioButtonStatus.setAttribute('type', 'hidden');
+				radioButtonStatus.setAttribute('id', 'InspectorChoiceRadioButtonStatus_'+choiceID);
+				if(itemId == 0) //initialization - preselection
+				{
+					radioButtonStatus.setAttribute('value', 'checked');
+				}
+				else if(setId == -1 && itemId == -1) //-1 means null inspector
+				{
+					radioButtonStatus.setAttribute('value', 'unchecked');
+				}
+				else
+				{
+					radioButtonStatus.setAttribute('value', 'unchecked');
+				}	
+				
+				inputElement.appendChild(radioButtonStatus);
+					
+				var labelElement = document.createElement('label');
+				parentElement.appendChild(brElement);
+				divElement.appendChild(inputElement);
+				divElement.appendChild(labelElement);
+				parentElement.appendChild(divElement);
+			}
+		};
+
+		
+		
+		/* ===================================================================================================
+		 * @name : inspectorChoiceRadioButtonClicked(setId, itemId, numberOfInspectorSet)
+		 * @description : action when inspectorRadioButton is clicked
+		 * =================================================================================================*/
+		function inspectorChoiceRadioButtonClicked(setId, itemId, numberOfInspectorSet)
+		{
+			var choiceID = setId+'_'+itemId; 
+			//alert("inside inspectorChoiceRadioButtonClicked and choiceID : " + choiceID + " numberOfInspectorSet is " + numberOfInspectorSet );
+			//check button status and toggle radio button if it necessary
+			var embeddedButtonStatus = document.getElementById("InspectorChoiceRadioButtonStatus_"+choiceID); 
+			var buttonStatus = document.getElementById('InspectorChoiceRadioButton_'+choiceID).checked; 
+				
+			if (embeddedButtonStatus.value == 'unchecked' && buttonStatus == true )
+			{
+				embeddedButtonStatus.value = 'checked';
+			}
+			else if(embeddedButtonStatus.value == 'checked' && buttonStatus == true)
+			{
+				document.getElementById('InspectorChoiceRadioButton_'+choiceID).checked = false;
+				embeddedButtonStatus.value = 'unchecked';
+			}
+				
+			var inspectorChoiceID = document.getElementById('InspectorChoiceRadioButton_'+choiceID).value; 
+			var numCheckedButton = 0; 
+			var buttonStatus = document.getElementById('InspectorChoiceRadioButton_'+choiceID).checked; 
+			if(buttonStatus == true)
+			{
+				//alert(choiceID + ' radio button clicked.'); 
+			}
+		
+			//Disable other selection of Inspector in same set
+			disableAllOtherInspectorInSet(setId, itemId, numberOfInspectorSet);
+			
+			//Update the inspector information in token pane 
+			updateInspectorInfoIntoTokenPane(); 
+		};
+	
+		
+		
+		/* ===================================================================================================
+		 * @name : updateInspectorInfoIntoTokenPane()
+		 * @description : When user click radio button in Inspector pane, update this in token pane 
+		 * ==================================================================================================*/
+		function updateInspectorInfoIntoTokenPane()
+		{
+			if(currentMatchedToken != null)
+			{	  
+				//---------------------------------------------
+				// check all radio button of Inspector sets	 
+				//---------------------------------------------
+				var setId = numberOfInspectorSet;
+				var selectedSet = new Array(); 
+				for(var i = 0; i < setId; i++)
+				{	
+					//alert("previousNumInspectorInSet[setId] : " + previousNumInspectorInSet[i]);
+					
+					for(var pIndex = 0; pIndex < previousNumInspectorInSet[i] ; pIndex++) 
+					{	
+						var inspectorSetButtonStatus = document.getElementById('InspectorChoiceRadioButtonStatus_' + i + '_' + pIndex);
+						//alert("inspectorSetButtonStatus : " + inspectorSetButtonStatus.getAttribute('value'));
+						if(inspectorSetButtonStatus.getAttribute('value') == 'checked')
+						{
+							//document.getElementById('InspectorChoiceRadioButton_'+setId+'_'+pIndex).checked = false;
+							//inspectorSetButtonStatus.value = 'unchecked';
+							//alert("set " + i + " index " + pIndex + " is selected");
+							selectedSet[i] = pIndex; 
+							//alert("selectedSet[i] : " + selectedSet[i]);
+						}
+					}	
+				}
+				
+				
+				//----------------------------------------------
+				// get inspector's friendly description 
+				//----------------------------------------------
+				var InspectorInfoNode = document.getElementById('inspector_for_'+currentMatchedToken);
+				var arraySet = InspectorInfoNode.getElementsByTagName('ul');
+				var descToAdd = '';
+				var selectedInspector = new Array(); 
+				
+				for(var i = 0; i < arraySet.length; i++)
+				{
+					var URIListItem = arraySet[i].getElementsByTagName('li');
+						
+					for(var j = 0; j < URIListItem.length; j++)
+					{
+						if(selectedSet[i] == j)
+						{	
+							var currDesc = URIListItem[j].getAttribute('friendlyDesc', arraySet[i][j]);
+							descToAdd = descToAdd + currDesc + '<br>';
+							
+							var currVal = URIListItem[j].getAttribute('value', arraySet[i][j]);
+							selectedInspector[i] = currVal; 
+						}	
+					}			
+				}
+		
+				if(selectedInspector.length == 0)
+				{
+					//alert("Nothing is selected for Inspector ");
+					returnInspectorList = null; 
+				}
+				else 
+				{	
+					returnInspectorList = selectedInspector;
+				}	
+							
+				//----------------------------------------------
+				// Add into the presentation token pane
+				//----------------------------------------------
+				var tokenContentPane = document.getElementById('TokenArea'); 
+				var previousInnerHTML = tokenContentPane.innerHTML;
+				
+				var previousInspectorInfo = document.getElementById('inspectorInfoInTokenPane'); 
+				if(previousInspectorInfo != null)
+				{	
+					tokenContentPane.removeChild(previousInspectorInfo);
+				}	
+				
+				previousInnerHTML = tokenContentPane.innerHTML; 
+				
+				tokenContentPane.innerHTML = previousInnerHTML + '<p id=\'inspectorInfoInTokenPane\'><br><br> <b>Inspector Information</b><br>' + descToAdd + '</p>';
+			 }
+			 else if(tokenUID == null)
+			 {
+				 //don't do anything
+			 }	  
+		} 
+			
+				
+		
+		 
+		 /* ====================================================================================================
+		  * @name : disableAllOtherInspectorInSet(setId, itemId, numberOfInspectorSet)
+		  * @description : Disable all radio button except current selected Inspector in current set
+		  * ===================================================================================================*/
+		function disableAllOtherInspectorInSet(setId, itemId, numberOfInspectorSet)
+		{
+			for(var pIndex = 0; pIndex < previousNumInspectorInSet[setId] ; pIndex++) //from current set 
+			{	
+				var inspectorSetButtonStatus = document.getElementById('InspectorChoiceRadioButtonStatus_' + setId + '_' + pIndex);
+				
+				if(inspectorSetButtonStatus.value == 'checked' && itemId != pIndex)
+				{
+					document.getElementById('InspectorChoiceRadioButton_'+setId+'_'+pIndex).checked = false;
+					inspectorSetButtonStatus.value = 'unchecked';
+				}
+			}
+		}; 
+	
+		
+		 
+		/* ===================================================================================================
+		 * @name : showPseudonymChoiceList(tokenUID) 
+		 * @description : show PseudonymChoiceList based on the selected token
+		 * =================================================================================================*/
+		 function showPseudonymChoiceList(tokenUID)
+		 {
+			// alert("showPseudonymChoiceList -  for token : " + tokenUID);
+			//--------------------------------------------------
+			//Deleting Pseudonym choice set previously posted
+			//--------------------------------------------------
+			var node = document.getElementById('PseudonymPane');
+			if(node != null)
+			{	
+				// -1 is the empth pseudonym list...
+				for(var i = -1; i < previousNumPseudonymSet; i++)
+				{	
+					var pseudonymPane = document.getElementById('pseudonymPane_'+i);
+					if(pseudonymPane != null)
+					{	
+						node.removeChild(pseudonymPane);
+					}	
+				}	
+			}
+			
+			
+			//
+			// Deleting the br tag
+			//
+			var previousBr = document.getElementById('br4Pseudonym');
+			if(previousBr != null)
+			{	
+				node.removeChild(previousBr);
+			}	
+			
+			//Showing current corresponding Pseudonym Choice List
+		    if(tokenUID != null)
+		    {	
+				var pseudonymChoiceList = document.getElementById('pseudonym_for_'+tokenUID);
+				var pseudonymSets = pseudonymChoiceList.getElementsByTagName('ul');
+			
+				//alert("pseudonymSets : " + pseudonymSets.length);
+				//var pseudonymSetItemNames = '';
+				var pseudonymSetItemDescs = new Array();
+				var id; 
+				previousNumPseudonymSet = pseudonymSets.length;
+				numberOfPseudonymSet = pseudonymSets.length;
+
+				if(pseudonymSets.length>0) {
+					for(var i = 0 ; i < pseudonymSets.length ; i++)
+					{
+						var pseudonymSetItems = pseudonymSets[i].getElementsByTagName('li');
+						id = i;
+				
+						var PseudonymSubset = new Array(); 
+				
+						for(var j = 0; j < pseudonymSetItems.length ; j++)
+						{	
+							PseudonymSubset[j] = pseudonymSetItems[j].getAttribute('value');  //save for return 
+					
+							pseudonymSetItemDescs[j] = pseudonymSetItems[j].getAttribute('friendlyDesc');
+						}
+						allPseudonymSet[i] = PseudonymSubset;
+		     
+						//addPseudonymChoiceList(id, pseudonymSetItemNames, tokenUID);
+						addPseudonymChoiceList(id, pseudonymSetItemDescs, tokenUID);
+				
+						//Give one line space between PseudonymSet
+						var node = document.getElementById('PseudonymPane');
+						//node.appendChild(document.createElement('br')); //change as following way
+						var br = addBrTagforPseudonymChoice(); 
+						//node.appendChild(br);  //document.createElement('br'));
+				
+						pseudonymSetItemNames = null;
+					}
+				}
+				else 
+				{
+					// alert("showPseudonymChoiceList empty pseudonym set..");
+					
+					var newContentPane = document.createElement('div');
+					newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+					newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:260px; height:80px; margin-left:2px');
+					newContentPane.setAttribute('id', 'pseudonymPane_-1');
+					newContentPane.setAttribute('align', 'center');
+					
+					newContentPane.appendChild(document.createTextNode('Pseudonym Choice List does not exist'));
+					node.appendChild(newContentPane);
+					
+					var br = addBrTagforPseudonymChoice(); 
+					newContentPane.appendChild(br);
+					
+					var setId = -1;
+					addPseudonymRadioButton(setId, newContentPane);
+					
+				}
+				// alert("showPseudonymChoiceList -  added");
+				
+		    }
+			
+		 };
+		
+		
+		 
+		 
+		 /* ===========================================================================================
+		  * @name : addBrTag()
+		  * @description : adding one <br> tag
+		  * ==========================================================================================*/
+		 function addBrTagforPseudonymChoice()
+		 {
+			var brTag = document.createElement('br');
+			brTag.setAttribute('id', 'br4Pseudonym');
+			
+			return brTag;
+		 };  
+		 
+		  
+		 
+		 /* ==========================================================================================
+		  * @name : addPseudonymChoiceList(id, pseudonymList, tokenUID)
+		  * @description : adding PseudonymChoiceList into Pseudonym Options Pane
+		  * =========================================================================================*/
+		 function addPseudonymChoiceList(id, pseudonymList, tokenUID)
+		 {
+		 	var node = document.getElementById('PseudonymPane');
+			if(node != null)
+			{	
+				var newContentPane = document.createElement('div');
+				newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+				newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:260px; height:100px; margin-left:2px');
+				newContentPane.setAttribute('id', 'pseudonymPane_'+id);
+				newContentPane.setAttribute('value', pseudonymList); //value);
+				newContentPane.setAttribute('align', 'center');
+				
+				//newContentPane.appendChild(document.createTextNode('Pseudonym Set : ' + id ));
+				newContentPane.appendChild(document.createElement('br'));
+				newContentPane.appendChild(document.createElement('br'));
+				
+				//Adding friendly description of pseudonym
+				for(var i = 0; i < pseudonymList.length; i++)
+				{
+					//newContentPane.appendChild(document.createTextNode(pseudonymList[i]));
+					var listItem = document.createElement('li');
+				    var listItemText = document.createElement('div');
+					listItemText.innerHTML = pseudonymList[i];
+				    listItem.appendChild(listItemText);
+				
+				    newContentPane.appendChild(listItem);
+					//newContentPane.appendChild(document.createElement('br'));
+				}	
+				
+				//Add Radiobutton for PseudonymChoiceList
+				var setID = id; //setID = PolicyUID + '_URISet_' + id;
+				addPseudonymRadioButton(setID, newContentPane);
+			
+				node.appendChild(newContentPane);
+				
+				return newContentPane; //return newly created node
+			}
+			else
+			{
+				alert("PseudonymPane is null");
+			}	
+		 };
+		 
+		 
+		 
+		 /* -----------------------------------------------------------------------------------------------
+		  * @name : addPseudonymRadioButtonForPseudonymSet(setID, parentElement)
+		  * @decription : add Radio Button to select Pseudonym Set
+		  * ----------------------------------------------------------------------------------------------*/
+		function addPseudonymRadioButton(setID, parentElement)
+		{
+			if(parentElement != null)
+			{
+				//create newline 
+				var brElement = document.createElement('br');
+					
+				//create div element
+				var divElement = document.createElement('div');
+				divElement.setAttribute('align', 'center');
+			  
+				//create RadioButton
+				var inputElement = document.createElement('input');
+				inputElement.setAttribute('type', 'radio');
+				inputElement.setAttribute('dojoType', 'dijit.form.RadioButton');
+				inputElement.setAttribute('value', setID);
+				inputElement.setAttribute('id', 'PseudonymRadioButton_'+setID);
+				if(setID == 0)//initial setting (preselection)
+				{
+					inputElement.checked = true; 
+					currentSelectedPseudonymSetId = setID; //initial Pseudonym selection
+				}
+				
+				inputElement.setAttribute('onclick', 'pseudonymRadioButtonClicked(' + setID + ', ' + previousNumPseudonymSet +')'); //add event of RatioButton
+				    
+				//hack for toggle radtiobutton
+				var radioButtonStatus = document.createElement('input');
+				radioButtonStatus.setAttribute('type', 'hidden');
+				radioButtonStatus.setAttribute('id', 'PseudonymRadioButtonStatus_'+setID);
+				if(setID == 0)//initial setting (preselection)
+				{
+					radioButtonStatus.setAttribute('value', 'checked');
+				}
+				else 
+				{
+					radioButtonStatus.setAttribute('value', 'unchecked');
+				}	
+				inputElement.appendChild(radioButtonStatus);
+					
+				var labelElement = document.createElement('label');
+				parentElement.appendChild(brElement);
+				divElement.appendChild(inputElement);
+				divElement.appendChild(labelElement);
+				parentElement.appendChild(divElement);
+			}
+		};
+
+		
+		 
+		/* ===================================================================================================
+		 * @name : pseudonymRadioButtonClicked(setID, previousNumPseudonymSet)
+		 * @description : action when pseudonymRadioButton is clicked
+		 * =================================================================================================*/
+		function pseudonymRadioButtonClicked(setID, previousNumPseudonymSet)
+		{
+			//check button status and toggle radio button if it necessary
+			var embeddedButtonStatus = document.getElementById('PseudonymRadioButtonStatus_'+setID); 
+			var buttonStatus = document.getElementById('PseudonymRadioButton_'+setID).checked; 
+				
+			if (embeddedButtonStatus.value == 'unchecked' && buttonStatus == true )
+			{
+				//alert("unchecked to check");
+				embeddedButtonStatus.value = 'checked';
+			}
+			else if(embeddedButtonStatus.value == 'checked' && buttonStatus == true)
+			{
+				//alert("checked to uncheck");
+				document.getElementById('PseudonymRadioButton_'+setID).checked = false;
+				embeddedButtonStatus.value = 'unchecked';
+			}
+				
+			var credUID = document.getElementById('PseudonymRadioButton_'+setID).value; 
+			var numCheckedButton = 0; 
+			var buttonStatus = document.getElementById('PseudonymRadioButton_'+setID).checked; 
+			if(buttonStatus == true)
+			{
+				//alert(setID + ' radio button clicked.'); 
+				//Save the selected value 
+				returnPseudonymSet = allPseudonymSet[setID];
+			}
+		
+			var selectedPseudonymSetIndex = setID;
+			disableAllOtherPseudonymSetSelection(selectedPseudonymSetIndex, numberOfPseudonymSet);
+			
+			//Update the Presentation Token Pane
+			updatePseudonymInfoInTokenPane();
+		};
+		
+		
+		
+		/* ===========================================================================================
+		 * @name : updatePseudonymInfoInTokenPane()
+		 * @description : Updating the Pseudonym Information base on the selection of Pseudonym 
+		 * ==========================================================================================*/ 
+		function updatePseudonymInfoInTokenPane()
+		{
+			 //alert("Testing updatePseudonymInfoInTokenPane : " + currentMatchedToken);
+			 currentSelectedPseudonymSetId = null; //initialize the value, otherwise it contains the previous setting
+			 
+			 if(currentMatchedToken != null)
+			  {	
+				//---------------------------------------------
+				// check all radio button of pseudonym set	 
+				//---------------------------------------------
+				for(var pIndex = 0; pIndex < numberOfPseudonymSet; pIndex++)
+				{	
+					var pseudonymSetButtonStatus = document.getElementById('PseudonymRadioButtonStatus_' + pIndex);
+					
+					if(pseudonymSetButtonStatus.value == 'checked') // && selectedPseudonymSetIndex != pIndex)
+					{
+						//document.getElementById('PseudonymRadioButton_'+pIndex).checked = false;
+						//pseudonymSetButtonStatus.value = 'unchecked';
+						//alert("Now " + pIndex + "th Pseudonym Set is selected ");
+						currentSelectedPseudonymSetId = pIndex;
+					}
+				}
+				
+				//alert("currentSelectedPseudonymSetId : " + currentSelectedPseudonymSetId);
+				
+				//----------------------------------------------------------------
+				//  PseudonymInfo for 'currentSelectedPseudonymSetId' is shown
+				//----------------------------------------------------------------
+				var pseudonymChoiceList = document.getElementById('pseudonym_for_'+currentMatchedToken);
+				var pseudonymSets = pseudonymChoiceList.getElementsByTagName('ul');
+		
+				//var allPseudonymSet = new Array();
+				var pseudonymSetItemDescs = new Array();
+				var id; 
+				previousNumPseudonymSet = pseudonymSets.length;
+				numberOfPseudonymSet = pseudonymSets.length;
+
+				for(var i = 0 ; i < pseudonymSets.length ; i++)
+				{
+					var pseudonymSetItems = pseudonymSets[i].getElementsByTagName('li');
+					id = i;
+					
+					var PseudonymSubset = new Array(); 
+					
+					if(i == currentSelectedPseudonymSetId) //if j is the currently selected 
+					{	
+						for(var j = 0; j < pseudonymSetItems.length ; j++)
+						{	
+							PseudonymSubset[j] = pseudonymSetItems[j].getAttribute('value');  //save for return 
+							pseudonymSetItemDescs[j] = pseudonymSetItems[j].getAttribute('friendlyDesc');
+						}
+						
+						//alert("Test Updating: " + PseudonymSubset);
+						returnPseudonymList = PseudonymSubset;
+					}
+					else //if it is not selected
+					{
+						returnPseudonymList = null;
+					}	
+			     
+					//alert("currently selected pseudonym set description : " + pseudonymSetItemDescs);
+				} 
+				
+				//----------------------------------------------
+				// Add into the presentation token pane
+				//----------------------------------------------
+				var tokenContentPane = document.getElementById('TokenArea'); 
+				var previousInnerHTML = tokenContentPane.innerHTML;
+				
+				//tokenContentPane.innerHTML = previousInnerHTML + '<br><br> <b>Pseudonym Information</b><br>' + pseudonymSetItemDescs;
+				var htmlTobeAdded = '';
+				for(var i = 0; i < pseudonymSetItemDescs.length; i++ )
+				{
+					htmlTobeAdded = htmlTobeAdded + pseudonymSetItemDescs[i] + '<br>';
+				}	
+				
+				//delete the previous info 
+				var previousPseudonymInfo = document.getElementById('pseudonymInfoInTokenPane'); 
+				if(previousPseudonymInfo != null)
+				{	
+					tokenContentPane.removeChild(previousPseudonymInfo);
+				}	
+				
+				previousInnerHTML = tokenContentPane.innerHTML; 
+				tokenContentPane.innerHTML = previousInnerHTML + '<p id=\'pseudonymInfoInTokenPane\'><br><br> <b>Pseudonym Information</b><br>' + htmlTobeAdded + '</p>';
+			  }
+			  else if(tokenUID == null)
+			  {
+				  //don't show anything
+			  }	  
+		} 
+		
+		
+		 
+		 /* ====================================================================================================
+		  * @name : disableAllPolicySelection(numberOfPolicies) 
+		  * @description : Disable all radio button except current selected policy
+		  * ===================================================================================================*/
+		function disableAllOtherPseudonymSetSelection(selectedPseudonymSetIndex, numberOfPseudonymSet)
+		{
+			for(var pIndex = 0; pIndex < numberOfPseudonymSet; pIndex++)
+			{	
+				var pseudonymSetButtonStatus = document.getElementById('PseudonymRadioButtonStatus_' + pIndex);
+				
+				if(pseudonymSetButtonStatus.value == 'checked' && selectedPseudonymSetIndex != pIndex)
+				{
+					document.getElementById('PseudonymRadioButton_'+pIndex).checked = false;
+					pseudonymSetButtonStatus.value = 'unchecked';
+				}
+			}
+		}; 
+		 
+		
+		
+		
+		/* ====================================================================================================
+		 * @name : removeNoCredentialSelectionElement()
+		 * @description : remove 'No Credential Selection' option from Credential Options pane
+		 * ==================================================================================================*/
+		 function removeNoCredentialSelectionElement()
+		 {
+			 //alert("removing No Credential selection");
+			 credentialPaneNode = document.getElementById('credentialPane');
+			 
+			 var NoCredentialSelection = document.getElementById('noCredentialSelection');
+			 if(NoCredentialSelection)
+			 {	 
+			 	credentialPaneNode.removeChild(NoCredentialSelection);
+			 }
+			 //if NoCredentialSelection is not existing, then do nothing
+		 };		 
+		 
+		
+			
+		 
+		
+
+		/* ====================================================================================================================
+		 * @name : addRadioButton(parentElement, credentialIndex, credentialUID, GroupIndex, currentNumCredendialsInGroup)
+		 * @decription : add Radio Button to ContentPane whose id is elementID
+		 * ===================================================================================================================*/
+		function addRadioButton(parentElement, credentialIndex, credentialUID, GroupIndex, currentNumCredendialsInGroup)
+		{
+			if(parentElement != null)
+			{
+				//create newline 
+				var brElement = document.createElement('br');
+				
+				//create div element
+				var divElement = document.createElement('div');
+				divElement.setAttribute('align', 'center');
+				divElement.setAttribute('style', 'background-color:#E6E6E6; width:480px; height:20px; margin-left:2px;');
+		  
+				//create RadioButton
+				var inputElement = document.createElement('input');
+				inputElement.setAttribute('type', 'radio');
+				inputElement.setAttribute('dojoType', 'dijit.form.RadioButton');
+				inputElement.setAttribute('value', credentialUID);
+				//inputElement.setAttribute('id', 'RadioButton'+credentialIndex);
+				inputElement.setAttribute('id', 'RadioButton'+credentialIndex+'_inGroup_'+GroupIndex);
+				inputElement.setAttribute('onclick', 'radioButtonClicked(' + credentialIndex + ', ' + GroupIndex + ',' + currentNumCredendialsInGroup +')'); //add event of RatioButton
+				
+				//for pre-select of the first choice
+				if(credentialIndex == 0)
+				{
+					inputElement.checked = true; 
+				}
+				
+				//hack for toggle radtiobutton
+				var radioButtonStatus = document.createElement('input');
+				radioButtonStatus.setAttribute('type', 'hidden');
+				//radioButtonStatus.setAttribute('id', 'RadioButtonStatus'+credentialIndex);
+				radioButtonStatus.setAttribute('id', 'RadioButtonStatus'+credentialIndex+'_inGroup_'+GroupIndex);
+				
+				if(credentialIndex == 0)
+				{
+					radioButtonStatus.setAttribute('value', 'checked'); //COMMENT : this way doesn't work, need to get element again to reset
+				}
+				else if(credentialIndex != 0)
+				{	
+					radioButtonStatus.setAttribute('value', 'unchecked');
+				}
+				
+				inputElement.appendChild(radioButtonStatus);
+				
+				var labelElement = document.createElement('label');
+				//parentElement.appendChild(brElement);
+				divElement.appendChild(inputElement);
+				//divElement.appendChild(labelElement);
+				parentElement.appendChild(divElement);
+			}
+		};
+
+		/* ====================================================================================================================
+		 * @name : addRadioButton(parentElement, credentialIndex, credentialUID, GroupIndex, currentNumCredendialsInGroup)
+		 * @decription : add Radio Button to ContentPane whose id is elementID
+		 * ===================================================================================================================*/
+		function addRadioButtonToGroupPane(credentialGroupPane, policyTokenUID, credentialGroupIndex, credentialGroupCount)
+		{
+			if(credentialGroupPane != null)
+			{
+				//create newline 
+				var brElement = document.createElement('br');
+				
+				//create div element
+				var divElement = document.createElement('div');
+				divElement.setAttribute('align', 'center');
+				divElement.setAttribute('style', 'background-color:#E6E6E6; width:480px; height:20px; margin-left:2px;');
+				
+		  
+				//create RadioButton
+				var inputElement = document.createElement('input');
+				inputElement.setAttribute('type', 'radio');
+				inputElement.setAttribute('dojoType', 'dijit.form.RadioButton');
+				inputElement.setAttribute('value', credentialGroupIndex);
+				//inputElement.setAttribute('id', 'RadioButton'+credentialIndex);
+				inputElement.setAttribute('id', 'RadioButton_CredentialGroupIndex_' + credentialGroupIndex);
+				inputElement.setAttribute('onclick', 'radioButtonClicked_GroupPane( \'' + policyTokenUID + '\', ' + credentialGroupIndex + ', ' + credentialGroupCount +')'); //add event of RatioButton
+				
+				//for pre-select of the first choice
+				if(credentialGroupIndex == 0)
+				{
+					inputElement.checked = true; 
+				}
+				
+				//hack for toggle radtiobutton
+				var radioButtonStatus = document.createElement('input');
+				radioButtonStatus.setAttribute('type', 'hidden');
+				//radioButtonStatus.setAttribute('id', 'RadioButtonStatus'+credentialIndex);
+				radioButtonStatus.setAttribute('id', 'RadioButtonStatus_CredentialGroupIndex_' + credentialGroupIndex);
+				
+				if(credentialGroupIndex == 0)
+				{
+					radioButtonStatus.setAttribute('value', 'checked'); //COMMENT : this way doesn't work, need to get element again to reset
+				}
+				else if(credentialGroupIndex != 0)
+				{	
+					radioButtonStatus.setAttribute('value', 'unchecked');
+				}
+				
+				inputElement.appendChild(radioButtonStatus);
+				
+				var labelElement = document.createElement('label');
+				//parentElement.appendChild(brElement);
+				divElement.appendChild(inputElement);
+				//divElement.appendChild(labelElement);
+				credentialGroupPane.appendChild(divElement);
+			}
+		};
+
+		
+		
+		
+		/* -------------------------------------------------------------------------------------------
+		 * @name : addNoCredentialSelectionOption(credentialPaneNode)
+		 * @description : add contentPane which contains that user will not select any Credentials
+		 * ------------------------------------------------------------------------------------------*/
+		function addNoCredentialSelectionOption(credentialPaneNode)
+		{
+			//Add content pane which indicating 'No Credential Selection' 
+			var noCredentialSelectionPane = document.createElement('p'); 
+			noCredentialSelectionPane.setAttribute('id', 'noCredentialSelection');
+			credentialPaneNode.appendChild(noCredentialSelectionPane);
+
+			var newContentPane = document.createElement('div');
+			newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+			newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:480px; height:210px; margin-left:2px');
+			newContentPane.setAttribute('id', 'noCredentialSelectionOption');
+			newContentPane.setAttribute('align', 'left');
+
+			newContentPane.appendChild(document.createTextNode('No credential selection'));
+
+			noCredentialSelectionPane.appendChild(newContentPane);
+			
+			//Adding Radio Button
+			var brElement = document.createElement('br');	//create newline 
+
+			var divElement = document.createElement('div');	//create div element
+			divElement.setAttribute('align', 'center');
+
+			var inputElement = document.createElement('input');	//create RadioButton
+			inputElement.setAttribute('type', 'radio');
+			inputElement.setAttribute('dojoType', 'dijit.form.RadioButton');
+			inputElement.setAttribute('id', 'RadioButtonForNoCredential');
+			inputElement.setAttribute('onclick', 'radioButtonClickedForNoCredential('+ previousNumCredentialsInPane + ')'); //add event of RatioButton
+		    
+			//Toggle radtiobutton
+			var radioButtonStatus = document.createElement('input');
+			radioButtonStatus.setAttribute('type', 'hidden');
+			radioButtonStatus.setAttribute('id', 'RadioButtonStatusForNoCredential');
+			radioButtonStatus.setAttribute('value', 'unchecked');
+			inputElement.appendChild(radioButtonStatus);
+			
+			var labelElement = document.createElement('label');
+			newContentPane.appendChild(brElement);
+			divElement.appendChild(inputElement);
+			divElement.appendChild(labelElement);
+			newContentPane.appendChild(divElement);
+		};
+
+		
+		
+
+		/* ============================================================================================
+		 * @name : createPaneForCredential(id, credentialUID) 
+		 * @description : create html pane which contains Credential Description
+		 * ==========================================================================================*/
+		function createPaneForCredential(id, credentialUID) 
+		{
+			var credentialInformation = document.getElementById(credentialUID); //CredentialUID);
+			var credentialName = credentialInformation.getAttribute('name');
+			var credentialAttribute = credentialInformation.getAttribute('value');
+			var credentialImgSrc = credentialInformation.getAttribute('src');
+			var attributeCount = credentialInformation.getAttribute('attributeCount');
+			var attributeDescription = credentialInformation.getAttribute('attributeDescription');
+			
+
+			//alert("only one credential");
+			var newContentPane = document.createElement('div');
+			newContentPane.setAttribute('dojoType', 'dijit.layout.ContentPane');
+			//newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:480px; height:210px; margin-left:2px');
+			var paneHeight = 100 + attributeCount * 14; // original 160
+			newContentPane.setAttribute('style', 'background-color:#E6E6E6; width:480px; height:" + paneHeight + "px; margin-left:2px;');
+			newContentPane.setAttribute('id', id); // 'credentialGroupIndex_'+ policyTokenUID + "_" + credentialUID);
+			newContentPane.setAttribute('align', 'center');
+
+			//Give some buffer 
+			//newContentPane.appendChild(document.createElement('br'));
+			//newContentPane.appendChild(document.createTextNode('    '));
+
+			//Show image first 
+			var img = document.createElement("img"); 
+			img.src = credentialImgSrc; 
+			img.width = 80;//width; 
+			img.height = 70;//height;
+			img.alt = '<No Image>'; 
+			img.title = credentialAttribute; //text will be shown when mouse hover
+
+			//Adding all components in pane
+			newContentPane.appendChild(document.createElement('br'));
+			newContentPane.appendChild(img); 	
+			newContentPane.appendChild(document.createElement('br'));
+			newContentPane.appendChild(document.createElement('br'));
+			newContentPane.appendChild(document.createTextNode(credentialUID ));//testJSONinput.credentialDescriptions.entry.value.CredentialUID));
+			newContentPane.appendChild(document.createElement('br'));
+			newContentPane.appendChild(document.createTextNode(credentialName));//testJSONinput.credentialDescriptions.entry.value.CredentialSpecificationUID));
+			newContentPane.appendChild(document.createElement('br'));
+
+			var attributeDescriptionElement = document.createElement('div')
+			attributeDescriptionElement.innerHTML = attributeDescription;
+			newContentPane.appendChild(attributeDescriptionElement);
+//			newContentPane.appendChild(document.createTextNode(attributeDescription));//testJSONinput.credentialDescriptions.entry.value.IssuerParametersUID));
+/*
+			if(attributeCount==0) {
+				newContentPane.appendChild(document.createTextNode("No Attribute : " + credentialAttribute));//testJSONinput.credentialDescriptions.entry.value.IssuerParametersUID));
+				newContentPane.appendChild(document.createElement('br'));
+			} else {
+				for(var i=0; i<attributeCount; i++) {
+					var attributeInformation = document.getElementById(credentialUID + "_" + i); //CredentialUID);
+					var label = attributeInformation.getAttribute('label');
+					var value = attributeInformation.getAttribute('value');
+					newContentPane.appendChild(document.createTextNode(label + " : " + value));//testJSONinput.credentialDescriptions.entry.value.IssuerParametersUID));
+					newContentPane.appendChild(document.createElement('br'));
+				}
+			}
+*/			
+			return newContentPane;
+		}
+		
+		 
+		
+		 
+		/* ====================================================================================================
+		 * @name : findTokenUIDForPolicy()
+		 * @description : finding presentation token UID for selected Policy
+		 * ===================================================================================================*/
+		function findTokenUIDForPolicy(selectedPolicyIndex) 
+		{
+			//alert("selected Policy UID : " + document.getElementById('PolicyRadioButton' + selectedPolicyIndex).value);
+			var policyUID = document.getElementById('PolicyRadioButton' + selectedPolicyIndex).value;
+			//search for TokenUID
+			
+			//TODO : 'token_for_' + policyUID     should be changed
+			var tokenUID =  document.getElementById('token_for_' + policyUID).value;
+			//alert("Token for policyUID : " + tokenUID);
+			
+			return tokenUID; 
+		};
+		
+		
+		 
+		 /* ====================================================================================================
+		  * @name : disableAllPolicySelection(numberOfPolicies) 
+		  * @description : Disable all radio button except current selected policy
+		  * ===================================================================================================*/
+		function disableAllOtherPolicySelection(selectedPolicyIndex, numberOfPolicies)
+		{
+			//For all credential radio button, disable the radio buttons	
+			//alert("Number of Policies : " + numberOfPolicies);
+				
+			for(var policyIndex = 0; policyIndex < numberOfPolicies; policyIndex++)
+			{	
+				var policyButtonStatus = document.getElementById('PolicyRadioButtonStatus' + policyIndex);
+				
+				if(policyButtonStatus.value == 'checked' && selectedPolicyIndex != policyIndex)
+				{
+					document.getElementById('PolicyRadioButton'+policyIndex).checked = false;
+					policyButtonStatus.value = 'unchecked';
+				}
+			}
+		}; 
+		 
+	</script>
+</head>
+<body class="claro" style="background-color:white;" onbeforeunload="onUnLoad()" id="bodyElement">
+	<div id="content">
+		<div class="center" id="contentCenterElement">
+			<div id="content-left">
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_verify_en"><b>Presentation Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_verify_sv"><b>Swedish : Presentation Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_verify_el"><b>Greek : Presentation Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_verify_da"><b>Danish : Presentation Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_verify_de"><b>German : Presentation Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_verify_fr"><b>French : Presentation Credential Selection</b></h1>	
+
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_issue_en"><b>Issuance Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_issue_sv"><b>Swedish : Issuance Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_issue_el"><b>Greek : Issuance Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_issue_da"><b>Danish : Issuance Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_issue_de"><b>German : Issuance Credential Selection</b></h1>	
+				<h1 style="margin-top:22px; text-align:center; visibility:hidden;" id="selectionTypeHeader_issue_fr"><b>French : Issuance Credential Selection</b></h1>	
+				
+				<p style="text-align:center; visibility:hidden;" id="messageSelectInstructions_en"><font color=grey>Instruction : First, Please select policy. Second, select credentials from 'Credential Options'. Third, select Pseudonyms and Inspector. Presentation token information will be updated dynamically.</font></p>
+				<p style="text-align:center; visibility:hidden;" id="messageSelectInstructions_sv"><font color=grey>Swedish : Instruction : First, Please select policy. Second, select credentials from 'Credential Options'. Third, select Pseudonyms and Inspector. Presentation token information will be updated dynamically.</font></p>
+				<p style="text-align:center; visibility:hidden;" id="messageSelectInstructions_el"><font color=grey>Greek : Instruction : First, Please select policy. Second, select credentials from 'Credential Options'. Third, select Pseudonyms and Inspector. Presentation token information will be updated dynamically.</font></p>
+				<p style="text-align:center; visibility:hidden;" id="messageSelectInstructions_da"><font color=grey>Instruktioner : Først, vælg policy. Derefter, vælg credentials fra 'Credential Options'. Til sidst, vælg Pseudonyms and Inspector. Presentation token information opdateres løbende.</font></p>
+				<p style="text-align:center; visibility:hidden;" id="messageSelectInstructions_de"><font color=grey>German : Instruction : First, Please select policy. Second, select credentials from 'Credential Options'. Third, select Pseudonyms and Inspector. Presentation token information will be updated dynamically.</font></p>
+				<p style="text-align:center; visibility:hidden;" id="messageSelectInstructions_fr"><font color=grey>French : Instruction : First, Please select policy. Second, select credentials from 'Credential Options'. Third, select Pseudonyms and Inspector. Presentation token information will be updated dynamically.</font></p>
+				
+				<!-- -------------------------------------------------------------- -->
+				<!--   Presentation Policy BEGIN : at the moment, this is example   -->
+				<!-- -------------------------------------------------------------- -->
+				<p style="text-align:center;"> 
+					<br/>
+					<div align=center>
+<!--
+						<b><font>Presentation Policy</font></b>
+-->
+						<div style="visibility:hidden;" id="policyHeader_verify_en"><b><font>English : Presentation Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_verify_sv"><b><font>Swedish : Presentation Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_verify_el"><b><font>Greek : Presentation Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_verify_da"><b><font>Danish : Presentation Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_verify_de"><b><font>German : Presentation Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_verify_fr"><b><font>French : Presentation Policy</font></b></div>	
+						
+						<div style="visibility:hidden;" id="policyHeader_issue_en"><b><font>English : Issuance Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_issue_sv"><b><font>Swedish : Issuance Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_issue_el"><b><font>Greek : Issuance Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_issue_da"><b><font>Danish : Issuance Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_issue_de"><b><font>German : Issuance Policy</font></b></div>	
+						<div style="visibility:hidden;" id="policyHeader_issue_fr"><b><font>French : Issuance Policy</font></b></div>	
+						
+						<form id="PresentationPolicy">
+ 							<!-- input type="radio" name="presentation policy A" value="presentation policy A" onmouseover="showPolicyDescription();" title="(Description Example) This is description of Presentation Policy A. User can select either student card, passport and credit card. Or user can select passport and credit card."/><font color="blue">presentation policy A</font><br / -->
+ 							<!-- input type="radio" name="presentation policy B" value="presentation policy B" onmouseover="showPolicyDescription();" title="(Description Example) This is description of Presentation Policy B. User can select either student card, passport and credit card. Or user can select passport and credit card."/><font color="blue">presentation policy B</font -->
+ 						</form>
+ 					</div>
+<!--
+ 					<br/>
+ 					<br/>
+-->
+					<p style="text-align:center;" id="friendlyPolicyDescription"><font color=grey>....</font></p>
+
+ 				</p>
+				<!-- Presentation Policy BEGIN -->
+				
+				<!-- ------------------------------------------------ -->
+				<!-- TODO : height:100% is not possible. check it out -->
+				<!-- ------------------------------------------------ -->
+				<div style="width:100%;height:500px;">
+				<div dojoType="dijit.layout.BorderContainer" style="width:100%; height:100%; margin-right:2px; border-width:0px;" id="globalVariables">
+				  <div dojoType="dijit.layout.ContentPane" id="" region="left" splitter="true" style="width:100%; border-width:0px; margin-right:5px;"> <!-- width:680px;  -->
+					<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:100%; height:100%; margin-right:2px; border-width:1px;" tabPosition="top">
+						<!-- ------------------------ -->
+						<!-- Credential Selection Tab -->
+						<!-- ------------------------ -->
+						<div dojoType="dijit.layout.ContentPane" title="Selection" selected="true" style="margin-right: 2px; border-width:1px;">
+							<div dojoType="dijit.layout.BorderContainer" style="width:100%; height:100%; margin-right: 2px; border-width:1px;">
+								<div dojoType="dijit.layout.ContentPane" id="credentialPane" region="left" splitter="true" style="width:481px;">
+									<div id="credentialPaneHeader"><b>Credential Options</b></div>
+									<!-- All parsed credentials will be dynamically added here -->
+								</div>
+								<div dojoType="dijit.layout.ContentPane" region="center" splitter="true" style="background-color:white width:280px;"> 
+									<p align="center"><b>Pseudonym Options</b></p>
+									<p align="center" id="PseudonymPane" style="color:#0E4959;"></p>
+									<hr />
+									<p align="center"><b>Inspector Options</b></p>
+									<p align="center" id="InspectorPane" style="color:#0E4959;"></p>
+								</div>
+								<div dojoType="dijit.layout.ContentPane" region="right" splitter="true" style="background-color:#E6E6E6; width:280px; border-width:2px;"> <!-- other background color : #C9F1FC; -->
+									<p align="center"><font color="blue"><b>Presentation Token</b></font></p>
+									<p align="left" id="TokenArea" style="color:#0E4959;"></p>
+								</div>
+							</div>
+						</div>
+						<!-- -------------------------- -->
+						<!-- Credential Description Tab -->
+						<!-- -------------------------- -->
+						<!-- 
+						<div dojoType="dijit.layout.ContentPane" title="Credential Descriptions" closable="true" onClose="alert('Closing Tab!');">
+							<div dojoType="dijit.layout.ContentPane" id="credentialDescPane">
+							</div>
+						</div>
+						-->
+						<!-- -------------------------- -->
+						<!--    Pseudonym Information   -->
+						<!-- -------------------------- -->
+						<p id="PseudonymInfo">
+						</p>
+						<!-- 
+						<div dojoType="dijit.layout.ContentPane" title="Pseudonym Selection" region="left" splitter="true" closable="true" onClose="alert('Closing Pseudonym Tab!');">
+							<p align=left><b>Pseudonym Options</b></p>
+							<div dojoType="dijit.layout.ContentPane" id="PseudonymPane">
+							 HERE DYNAMIC ADD 
+							</div>
+						</div>
+						-->
+						<!-- ------------------------------------ -->
+						<!--         Inspector Selection Tab      -->
+						<!-- ------------------------------------ -->
+						<p id="InspectorInfo">
+						</p>
+						<!-- 
+						<div dojoType="dijit.layout.ContentPane" title="Inspector Selection" closable="true" onClose="alert('Closing Presentation Policy Tab!');">
+							<p align=left><b>Inspector Options</b></p>
+							<div dojoType="dijit.layout.ContentPane" id="PresentationPolicyPane">
+						     HERE DYNAMIC ADD
+							</div>
+						</div>
+						-->
+						<!-- End of Three Tab -->
+						
+					  </div> <!-- <div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:100%;height:100%;" tabPosition="top"> -->	
+					</div> <!--  <div dojoType="dijit.layout.ContentPane" id="" region="left" splitter="true" style="width:680px"> -->
+				    
+				    <p>&nbsp;</p>
+				    <!-- ------------------------------------- -->   		
+				 	<!--  Presentation Token ContentPane BEGIN -->
+				 	<!-- ------------------------------------- -->
+				 	<!-- 
+						<div dojoType="dijit.layout.ContentPane" region="right" splitter="true" style="background-color:#C9F1FC; width:280px;"> 
+							<p align="center"><b>Presentation Token</b></p>
+							<p align="center" id="TokenArea" style="color:#0E4959;"></p>
+						</div>
+					-->	
+				 	<!-- ----------------------------------- -->	
+				 	<!--  Presentation Token ContentPane END -->
+				 	<!-- ----------------------------------- -->
+				</div> <!-- <div dojoType="dijit.layout.BorderContainer" style="width:100%;height:100%;"> -->
+			</div><!-- <div style="width:100%;height:500px;">	-->
+			
+			<!-- p>&nbsp;</p -->
+			
+			<!-- ------------------- -->	
+			<!-- Submit Button BEGIN -->
+			<!-- ------------------- -->
+				<div align="center">
+					<button dojoType="dijit.form.Button" id="submitButton" onClick="submitResult();" disabled="disabled">Submit</button>
+					<button dojoType="dijit.form.Button" id="cancelButton" onClick="submitCancel();">Cancel</button>
+<!--
+					<button id="submitButton" onClick="submitResult();">Submit</button>
+					<button id="cancelButton" onClick="submitCancel();">Cancel</button>
+					-->										
+				</div>
+			<!-- ----------------- -->	
+			<!-- Submit Button END -->
+			<!-- ----------------- -->	
+			
+			<!-- ---------------------------------------------------------- -->	
+			<!-- Presentation Token Information will be embedded here BEGIN -->
+			<!-- ---------------------------------------------------------- -->
+				<div id="candidateTokens">
+				</div>
+				<div id="selectedToken">
+				</div>
+			<!-- -------------------------------------------------------- -->	
+			<!-- Presentation Token Information will be embedded here END -->
+			<!-- -------------------------------------------------------- -->
+		
+			</div> <!-- 	<div id="content-left">    -->
+		</div> <!-- <div class="center"> -->
+	</div> <!-- <div id="content"> -->
+</body>
+</html>

@@ -24,24 +24,24 @@ public class ITPatrasPilot extends AbstractIT {
     public ITPatrasPilot() {
         System.out.println("ITIssuer");
     }
-    
+
     private void setupCryptoEngines(CryptoEngine cryptoEngine, CryptoEngine clientEngine,
-                                    int matNumber) throws Exception {
-        initIssuer(cryptoEngine, clientEngine);
-        
+            int matNumber) throws Exception {
+        this.initIssuer(cryptoEngine, clientEngine);
+
         String storagePrefix = "student_" + matNumber;
         if(cryptoEngine == CryptoEngine.BRIDGED) {
             storagePrefix += "_bridged";
         }
         storagePrefix += "_" + clientEngine.toString().toLowerCase() + "_";
-  
-        initHelper(cryptoEngine, clientEngine, storagePrefix);
+
+        this.initHelper(cryptoEngine, clientEngine, storagePrefix);
     }
 
     private void issuePatrasCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, int matNumber) throws Exception {
         System.out.println("-- issuePatrasCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - matNumber : " + matNumber);
 
-        setupCryptoEngines(cryptoEngine, clientEngine, matNumber);
+        this.setupCryptoEngines(cryptoEngine, clientEngine, matNumber);
 
         String scope = "urn:patras:registration";
         this.initPseudonym(clientEngine, scope, matNumber);
@@ -59,44 +59,46 @@ public class ITPatrasPilot extends AbstractIT {
     }
 
     private void verifyPatrasCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, int matNumber) throws Exception {
-      System.out.println("-- verifyPatrasCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - matNumber : " + matNumber);
+        System.out.println("-- verifyPatrasCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - matNumber : " + matNumber);
 
-      setupCryptoEngines(cryptoEngine, clientEngine, matNumber);
+        this.setupCryptoEngines(cryptoEngine, clientEngine, matNumber);
 
-      //
-      String scope = "urn:patras:registration";
-      this.runVerification(cryptoEngine, clientEngine, "presentationPolicyPatrasUniversityLogin.xml", true, scope);
+        //
+        String scope = "urn:patras:registration";
+        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyPatrasUniversityLogin.xml", true, scope);
 
-      //
-      String courceScope = "urn:patras:evaluation";
-      this.runVerification(cryptoEngine, clientEngine, "presentationPolicyPatrasCourseEvaluation.xml", true, courceScope);
+        //
+        String courceScope = "urn:patras:evaluation";
+        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyPatrasCourseEvaluation.xml", true, courceScope);
 
-  }
+    }
 
     @Test
     public void testStudent_42_idemix() throws Exception {
-        issuePatrasCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, 42);
-        verifyPatrasCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, 42);
+        this.copySystemParameters();
+        this.issuePatrasCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, 42);
+        this.verifyPatrasCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, 42);
     }
 
     @Test
     public void testStudent_42_uprove() throws Exception {
-        issuePatrasCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, 42);
-        verifyPatrasCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, 42);
+        this.issuePatrasCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, 42);
+        this.verifyPatrasCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, 42);
     }
 
     @Test
     public void testStudent_42_bridged_idemix() throws Exception {
-        issuePatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, 42);
-        verifyPatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, 42);
+        this.copySystemParameters();
+        this.issuePatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, 42);
+        this.verifyPatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, 42);
     }
 
     @Test
     public void testStudent_42_bridged_uprove() throws Exception {
-        issuePatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, 42);
-        verifyPatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, 42);
+        this.issuePatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, 42);
+        this.verifyPatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, 42);
     }
-    
+
     // @Test
     public void testStudent_1235332() throws Exception {
         //    System.out.println("---- testStudent_1235332 ----");

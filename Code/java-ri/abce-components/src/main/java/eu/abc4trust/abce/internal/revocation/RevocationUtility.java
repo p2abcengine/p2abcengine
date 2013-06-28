@@ -28,6 +28,7 @@ import com.ibm.zurich.idmx.showproof.accumulator.ValueHasBeenRevokedException;
 import com.ibm.zurich.idmx.utils.Parser;
 import com.ibm.zurich.idmx.utils.XMLSerializer;
 
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.revauth.AccumCryptoEngineRevAuthImpl;
 import eu.abc4trust.revocationProxy.RevocationMessageType;
 import eu.abc4trust.xml.NonRevocationEvidence;
@@ -45,32 +46,16 @@ public class RevocationUtility {
     }
 
     public static void updateNonRevocationEvidence(NonRevocationEvidence nre,
-            RevocationInformation revInfo) {
+            RevocationInformation revInfo) throws CredentialWasRevokedException {
         Parser xmlParser = Parser.getInstance();
         Element witnessElement = (Element) nre.getCryptoParams().getAny()
                 .get(0);
         AccumulatorWitness w1 = (AccumulatorWitness) xmlParser
                 .parse(witnessElement);
-
-        List<Object> cryptoEvidence = revInfo.getCryptoParams().getAny();
-        
-        Element historyElement = (Element) cryptoEvidence.get(1);
-        AccumulatorHistory history = (AccumulatorHistory) xmlParser
-                .parse(historyElement);
-
-        boolean check = true;
-        for (AccumulatorEvent accumulatorEvent : history) {
-            try {
-            	if(w1.getState().getEpoch() >= accumulatorEvent.getNewEpoch()){ // The witness has already been updated with this event
-            		continue;
-            	}
-                w1 = AccumulatorWitness.updateWitness(w1, accumulatorEvent,
-                        check);
-            } catch (ValueHasBeenRevokedException ex) {
-                // We don't care at this point.
-                System.out.println("Value has been revoked.");
-                break;
-            } 
+        try {
+            w1 = updateWitness(w1, revInfo);
+        } catch (ValueHasBeenRevokedException ex) {
+            throw new CredentialWasRevokedException(ex);
         }
 
         XMLSerializer xmlSerializer = XMLSerializer.getInstance();
@@ -81,7 +66,27 @@ public class RevocationUtility {
         nre.setCreated(AccumCryptoEngineRevAuthImpl.getNow());
         nre.setExpires(AccumCryptoEngineRevAuthImpl.getExpirationDate());
     }
-    
+
+    public static AccumulatorWitness updateWitness(AccumulatorWitness w1,
+            RevocationInformation revInfo) throws ValueHasBeenRevokedException {
+        Parser xmlParser = Parser.getInstance();
+
+        List<Object> cryptoEvidence = revInfo.getCryptoParams().getAny();
+
+        Element historyElement = (Element) cryptoEvidence.get(1);
+        AccumulatorHistory history = (AccumulatorHistory) xmlParser
+                .parse(historyElement);
+
+        boolean check = true;
+        for (AccumulatorEvent accumulatorEvent : history) {
+            if(w1.getState().getEpoch() >= accumulatorEvent.getNewEpoch()){ // The witness has already been updated with this event
+                continue;
+            }
+            w1 = AccumulatorWitness.updateWitness(w1, accumulatorEvent, check);
+        }
+        return w1;
+    }
+
     public static Element serializeRevocationMessageType(RevocationMessageType rmt) {
         return createW3DomElement("RevocationMessageType", rmt.toString());
     }
@@ -92,8 +97,8 @@ public class RevocationUtility {
         return createW3DomElement("Epoch", epoch.toString());
     }
     public static RevocationMessageType unserializeRevocationMessageType(Element element) {
-      RevocationMessageType rmt = RevocationMessageType.valueOf(element.getTextContent());
-      return rmt;
+        RevocationMessageType rmt = RevocationMessageType.valueOf(element.getTextContent());
+        return rmt;
     }
     public static URI unserializeRevocationInfoUid(Element element) {
         URI revInfoUid = URI.create(element.getTextContent());
@@ -103,11 +108,11 @@ public class RevocationUtility {
         Integer epoch = new Integer(element.getTextContent());
         return epoch;
     }
-    
+
     private static Element createW3DomElement(String elementName, String value) {
         Element element;
         try {
-          element = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument().createElement(elementName);
+            element = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument().createElement(elementName);
         } catch (DOMException e) {
             throw new IllegalStateException("This should always work!",e);
         } catch (ParserConfigurationException e) {

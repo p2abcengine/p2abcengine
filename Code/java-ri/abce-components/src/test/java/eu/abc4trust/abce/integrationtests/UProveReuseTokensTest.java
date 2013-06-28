@@ -1,5 +1,5 @@
-//* Licensed Materials - Property of IBM, Miracle A/S,                *
-//* and Alexandra Instituttet A/S                                     *
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
 //* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
@@ -53,7 +53,6 @@ import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.smartcard.CardStorage;
-import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.IssuancePolicy;
@@ -69,9 +68,9 @@ import eu.abc4trust.xml.util.XmlUtils;
  * Patras scenario, iterated loops over generation of credtoken with pseudonnym.
  */
 public class UProveReuseTokensTest {
-//    private static final String URN_ABC4TRUST_1_0_ALGORITHM_UPROVE = "urn:abc4trust:1.0:algorithm:uprove";
-//
-//    private static final String URN_ABC4TRUST_1_0_ALGORITHM_IDEMIX = "urn:abc4trust:1.0:algorithm:idemix";
+    //    private static final String URN_ABC4TRUST_1_0_ALGORITHM_UPROVE = "urn:abc4trust:1.0:algorithm:uprove";
+    //
+    //    private static final String URN_ABC4TRUST_1_0_ALGORITHM_IDEMIX = "urn:abc4trust:1.0:algorithm:idemix";
 
     @SuppressWarnings("unused")
     private static final String URN_ABC4TRUST_1_0_ALGORITHM_BRIDGING = "urn:abc4trust:1.0:algorithm:bridging";
@@ -101,12 +100,13 @@ public class UProveReuseTokensTest {
     private static final int MATRICULATIONNUMBER = 1235332;
 
 
-   
+
 
     // @Ignore
     @Test
     public void reuseTokensTest() throws Exception {
-        int keyLength = 2048;
+        int idemixKeyLength = 2048;
+        int uproveKeylength = 2048;
         SecretWrapper uproveSecretWrapper = new SecretWrapper(this.getUProveSecret());
         SecretWrapper idemixSecretWrapper = new SecretWrapper(this.getIdemixSecret());
 
@@ -117,10 +117,10 @@ public class UProveReuseTokensTest {
                 new Random(1231), uproveUtils.getUserServicePort()));
         Injector universityInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231), IssuerCryptoEngine.UPROVE,
-                    uproveUtils.getIssuerServicePort()));
+                        uproveUtils.getIssuerServicePort()));
         Injector courseEvaluationInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231), IssuerCryptoEngine.IDEMIX,
-                    uproveUtils.getVerifierServicePort()));
+                        uproveUtils.getVerifierServicePort()));
         IssuanceHelper issuanceHelper = new IssuanceHelper();
 
         IssuerAbcEngine universityEngine = universityInjector
@@ -143,21 +143,23 @@ public class UProveReuseTokensTest {
         if (!idemixSecretWrapper.isSecretOnSmartcard()) {
             userCredentialManager.storeSecret(idemixSecretWrapper.getSecret());
         }
-/*
+        /*
         SystemParameters idemixSystemParameters = courseEngine
                 .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
 
         //	Change here if we want dynamic system parameters for uprove
         SystemParameters uproveSystemParameters = this.getUProveSystemParameters(universityInjector);
-  */      
-    
+         */
+
         SystemParametersUtil sysParamUtil = new SystemParametersUtil();
-        SystemParameters sysParam = sysParamUtil.generatePilotSystemParameters_WithIdemixSpecificKeySize(keyLength);
-        
-        userIdemixEngine.loadIdemixSystemParameters(sysParam);
+        SystemParameters sysParam = SystemParametersUtil
+                .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                        idemixKeyLength, uproveKeylength);
+
+        IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(sysParam);
 
 
-       
+
 
 
         PseudonymWithMetadata upwm = this.getUProvePseudonym(uproveSecretWrapper.getSecretUID(), userInjector);
@@ -226,7 +228,7 @@ public class UProveReuseTokensTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters universityIssuerParameters = universityEngine
                 .setupIssuerParameters(universityCredSpec, sysParam,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         // ObjectFactory of = new ObjectFactory();
         // System.out.println(" - universityParameters : "
@@ -236,7 +238,7 @@ public class UProveReuseTokensTest {
         revocationId = new URI("revocationUID2");
         IssuerParameters credCourseIssuerParameters = universityEngine
                 .setupIssuerParameters(credCourseSpec, sysParam,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
                 universityIssuerParameters);
@@ -384,7 +386,7 @@ public class UProveReuseTokensTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters universityIssuerParameters = universityEngine
                 .setupIssuerParameters(universityCredSpec, systemParameters,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         // ObjectFactory of = new ObjectFactory();
         // System.out.println(" - universityParameters : "
@@ -394,7 +396,7 @@ public class UProveReuseTokensTest {
         revocationId = new URI("revocationUID2");
         IssuerParameters credCourseIssuerParameters = universityEngine
                 .setupIssuerParameters(credCourseSpec, systemParameters,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
                 universityIssuerParameters);
@@ -464,9 +466,9 @@ public class UProveReuseTokensTest {
         // Verify against course evaluation using the course credential.
         System.out.println(">> Verify.");
         for(int i = 0; i< 20; i++){
-        	PresentationToken pt = this.logIntoCourseEvaluation(issuanceHelper,
-                courseEvaluationInjector, userInjector);
-        	assertNotNull(pt);
+            PresentationToken pt = this.logIntoCourseEvaluation(issuanceHelper,
+                    courseEvaluationInjector, userInjector);
+            assertNotNull(pt);
         }
     }
 
@@ -608,7 +610,7 @@ public class UProveReuseTokensTest {
             SystemParameters systemParameters) {
         String scope = "urn:patras:registration";
         try {
-            idemixUser.loadIdemixSystemParameters(systemParameters);
+            IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(systemParameters);
         } catch (CryptoEngineException ex) {
             ex.printStackTrace();
             fail(ex.getLocalizedMessage());

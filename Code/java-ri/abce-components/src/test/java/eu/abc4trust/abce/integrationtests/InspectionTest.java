@@ -373,7 +373,7 @@ public class InspectionTest {
 
             Injector idemixInjector = Guice
                     .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                            IssuerCryptoEngine.IDEMIX, 8893));
+                            IssuerCryptoEngine.IDEMIX, 32123));
             IssuerAbcEngine idemixIssuer = idemixInjector.getInstance(IssuerAbcEngine.class);
             SystemParameters idemixSystemParameters = idemixIssuer
                     .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
@@ -410,13 +410,13 @@ public class InspectionTest {
         URI revParamsUid = REVOCATION_PARAMETERS_UID;
         Reference revocationInfoReference = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(URI.create("example.org"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
                 .setupRevocationAuthorityParameters(keyLength,
                         CryptoUriUtil.getIdemixMechanism(), revParamsUid,
@@ -427,13 +427,13 @@ public class InspectionTest {
         URI revParamsUid2 = REVOCATION_PARAMETERS_UID2;
         Reference revocationInfoReference2 = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference2 = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference2 = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(URI.create("example.org"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revocationAuthorityParameters2 = revocationEngine
                 .setupRevocationAuthorityParameters(keyLength,
                         CryptoUriUtil.getIdemixMechanism(), revParamsUid2,
@@ -524,7 +524,7 @@ public class InspectionTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters governmentIdcardIssuerParameters = governmentEngine
                 .setupIssuerParameters(idcardCredSpec, systemParameters,
-                        idcardIssuancePolicyUid, hash, engineType, revocationId);
+                        idcardIssuancePolicyUid, hash, engineType, revocationId, null);
 
 
         // store issuance parameters for government and user.
@@ -538,7 +538,7 @@ public class InspectionTest {
         URI revocationId2 = new URI("revocationUID2");
         IssuerParameters governmentStudentcardIssuerParameters = governmentEngine
                 .setupIssuerParameters(studentcardCredSpec, systemParameters,
-                        studentcardIssuancePolicyUid, hash, engineType, revocationId2);
+                        studentcardIssuancePolicyUid, hash, engineType, revocationId2, null);
 
 
         // store issuance parameters for government and user.
@@ -1027,6 +1027,12 @@ public class InspectionTest {
                        ex.getMessage()
                        .startsWith(
                                "The crypto evidence in the presentation token is not valid"));
+           } catch (RuntimeException ex) {
+             assertTrue(
+               "We expect presentation token generation to fail",
+               ex.getMessage()
+               .startsWith(
+                       "Cannot generate presentationToken"));
            }
        }
        

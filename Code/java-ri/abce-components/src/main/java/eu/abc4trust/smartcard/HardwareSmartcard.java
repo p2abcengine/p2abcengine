@@ -35,6 +35,7 @@ import javax.smartcardio.ResponseAPDU;
 import org.apache.commons.lang.NotImplementedException;
 
 import eu.abc4trust.cryptoEngine.idemix.user.IdemixCryptoEngineUserImpl;
+import eu.abc4trust.cryptoEngine.uprove.user.ReloadStorageManager;
 import eu.abc4trust.cryptoEngine.uprove.user.UProveCryptoEngineUserImpl;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.PseudonymSerializer;
@@ -128,7 +129,7 @@ public class HardwareSmartcard implements Smartcard {
     backupCredential = 0x80, // pin, password (8 bytes), credentialID - Exteded
     restoreCredential = 0x82; //pin, password (8 bytes) - NOT Exteded.
     
-    private final int ABC4TRUSTCMD = 0xAB,
+    private final int ABC4TRUSTCMD = 0xBC,
             STATUS_OK = 0x90,
             STATUS_FORBIDDEN = 0x9A,
             STATUS_TOO_LITTLE_DATA = 0x9B,
@@ -142,13 +143,12 @@ public class HardwareSmartcard implements Smartcard {
     		STATUS_BAD_PUK = 0x05,
     		STATUS_CARD_DEAD = 0x06;
 
-    private static final int MAX_CREDENTIALS = 20;
-    private int MAX_BLOB_BYTES;
-    
-    private final int ROOT_KEY_ID = 0;
+    private static final int MAX_CREDENTIALS = 8;
+    public static final int MAX_BLOB_BYTES = 512;
 
     private final Random rand; 
 	private static final StaticUriToIDMap staticMap = StaticUriToIDMap.getInstance();
+	public static boolean printInput = false;
 
     /**
      * 
@@ -205,6 +205,7 @@ public class HardwareSmartcard implements Smartcard {
 		}
     }
     
+    /*
     private void detectMaxBlobSize(int pin){
     	if(MAX_BLOB_BYTES == 0){
     		if(this.readIssuer(pin, StaticUriToIDMap.credUnivUProveIssuer) == null){
@@ -214,6 +215,8 @@ public class HardwareSmartcard implements Smartcard {
     		}
     	}
     }
+    */
+	
 
     private SmartcardStatusCode evaluateStatus(ResponseAPDU response){
         switch(response.getSW1()){
@@ -324,30 +327,35 @@ public class HardwareSmartcard implements Smartcard {
         return null;
     }
 
-    private byte getNewCredentialID(int pin, URI credUri){    	
-        byte credID = 1;
-        int maxNoOfCredentials = 20; //hardcoded in the card as well.
-        boolean found = true;
-        while(true){            
-            Map<URI, SmartcardBlob> blobs = getBlobs(pin);
+    private byte getNewCredentialID(int pin){    	
+        int maxNoOfCredentials = 8; //hardcoded in the card as well.
+        Map<URI, SmartcardBlob> blobs = getBlobs(pin);
+        for(int credID = 1; credID <= maxNoOfCredentials ; credID++){
+        	boolean foundCredID = false;
         	for(URI uri : blobs.keySet()){
         		if(blobs.get(uri).blob[0] == credID && blobs.get(uri).blob.length == 1){
-        			credID++;
-        			found = false;
-        		}else{
-        			found = true;
+        			URI possibleCredURI = URI.create(uri.toString()+"_1");
+        			if(blobs.containsKey(possibleCredURI)){
+        				//there really is a credential with this ID
+        				foundCredID = true;
+            			continue;
+        			}else{
+        				//at some point in an issuance, something went wrong, and we only have the "URI to ID blob".
+        				//Delete the URI to ID blob and return the credID
+        				this.deleteBlob(pin, uri);
+        				return (byte)credID;
+        			}
         		}
         	}            
-        	if(found){
-        		return credID;
-        	}   
-        	if(credID == maxNoOfCredentials+1){
-                throw new RuntimeException("No more than "+maxNoOfCredentials+" credentials can be stored. remove one and try again.");                
-            }
+        	if(foundCredID){
+        		continue;
+        	}
+        	return (byte)credID;
         }
+        throw new RuntimeException("No more than "+maxNoOfCredentials+" credentials can be stored. remove one and try again.");
     }
     
-    private byte getNewIssuerID(int pin, URI issuerUri){
+    private byte getNewIssuerID(URI issuerUri){
     	return staticMap.getIssuerIDFromUri(issuerUri);    	
     }
     
@@ -372,16 +380,18 @@ public class HardwareSmartcard implements Smartcard {
     }
 
     @Override
-    public void removeCredentialUri(int pin, URI uri){
+    public void removeCredentialUri(int pin, URI uri){    	
     	int i = 1;
     	while(true){
-    		uri = URI.create(uri.toString()+"_"+i++);
-    		if(this.deleteBlob(pin, uri) != SmartcardStatusCode.OK){
+    		URI tmpUri = URI.create(uri.toString()+"_"+i++);    		
+    		if(this.deleteBlob(pin, tmpUri) != SmartcardStatusCode.OK){
     			if(i == 1){
     				//Actual error - we should be able to remove at least 1 blob
-    				throw new RuntimeException("Could not delete blob: " + uri);
+    				throw new RuntimeException("Could not delete blob: " + tmpUri);
     			}
     			return;
+    		}else{
+    			System.out.println("intermediate step, removed credential blob: "+ tmpUri);
     		}
     	}
     }
@@ -465,7 +475,7 @@ public class HardwareSmartcard implements Smartcard {
 
     private void putData(byte[] data){
         try {
-        	ByteBuffer buf = ByteBuffer.allocate(7+data.length);
+        	ByteBuffer buf = ByteBuffer.allocate(7 + data.length);
         	buf.put((byte) this.ABC4TRUSTCMD);
         	buf.put(this.putData);
         	buf.put(new byte[]{0,0,0});
@@ -524,10 +534,8 @@ public class HardwareSmartcard implements Smartcard {
             if(mode == 1){
                 this.putData(pk_bytes);
             }else if(mode == 2){
-                byte[] authData = new byte[1+pk_bytes.length];
-                authData[0] = (byte)keyID;
-                System.arraycopy(pk_bytes, 0, authData, 1, pk_bytes.length);
-                this.authenticateData(authData, rootKey, this.ROOT_KEY_ID, this.setAuthenticationKey);
+                System.out.println("Can only use setAuthenticationKey in root mode");
+                return SmartcardStatusCode.UNAUTHORIZED;
             }
             System.out.println("Input for setAuthKey: " + Arrays.toString(new byte[]{(byte)this.ABC4TRUSTCMD, this.setAuthenticationKey, 0, 0, 1, (byte)keyID}));
             response = this.transmitCommand(new CommandAPDU(this.ABC4TRUSTCMD, this.setAuthenticationKey, 0, 0, new byte[]{(byte)keyID}));
@@ -557,15 +565,9 @@ public class HardwareSmartcard implements Smartcard {
         data[1] = (byte)compType;
         if(mode == 1){
             this.putData(component);
-        }else if(mode == 2){
-            byte[] authData = new byte[data.length+component.length];
-            authData[0] = data[0];
-            authData[1] = data[1];
-            System.arraycopy(component, 0, authData, 2, component.length);
-            SmartcardStatusCode status = this.authenticateData(authData, rootKey, this.ROOT_KEY_ID, this.setGroupComponent);
-            if(status != SmartcardStatusCode.OK) return status;
         }else{
-            return SmartcardStatusCode.FORBIDDEN;
+        	System.out.println("Can only use setGroupComponent in root mode");
+            return SmartcardStatusCode.UNAUTHORIZED;
         }
         ByteBuffer buf = ByteBuffer.allocate(7);
         buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.setGroupComponent, 0, 0, 2, (byte)groupID, (byte)compType});
@@ -584,15 +586,9 @@ public class HardwareSmartcard implements Smartcard {
         data[1] = (byte)genID;
         if(mode == 1){
             this.putData(g);
-        }else if(mode == 2){
-            byte[] authData = new byte[data.length+g.length];
-            authData[0] = data[0];
-            authData[1] = data[1];
-            System.arraycopy(g, 0, authData, 2, g.length);
-            SmartcardStatusCode status = this.authenticateData(authData, rootKey, this.ROOT_KEY_ID, this.setGenerator);
-            if(status != SmartcardStatusCode.OK) return status;
         }else{
-            return SmartcardStatusCode.FORBIDDEN;
+        	System.out.println("Can only use setGenerator in root mode");
+            return SmartcardStatusCode.UNAUTHORIZED;
         }
         ByteBuffer buf = ByteBuffer.allocate(7);
         buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.setGenerator, 0, 0, 2, (byte)groupID, (byte)genID});
@@ -616,8 +612,8 @@ public class HardwareSmartcard implements Smartcard {
         try {
             int mode = this.getMode();
             if(mode == 2){
-                SmartcardStatusCode status = this.authenticateData(data, rootKey, this.ROOT_KEY_ID, this.setCounter);
-                if(status != SmartcardStatusCode.OK) return status;
+            	System.out.println("Can only use setCounter in root mode");
+                return SmartcardStatusCode.UNAUTHORIZED;
             }
             ByteBuffer buf = ByteBuffer.allocate(13);
             buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.setCounter, 0, 0, 8});
@@ -626,31 +622,6 @@ public class HardwareSmartcard implements Smartcard {
             System.out.println("Input for setCounter: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from setCounter: " + response);
-            return this.evaluateStatus(response);
-        } catch (CardException e) {
-            return SmartcardStatusCode.NOT_FOUND;
-        }
-    }
-
-    public SmartcardStatusCode authenticateData(byte[] data, RSAKeyPair key, int keyID, int instructionByte){
-        //Before doing anything, we add the instruction byte to the data. Needed by the instruction after authentication.
-    	byte[] challenge = this.getChallenge(32);
-    	
-        byte[] temp = new byte[data.length+1 + challenge.length];
-        temp[0] = (byte)instructionByte;
-        System.arraycopy(data, 0, temp, 1, data.length);
-        System.arraycopy(challenge, 0, temp, 1+data.length, challenge.length);
-        data = temp;
-        
-        System.out.println("Challenge: " + Arrays.toString(challenge));
-        byte[] toSend = SmartcardCrypto.generateSignature(data, challenge, key, this.rand).sig;
-        //toSend = this.removeSignBit(toSend);
-        System.out.println("Converts to this byte array: " + Arrays.toString(toSend));
-        try {
-            this.putData(toSend);
-
-            ResponseAPDU response = this.transmitCommand(new CommandAPDU(this.ABC4TRUSTCMD, this.authenticateData, 0, 0, new byte[]{(byte) keyID}));
-            System.out.println("Response from Auth data: " + response);
             return this.evaluateStatus(response);
         } catch (CardException e) {
             return SmartcardStatusCode.NOT_FOUND;
@@ -773,7 +744,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{(byte)groupID, (byte)compType, 0, 0});
         buf.position(0);
         try {
-        	System.out.println("Input for readGroupComponent: " + groupID + " : " + compType + " : " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for readGroupComponent: " + groupID + " : " + compType + " : " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from readGroupComponent: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -803,7 +775,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{(byte)groupID, (byte)genID, 0, 0});
         buf.position(0);
         try {
-        	System.out.println("Input for readGenerator: " + groupID + " : " + genID + " : " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for readGenerator: " + groupID + " : " + genID + " : " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from readGenerator: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -840,7 +813,8 @@ public class HardwareSmartcard implements Smartcard {
             buf.put(new byte[]{0,0});
             buf.position(0);
 
-            System.out.println("Input for getScopeExclusivePseudonym: " + Arrays.toString(buf.array()));
+            if(printInput)
+        		System.out.println("Input for getScopeExclusivePseudonym: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from getScopeExclusivePseudonym: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -865,9 +839,6 @@ public class HardwareSmartcard implements Smartcard {
         try {
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from getDevicePublicKey: " + response);
-            System.out.println("And this is the output: " + Arrays.toString(response.getData()));
-            System.out.println("Which gives this bigint: " + new BigInteger(response.getData()));
-            System.out.println("Or this bigInt: " + new BigInteger(1, response.getData()));
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
                 return new BigInteger(1, response.getData());
             }
@@ -909,7 +880,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put((byte)16);
         buf.position(0);
         try {        	
-        	System.out.println("Input for startCommitments: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for startCommitments: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from startCommitments: "+response);
             System.out.println("And this is the output: " + Arrays.toString(response.getData()));
@@ -932,8 +904,8 @@ public class HardwareSmartcard implements Smartcard {
         for(URI uri : credentialIds){        	        	
             byte credID = this.getCredentialIDFromUri(pin, uri);
             byte[] credInfo = readCredential(pin, credID);            
-            byte issuerID = credInfo[0];
-            byte counterID = this.readIssuer(pin, issuerID)[4];
+            //byte issuerID = credInfo[0];
+            //byte counterID = this.readIssuer(pin, issuerID)[4];
             byte status = credInfo[5];
             byte presentOrIssuance = this.getIssuanceCommitment;
             String command = "getIssuanceCommitment";
@@ -943,6 +915,7 @@ public class HardwareSmartcard implements Smartcard {
             	command = "getPresentationCommitment";
             	presentOrIssuance = this.getPresentationCommitment;
             }
+            /*
             if(counterID != 0){
             	//Counter active. We must know if the attendance is high enough.
 	            byte[] counterInfo = readCounter(pin, counterID);
@@ -952,7 +925,8 @@ public class HardwareSmartcard implements Smartcard {
 	            	//Not enough attendance. aborting at the end; Done because of timing attacks.
 	            	notEnoughAttendance = true;
 	            }
-            }            
+            } 
+            */           
             
             buf = ByteBuffer.allocate(14);
             buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, presentOrIssuance, 0, 0, 0, 0, 5});
@@ -961,12 +935,11 @@ public class HardwareSmartcard implements Smartcard {
             buf.put(new byte[]{0,0});
             buf.position(0);
             try {            	            	
-            	System.out.println("Input for "+command+": " +Arrays.toString(buf.array()));
+            	if(printInput)
+            		System.out.println("Input for "+command+": " +Arrays.toString(buf.array()));
                 ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
                 System.out.println("Response from "+command+": "+response);
                 if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
-                	System.out.println("And this is the output: " + Arrays.toString(response.getData()));
-                	System.out.println("which is this BigInteger: "+new BigInteger(1, response.getData()));
                     comm.commitmentForCreds.put(uri, new BigInteger(1, response.getData()));
                 }else{
                     return null;
@@ -1021,7 +994,9 @@ public class HardwareSmartcard implements Smartcard {
         buf.put((byte)7);
         buf.position(0);
         try {        	
-        	System.out.println("Input for readCredential: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for readCredential: " + Arrays.toString(buf.array()));
+        	System.out.println("Reading the on-board credential with ID="+credentialID);
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from readCredential: " + response);
             System.out.println("With the data: " + Arrays.toString(response.getData()));            
@@ -1043,7 +1018,7 @@ public class HardwareSmartcard implements Smartcard {
     private byte[] readIssuer(int pin, int issuerID){
         if(cachedIssuerByteArray.containsKey(issuerID)) {
             byte[] cached = cachedIssuerByteArray.get(issuerID);
-            System.out.println("Input for readIssuer - use cached : " + (cached == null ? null : Arrays.toString(cached)));
+            System.out.println("ReadIssuer - use cached : " + (cached == null ? null : Arrays.toString(cached)));
             return cached;
         }
         
@@ -1056,7 +1031,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put((byte)5);
         buf.position(0);
         try {
-        	System.out.println("Input for readIssuer: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for readIssuer: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from readIssuer: " + response);
             System.out.println("With the data: "+Arrays.toString(response.getData()));
@@ -1078,12 +1054,12 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{0, 0});
         buf.position(0);
         try {
-        	System.out.println("Input for getDeviceCommitment: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for getDeviceCommitment: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from getDeviceCommitment: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
             	System.out.println("And this is the output: " + Arrays.toString(response.getData()));
-            	System.out.println("gives this bigInt: " + new BigInteger(response.getData()));
             	System.out.println("Or this bigInt: " + new BigInteger(1, response.getData()));
                 return new BigInteger(1, response.getData());
             }
@@ -1103,7 +1079,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{0,0});
         buf.position(0);
         try {
-        	System.out.println("Input for getScopeExclusiveCommitment: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for getScopeExclusiveCommitment: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from getScopeExclusiveCommitment: "+response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -1128,13 +1105,14 @@ public class HardwareSmartcard implements Smartcard {
         System.out.println("data length: " + data.length);
         System.arraycopy(nonceCommitment, 0, data, 6, 16);        
         System.arraycopy(challengeHashPreimage, 0, data, 4+1+1+16, challengeHashPreimage.length);
-
-        ByteBuffer buf = ByteBuffer.allocate(9+data.length);        
+        
+        ByteBuffer buf = ByteBuffer.allocate(7 + data.length);        
         buf.put(new byte[]{(byte) this.ABC4TRUSTCMD, this.startResponses, 0, 0, 0});
         buf.put(this.intLengthToShortByteArr(data.length));
         buf.put(data);
         buf.position(0);
-        System.out.println("Input for startResponses: " + Arrays.toString(buf.array()));
+        if(printInput)
+    		System.out.println("Input for startResponses: " + Arrays.toString(buf.array()));
         try {
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from startResponses: "+response );
@@ -1171,7 +1149,8 @@ public class HardwareSmartcard implements Smartcard {
             buf.put(new byte[]{0, 0});
             buf.position(0);
             try {
-            	System.out.println("Input for "+command+": " + Arrays.toString(buf.array()));
+            	if(printInput)
+            		System.out.println("Input for "+command+": " + Arrays.toString(buf.array()));
                 ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
                 System.out.println("Response from "+command+": " + response);
                 if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
@@ -1202,7 +1181,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{0, 0});
         buf.position(0);
         try {
-        	System.out.println("Input for getDeviceResponse: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for getDeviceResponse: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from getDeviceResponse: " + response);
             System.out.println("And this is the output: " + Arrays.toString(response.getData()));
@@ -1234,7 +1214,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{0, 0});
         buf.position(0);
         try {
-        	System.out.println("Input for getCredentialPublicKey: " + credentialId + " : " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for getCredentialPublicKey: " + credentialId + " : " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from getCredentialPublicKey (fragment): " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -1264,7 +1245,7 @@ public class HardwareSmartcard implements Smartcard {
     
     @Override
 	public SmartcardStatusCode storeCredential(int pin, URI credentialId, Credential cred, CredentialSerializer serializer){    	
-    	this.detectMaxBlobSize(pin);
+    	//this.detectMaxBlobSize(pin);
     	byte[] credBytes = serializer.serializeCredential(cred);    	    
     	System.out.println("CredBytes length: " + credBytes.length);
     	int nextCredBlobUri = 1;
@@ -1297,7 +1278,7 @@ public class HardwareSmartcard implements Smartcard {
     
     @Override
 	public SmartcardStatusCode storePseudonym(int pin, URI pseudonymId, PseudonymWithMetadata pseudo, PseudonymSerializer serializer){
-    	this.detectMaxBlobSize(pin);
+    	//this.detectMaxBlobSize(pin);
     	byte[] pseudoBytes = serializer.serializePseudonym(pseudo);
     	System.out.println("PseudoBytes length: " + pseudoBytes.length);
     	int nextPseudoBlobUri = 1;
@@ -1329,28 +1310,27 @@ public class HardwareSmartcard implements Smartcard {
     }
 	
     @Override
-	public PseudonymWithMetadata getPseudonym(int pin, URI pseudonymId, PseudonymSerializer serializer){
-    	this.detectMaxBlobSize(pin);
+	public PseudonymWithMetadata getPseudonym(int pin, URI pseudonymUID, PseudonymSerializer serializer){
 		ByteArrayOutputStream accumulatedPseuBytes = new ByteArrayOutputStream();
-		return getPseudonym(pin, pseudonymId, 1, accumulatedPseuBytes, serializer);
+		return getPseudonym(pin, pseudonymUID, 1, accumulatedPseuBytes, serializer);
 	}
 	
-	private PseudonymWithMetadata getPseudonym(int pin, URI pseudonymId, int nextPseuBlobUriId, 
+	private PseudonymWithMetadata getPseudonym(int pin, URI pseudonymUID, int nextPseuBlobUriId, 
 			ByteArrayOutputStream accumulatedPseuBytes, PseudonymSerializer serializer){
 		System.out.println("Accumulated this many bytes: "  + accumulatedPseuBytes.size());
-    	URI nextPseuBlobUri = URI.create(pseudonymId.toASCIIString()+"_"+nextPseuBlobUriId);
+    	URI nextPseuBlobUri = URI.create(pseudonymUID.toASCIIString()+"_"+nextPseuBlobUriId);
     	System.out.println("getting this uri: " + nextPseuBlobUri.toASCIIString());
     	SmartcardBlob scBlob = this.getBlob(pin, nextPseuBlobUri);
     	if(scBlob == null){
-    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray());
+    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymUID);
     	}
     	byte[] blob = scBlob.blob;
     	accumulatedPseuBytes.write(blob, 0, blob.length);    	
     	if(blob.length < MAX_BLOB_BYTES){
-    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray());
+    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymUID);
     	}else{
     		//next round
-    		return getPseudonym(pin, pseudonymId, nextPseuBlobUriId+1, accumulatedPseuBytes, serializer);
+    		return getPseudonym(pin, pseudonymUID, nextPseuBlobUriId+1, accumulatedPseuBytes, serializer);
     	}
 	}
 	
@@ -1368,7 +1348,7 @@ public class HardwareSmartcard implements Smartcard {
     
 	@Override
     public Credential getCredential(int pin, URI credentialId, CredentialSerializer serializer){	
-		this.detectMaxBlobSize(pin);
+		//this.detectMaxBlobSize(pin);
     	ByteArrayOutputStream accumulatedCredBytes = new ByteArrayOutputStream();
     	return getCredential(pin, credentialId, 1, accumulatedCredBytes, serializer);
     }
@@ -1402,7 +1382,7 @@ public class HardwareSmartcard implements Smartcard {
         }
 
         byte issuerID = this.getIssuerIDFromUri(pin, issuerParameters);        
-        byte newCredentialID = this.getNewCredentialID(pin, credentialId);
+        byte newCredentialID = this.getNewCredentialID(pin);
         if(newCredentialID == (byte)-1){
             return SmartcardStatusCode.INSUFFICIENT_STORAGE;
         }
@@ -1413,7 +1393,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(issuerID);
         buf.position(0);
         try {
-        	System.out.println("Input for setCredential: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for setCredential: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from setCredential: " + response);
             if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
@@ -1437,12 +1418,28 @@ public class HardwareSmartcard implements Smartcard {
     @Override
     public SmartcardStatusCode deleteCredential(int pin, URI credentialId) {
         byte credID = this.getCredentialIDFromUri(pin, credentialId);
-        byte[] data = new byte[4+1];
-        System.arraycopy(this.pinToByteArr(pin), 0, data, 0, 4);
-        data[4] = credID;
+        ByteBuffer buf = ByteBuffer.allocate(10);
+        buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.removeCredential, 0, 0, 5});
+        buf.put(this.pinToByteArr(pin));
+        buf.put(credID);
+        buf.position(0);        
         try {
+        	System.out.println("Removing credential with uri: " + credentialId);
+        	this.deleteBlob(pin, credentialId);
+        	if(credentialId.toString().startsWith(UProveCryptoEngineUserImpl.UProveCredential)){
+        		URI reloadURI = URI.create(credentialId.toString()+ReloadStorageManager.URI_POSTFIX);
+        		if(reloadURI.toString().contains(":") && !reloadURI.toString().contains("_")){
+        			reloadURI = URI.create(reloadURI.toString().replaceAll(":", "_")); //change all ':' to '_'
+                }
+        		this.deleteBlob(pin, reloadURI);
+        		System.out.println("deleted the reload blob of the credential: " + reloadURI);
+        	}
             this.removeCredentialUri(pin, credentialId);
-            ResponseAPDU response = this.transmitCommand(new CommandAPDU(this.ABC4TRUSTCMD, this.removeCredential, 0, 0, data));
+            if(printInput)
+        		System.out.println("Input for removeCredential: " + Arrays.toString(buf.array()));
+            System.out.println("Trying to remove on-board credential with ID="+credID);
+            ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
+            System.out.println("response from RemoveCredential: " + response);
             return this.evaluateStatus(response);
         } catch (CardException e) {
             return SmartcardStatusCode.NOT_FOUND;
@@ -1475,10 +1472,9 @@ public class HardwareSmartcard implements Smartcard {
             buf.put(idAndDeviceKeySize);
             buf.put(new byte[]{0,0});
             buf.position(0);
-            System.out.println("Input to initialize device: " + Arrays.toString(buf.array()));
+            if(printInput)
+        		System.out.println("Input to initialize device: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
-            System.out.println("response from init device: " + response);
-            System.out.println("carrying the data: " + Arrays.toString(response.getData()));
             if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
                 return -1;
             }
@@ -1517,7 +1513,7 @@ public class HardwareSmartcard implements Smartcard {
             }
 
             //set prover
-            byte[] data = new byte[5+MAX_CREDENTIALS];
+            byte[] data = new byte[5+MAX_CREDENTIALS+1];
             data[0] = 1; //id 1
             int ksize = pseuParams.zkChallengeSizeBytes*2+pseuParams.zkStatisticalHidingSizeBytes;
             byte[] ksize_bytes = this.intLengthToShortByteArr(ksize);
@@ -1527,7 +1523,7 @@ public class HardwareSmartcard implements Smartcard {
             byte[] csize_bytes = this.intLengthToShortByteArr(csize);
             data[3] = csize_bytes[0];
             data[4] = csize_bytes[1]; // challenge size: 256 bit = 32 bytes (as per default in SystemParameters)
-            for(int i = 0; i < MAX_CREDENTIALS; i++){
+            for(int i = 0; i <= MAX_CREDENTIALS; i++){
             	//0 means it accepts both credentials and scope-exclusive stuff.
                 //1,2,3,... means it accepts credentials with id 1,2,3,...
             	data[i+5] = (byte)i;            	
@@ -1542,8 +1538,6 @@ public class HardwareSmartcard implements Smartcard {
             if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
                 return -1;
             }
-
-            //this.setWorkingMode(); //non-reversible. Only do this if everything else succeeded.
 
             //After init, one should call setIssuer which creates a group and counter.
             return Integer.parseInt(ipuk);
@@ -1595,7 +1589,6 @@ public class HardwareSmartcard implements Smartcard {
 
 
     Map<URI, SmartcardBlob> blobCache = new HashMap<URI, SmartcardBlob>();
-    boolean blobURIsValid = false;
     @Override
     public SmartcardStatusCode storeBlob(int pin, URI uri, SmartcardBlob blob) {
     	//this.resetCard();
@@ -1618,6 +1611,7 @@ public class HardwareSmartcard implements Smartcard {
         
         // BLOB CACHE!
         blobCache.put(uri, blob);
+        blobUrisCache.add(uri);
         
         //first put data from blob followed by the STORE BLOB command
         this.putData(blob.blob);
@@ -1630,9 +1624,13 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(data);
         buf.position(0);
         try {        	
-        	System.out.println("Input for storeBlob: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for storeBlob: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from storeBlob: " + response);
+            if((response.getSW1() != STATUS_OK) && (response.getSW1() != STATUS_BAD_PIN)){
+            	throw new InsufficientStorageException("Could not store blob. Response from card: " + response);
+            }
             return this.evaluateStatus(response);
         } catch (CardException e) {
             e.printStackTrace();
@@ -1649,7 +1647,7 @@ public class HardwareSmartcard implements Smartcard {
         }
         // BLOB CACHE!
         blobCache.remove(uri);
-        blobURIsValid = false;
+        blobUrisCache.remove(uri);
         
         byte[] data = new byte[4+uriBytes.length];
         System.arraycopy(this.pinToByteArr(pin), 0, data, 0, 4);
@@ -1659,7 +1657,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(data);
         buf.position(0);
         try {
-        	System.out.println("Input for removeBlob: "+Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for removeBlob: "+Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from removeBlob: " + response);
             return this.evaluateStatus(response);
@@ -1668,10 +1667,10 @@ public class HardwareSmartcard implements Smartcard {
             return null;
         }
     }
-
+    
     @Override
     public Map<URI, SmartcardBlob> getBlobs(int pin) {
-        Set<URI> uris = this.getBlobUris(pin);
+    	Set<URI> uris = this.getBlobUris(pin);
         Map<URI, SmartcardBlob> result = new HashMap<URI, SmartcardBlob>();
         for(URI uri : uris){
             result.put(uri, this.getBlob(pin, uri));
@@ -1679,16 +1678,24 @@ public class HardwareSmartcard implements Smartcard {
         return result;
     }
 
+    private boolean loadedBlobUris = false;
+    private Set<URI> blobUrisCache = new HashSet<URI>();
     @Override
     public Set<URI> getBlobUris(int pin) {
         //TODO: Works only if the total length of URIs is less than 2048-#URIs-2
         Set<URI> uris = new HashSet<URI>();
+    	if(loadedBlobUris){
+    		System.out.println("Returning the cached blob uris: "+blobUrisCache);
+    		return blobUrisCache;
+    	}
         byte nread = 0;
         int eternalLoopPreventer = 0;
         while(true){
         	byte[] readInfo = this.getBlobUrisHelper(pin, uris, nread);
         	nread = readInfo[0];
         	if(readInfo[1] == 0){
+        		loadedBlobUris = true;
+        		blobUrisCache = uris;
         		return uris;
         	}
         	eternalLoopPreventer++;
@@ -1708,7 +1715,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{nread, 0, 0}); //first arg is how many URIs we read so far.
         buf.position(0);
         try {
-        	System.out.println("Input for listBlobs: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for listBlobs: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from listBlobs: " + response);
             if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
@@ -1718,7 +1726,6 @@ public class HardwareSmartcard implements Smartcard {
             System.out.println("data: " + Arrays.toString(data));
             int index = 0;
             while(true){
-                System.out.println("index: " +index);
                 if((index+2) == data.length){
                     //at the end, so the last two bytes is the updated number of read URIs and the number of unread URIs
                     //					System.out.println("data.length: " + data.length);
@@ -1730,7 +1737,6 @@ public class HardwareSmartcard implements Smartcard {
                     return new byte[]{nread, unread};                	                    
                 }else{
                     byte uriSize = data[index];
-                    System.out.println("uriSize: " + uriSize);
                     byte[] uri = new byte[uriSize];
                     System.arraycopy(data, index+1, uri, 0, uriSize);
                     uris.add(this.byteArrToUri(uri));
@@ -1767,7 +1773,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{0, 0});
         buf.position(0);
         try {
-        	System.out.println("Input for readBlob: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for readBlob: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from readBlob: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -1796,7 +1803,8 @@ public class HardwareSmartcard implements Smartcard {
         	buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.changePin, 0, 0, 8});
         	buf.put(data);
         	buf.position(0);
-        	System.out.println("Input for changePin: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for changePin: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from changePin: " + response);
             return this.evaluateStatus(response);
@@ -1831,7 +1839,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put(new byte[]{0});
         buf.position(0);
         try {
-        	System.out.println("Input for listCounters: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for listCounters: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from listCounters: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -1863,6 +1872,9 @@ public class HardwareSmartcard implements Smartcard {
         byte issuerID = this.getIssuerIDFromUri(pin, issuerUri);
         byte[] issuerInfo = this.readIssuer(pin, issuerID);
         byte counterID = issuerInfo[4];
+        if (counterID == 0) {
+        	return null;
+        }
         byte[] counterInfo = this.readCounter(pin, counterID);
         if(counterInfo == null){
             return null;
@@ -1898,6 +1910,9 @@ public class HardwareSmartcard implements Smartcard {
         	groupParams = new UProveParams(g, p, q);
         }
 
+        if (counterID == 0) {
+        	return new TrustedIssuerParameters(paramsUri, groupParams);
+        }
         byte[] counterInfo = this.readCounter(pin, counterID);
         if(counterInfo == null){
             return new TrustedIssuerParameters(paramsUri, groupParams);
@@ -1934,7 +1949,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put((byte)7);
         buf.position(0);
         try {
-        	System.out.println("Input for readCounter: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for readCounter: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from readCounter: " + response);
             System.out.println("With data: " + Arrays.toString(response.getData()));
@@ -2091,7 +2107,8 @@ public class HardwareSmartcard implements Smartcard {
                 buf.put(this.pinToByteArr(pin));
                 buf.put(Utils.passwordToByteArr(password));
                 buf.position(0);
-                System.out.println("command for restore credential: " + Arrays.toString(buf.array()));
+                if(printInput)
+            		System.out.println("Input for for restoreCredential: " + Arrays.toString(buf.array()));
                 this.putData(backup.macCredentials.get(credID));//put the encrypted data in the buffer
                 ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
                 System.out.println("Response from restoreCredential: " + response);
@@ -2137,7 +2154,8 @@ public class HardwareSmartcard implements Smartcard {
         buf.put((byte)0);
         buf.position(0);
         try {
-        	System.out.println("Input for listCredentials: " + Arrays.toString(buf.array()));
+        	if(printInput)
+        		System.out.println("Input for listCredentials: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from listCredentials: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -2157,8 +2175,11 @@ public class HardwareSmartcard implements Smartcard {
 
     @Override
     public SmartcardStatusCode deleteIssuer(int pin, URI issuerParameters, RSAKeyPair rootKey) {
-        byte issuerID = this.getIssuerIDFromUri(pin, issuerParameters);
-        this.authenticateData(new byte[]{issuerID}, rootKey, 0, this.removeIssuer);
+    	if(this.getMode() != 1){
+    		System.out.println("Can only use deleteIssuer in root mode");
+            return SmartcardStatusCode.UNAUTHORIZED;
+    	}
+        byte issuerID = this.getIssuerIDFromUri(pin, issuerParameters);        
         try {
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(this.ABC4TRUSTCMD, this.removeIssuer, 0, 0, new byte[]{issuerID}));
             return this.evaluateStatus(response);
@@ -2174,10 +2195,10 @@ public class HardwareSmartcard implements Smartcard {
     }
 
     @Override
-    public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(int pin,
-            RSAKeyPair rootKey, URI parametersUri, int keyIDForCounter, CredentialBases credBases,
+    public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
+    		URI parametersUri, int keyIDForCounter, CredentialBases credBases,
             RSAVerificationKey courseKey, int minimumAttendance) {
-        byte issuerID = this.getNewIssuerID(pin, parametersUri);
+        byte issuerID = this.getNewIssuerID(parametersUri);
         byte groupID = issuerID;
         byte genID1 = 1;
         byte genID2 = 2;
@@ -2205,7 +2226,8 @@ public class HardwareSmartcard implements Smartcard {
             //prior to the actual command,if we are in working mode,
             //we have to authenticate the input data first.
             if(mode == 2){
-                this.authenticateData(data, rootKey, 0, this.setIssuer);
+            	System.out.println("Can only use addIssuerParameters in root mode");
+                return SmartcardStatusCode.UNAUTHORIZED;
             }
             System.out.println("Input to setIssuer: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
@@ -2225,10 +2247,10 @@ public class HardwareSmartcard implements Smartcard {
         }
     }
     
-    public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(int pin,
-            RSAKeyPair rootKey, URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
+    public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
+            URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
             RSAVerificationKey courseKey, int minimumAttendance) {
-        byte issuerID = this.getNewIssuerID(pin, parametersUri);
+        byte issuerID = this.getNewIssuerID(parametersUri);
         byte groupID = issuerID;
         byte genID1 = 1;
         byte genID2 = 0; //Not used in UProve, thus set to 0.
@@ -2262,8 +2284,8 @@ public class HardwareSmartcard implements Smartcard {
             //prior to the actual command,if we are in working mode,
             //we have to authenticate the input data first.
             if(mode == 2){
-                this.authenticateData(data, rootKey, 0, this.setIssuer);
-            }
+            	System.out.println("Can only use addIssuerParameters in root mode");
+                return SmartcardStatusCode.UNAUTHORIZED;            }
 
             System.out.println("Input for setIssuer: " +Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
@@ -2284,9 +2306,9 @@ public class HardwareSmartcard implements Smartcard {
     }
 
     @Override
-    public SmartcardStatusCode addIssuerParameters(int pin, RSAKeyPair rootKey,
+    public SmartcardStatusCode addIssuerParameters(RSAKeyPair rootKey,
             URI parametersUri, CredentialBases credBases) {
-    	byte issuerID = this.getNewIssuerID(pin, parametersUri);
+    	byte issuerID = this.getNewIssuerID(parametersUri);
         byte groupID = issuerID;
         byte genID1 = 1;//R0
         byte genID2 = 2;//S
@@ -2319,10 +2341,8 @@ public class HardwareSmartcard implements Smartcard {
             //prior to the actual command, if we are in working mode,
             //we have to authenticate the input data first.
             if(mode == 2){
-                status = this.authenticateData(data, rootKey, this.ROOT_KEY_ID, this.setIssuer);
-                if(status != SmartcardStatusCode.OK){
-                	return status;
-                }
+            	System.out.println("Can only use addIssuerParameters in root mode");
+                return SmartcardStatusCode.UNAUTHORIZED;
             }
 
             System.out.println("Input for set Issuer: " +Arrays.toString(buf.array()));
@@ -2337,9 +2357,9 @@ public class HardwareSmartcard implements Smartcard {
     }
     
     @Override
-    public SmartcardStatusCode addUProveIssuerParameters(int pin, RSAKeyPair rootKey, 
+    public SmartcardStatusCode addUProveIssuerParameters(RSAKeyPair rootKey, 
     		URI parametersUri, UProveParams uProveParams){
-    	byte issuerID = this.getNewIssuerID(pin, parametersUri);
+    	byte issuerID = this.getNewIssuerID(parametersUri);
         byte groupID = issuerID;
         byte genID1 = 1;
         byte genID2 = 0;
@@ -2363,8 +2383,8 @@ public class HardwareSmartcard implements Smartcard {
             //prior to the actual command, if we are in working mode,
             //we have to authenticate the input data first.
             if(mode == 2){
-                this.authenticateData(data, rootKey, 0, this.setIssuer);
-            }
+            	System.out.println("Can only use addIssuerParameters in root mode");
+                return SmartcardStatusCode.UNAUTHORIZED;            }
 
             System.out.println("Input for setIssuer: " +Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
@@ -2409,7 +2429,8 @@ public class HardwareSmartcard implements Smartcard {
         try {
         	byte[] counterInfo = this.readCounter(pin, counterID);
             byte index = counterInfo[1];
-            System.out.println("Input for incrementCounter: " + Arrays.toString(buf.array()));
+            if(printInput)
+            	System.out.println("Input for incrementCounter: " + Arrays.toString(buf.array()));
             ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
             System.out.println("Response from incrementCounter: " + response);
             if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
@@ -2452,7 +2473,8 @@ public class HardwareSmartcard implements Smartcard {
     			buf.put(data);
     			buf.put((byte)16);
     			buf.position(0);     	
-    			System.out.println("Input for startCommitments: " + Arrays.toString(buf.array()));
+    			if(printInput)
+    				System.out.println("Input for startCommitments: " + Arrays.toString(buf.array()));
     			ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
     			System.out.println("Response from startCommitments: "+response);
     			System.out.println("And this is the output: " + Arrays.toString(response.getData()));
@@ -2469,7 +2491,8 @@ public class HardwareSmartcard implements Smartcard {
     			buf.put(new byte[]{0,0});
     			buf.position(0);
 
-    			System.out.println("Input for getIssuanceCommitment: " +Arrays.toString(buf.array()));
+    			if(printInput)
+    				System.out.println("Input for getIssuanceCommitment: " +Arrays.toString(buf.array()));
     			response = this.transmitCommand(new CommandAPDU(buf));
     			System.out.println("Response from getIssuanceCommitment: "+response);
     			if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
@@ -2483,12 +2506,13 @@ public class HardwareSmartcard implements Smartcard {
     	        data[5] = 1; //number of proofs - hardcoded to 1 for pilot.
     	        System.arraycopy(proofSession, 0, data, 6, 16);        
 
-    	        buf = ByteBuffer.allocate(9+data.length);        
+    	        buf = ByteBuffer.allocate(7+data.length);        
     	        buf.put(new byte[]{(byte) this.ABC4TRUSTCMD, this.startResponses, 0, 0, 0});
     	        buf.put(this.intLengthToShortByteArr(data.length));
     	        buf.put(data);
     	        buf.position(0);
-    	        System.out.println("Input for startResponses: " + Arrays.toString(buf.array()));
+    	        if(printInput)
+    				System.out.println("Input for startResponses: " + Arrays.toString(buf.array()));
 	            response = this.transmitCommand(new CommandAPDU(buf));
 	            System.out.println("Response from startResponses: "+response );    	            
 	            if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
@@ -2502,7 +2526,8 @@ public class HardwareSmartcard implements Smartcard {
 	            buf.put(credID);
 	            buf.put(new byte[]{0, 0});
 	            buf.position(0);
-            	System.out.println("Input for getIssuanceResponse: " + Arrays.toString(buf.array()));
+	            if(printInput)
+    				System.out.println("Input for getIssuanceResponse: " + Arrays.toString(buf.array()));
                 response = this.transmitCommand(new CommandAPDU(buf));
                 System.out.println("Response from getIssuanceResponse: " + response);
                 if(this.evaluateStatus(response) != SmartcardStatusCode.OK){

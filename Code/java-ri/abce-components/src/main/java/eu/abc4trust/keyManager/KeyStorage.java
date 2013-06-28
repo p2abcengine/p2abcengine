@@ -26,4 +26,6 @@ public interface KeyStorage {
     byte[] getValue(URI uri) throws Exception;
 
     void addValue(URI uri, byte[] key) throws IOException;
+    
+    void addValueAndOverwrite(URI uri, byte[] key) throws IOException;
 }

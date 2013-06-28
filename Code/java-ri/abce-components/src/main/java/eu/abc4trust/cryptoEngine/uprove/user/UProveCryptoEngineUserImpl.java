@@ -1,10 +1,11 @@
 //* Licensed Materials - Property of IBM, Miracle A/S,                *
-//* and Alexandra Instituttet A/S                                     *
+//* Alexandra Instituttet A/S, and Microsoft                          *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
 //* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
 //* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
 //* Rights Reserved.                                                  *
+//* (C) Copyright Microsoft Corp. 2012. All Rights Reserved.          *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*/**/****************************************************************
@@ -47,6 +48,7 @@ import eu.abc4trust.abce.internal.revocation.RevocationUtility;
 import eu.abc4trust.abce.internal.revocation.UserRevocation;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.idemix.user.CryptoEngineUtil;
 import eu.abc4trust.cryptoEngine.idemix.util.RevocationProofData;
@@ -102,7 +104,8 @@ import eu.abc4trust.xml.UnknownAttributes;
 public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
 
     public static final String UProveCredential = "UProveCredential";
-	private final KeyManager keyManager;
+	public static boolean RELOADING_TOKENS = false;
+    private final KeyManager keyManager;
     private final CredentialManager credManager;
     private final ContextGenerator contextGen;
 
@@ -118,12 +121,12 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
     private final CardStorage cardStorage;
     private final ReloadTokensCommunicationStrategy reloadTokens;
     private final CryptoEngineContext ctxt;
-    
+
     @Inject
     public UProveCryptoEngineUserImpl(KeyManager keyManager, CredentialManager credManager,
             AbcSmartcardManager smartcardManager, ContextGenerator contextGen,
             CryptoEngineContext ctxt, UserRevocation userRevocation,
-            RevocationProof revocationProof, CardStorage cardStorage, ReloadTokensCommunicationStrategy reloadTokens, 
+            RevocationProof revocationProof, CardStorage cardStorage, ReloadTokensCommunicationStrategy reloadTokens,
             UProveIssuanceHandling issuanceHandling) {
         // WARNING: Due to circular dependencies you MUST NOT dereference credManager
         // in this constructor.
@@ -145,18 +148,18 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         this.issuanceHandling = issuanceHandling;
 
         this.utils = new UProveUtils();
-        
+
         System.out.println("Hello from UProveCryptoEngineUserImpl()");
     }
 
     @Override
     public IssuanceToken createIssuanceToken(IssuanceTokenDescription itd,
             List<URI> creduids, List<Attribute> atts, List<URI> pseudonyms,
-            URI context) {    	
+            URI context) {
         // UProve does not support the ABC4Trust advanced Issuance setting yet.
         // Hence, the returned IssuanceToken is simply discarded later..
-    	
-        fillInAttributeCache(context, atts);
+
+        this.fillInAttributeCache(context, atts);
         this.tokenCache.put(context, itd);
         this.credCache.put(context, creduids);
 
@@ -170,9 +173,9 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         } catch (CredentialManagerException e) {
             e.printStackTrace();
         }
-        
-        ReloadInformation info = new ReloadInformation(itd,creduids, pseudonyms);
-        reloadTokens.setCredentialInformation(context, info);
+
+//        ReloadInformation info = new ReloadInformation(itd,creduids, pseudonyms);
+//        this.reloadTokens.setCredentialInformation(context, info);
 
         ObjectFactory of = new ObjectFactory();
         IssuanceToken ret = of.createIssuanceToken();
@@ -186,19 +189,19 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
 
         return ret;
     }
-    
+
     private void fillInAttributeCache(URI ctxtUri, List<Attribute> atts) {
-      List<MyAttribute> list = new ArrayList<MyAttribute>();
-      for(Attribute at: atts) {
-        MyAttribute myAtt = new MyAttribute(at);
-        list.add(myAtt);
-      }
-      ctxt.attributeCache.put(ctxtUri, list);
+        List<MyAttribute> list = new ArrayList<MyAttribute>();
+        for(Attribute at: atts) {
+            MyAttribute myAtt = new MyAttribute(at);
+            list.add(myAtt);
+        }
+        this.ctxt.attributeCache.put(ctxtUri, list);
     }
 
     @Override
     public Credential updateNonRevocationEvidence(Credential cred,
-            URI raparsuid, List<URI> revokedatts) throws CryptoEngineException {
+            URI raparsuid, List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException {
         return this.userRevocation.updateNonRevocationEvidence(cred, raparsuid,
                 revokedatts);
     }
@@ -206,7 +209,7 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
     @Override
     public Credential updateNonRevocationEvidence(Credential cred,
             URI raparsuid, List<URI> revokedatts, URI revinfouid)
-                    throws CryptoEngineException {
+                    throws CryptoEngineException, CredentialWasRevokedException {
         return this.userRevocation.updateNonRevocationEvidence(cred, raparsuid,
                 revokedatts, revinfouid);
     }
@@ -233,7 +236,7 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         // create UID of newly issued credential, allocate it on a smart-card
         URI uidOfNewCredential = this.contextGen.getUniqueContext(URI
                 .create(UProveCredential));
-        ctxt.uidOfIssuedCredentialCache.put(context, uidOfNewCredential);
+        this.ctxt.uidOfIssuedCredentialCache.put(context, uidOfNewCredential);
 
         // Find the URI of the secret.
         URI secretUid = null;
@@ -242,11 +245,13 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
                 .getSmartcardUidFromPseudonymOrCredentialUri(
                         aliasCreds, aliasNyms, sameKeyBindingAsUri);
 
-        ctxt.secretCache.put(context, secretUid);
+        this.ctxt.secretCache.put(context, secretUid);
 
         // boolean isOnSmartcard = false;
-        this.smartcardManager.allocateCredential(secretUid,
-                uidOfNewCredential, issuerParameters.getParametersUID(), false);
+        if(!RELOADING_TOKENS){
+        	this.smartcardManager.allocateCredential(secretUid,
+        			uidOfNewCredential, issuerParameters.getParametersUID(), false);
+        }
 
         // add carry over attribute values to the user values:
         List<Attribute> userValues = atts;
@@ -272,28 +277,28 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
 
         CryptoParams cryptoEvidence = of.createCryptoParams();
         try {
-			if(this.keyManager.getCredentialSpecification(itd.getCredentialTemplate().getCredentialSpecUID()).isKeyBinding()){
-				URI scUri = UProveUtils.getSmartcardUri(cardStorage);
-				if(scUri != null){
-					HardwareSmartcard sc = (HardwareSmartcard) cardStorage.getSmartcard(scUri);
-					BigInteger hd = sc.computeDevicePublicKey(cardStorage.getPin(scUri));
-					com.microsoft.schemas._2003._10.serialization.ObjectFactory fact = new com.microsoft.schemas._2003._10.serialization.ObjectFactory();
-					JAXBElement<byte[]> hdB = fact.createBase64Binary(hd.toByteArray());
-					cryptoEvidence.getAny().add(hdB);
-					
-					//CryptoParams innerCryptoEvidence = of.createCryptoParams();
-					//innerCryptoEvidence.getAny().add(hdB);
-					//PresentationToken token = of.createPresentationToken();
-					//token.setCryptoEvidence(innerCryptoEvidence);
-					//cryptoEvidence.getAny().add(token);
-//					String xml = UProveUtils.toXml();
-//					System.out.println("\n\n"+xml+"\n\n");
-				}
-			}
-		} catch (KeyManagerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
+            if(this.keyManager.getCredentialSpecification(itd.getCredentialTemplate().getCredentialSpecUID()).isKeyBinding()){
+                URI scUri = UProveUtils.getSmartcardUri(this.cardStorage);
+                if(scUri != null){
+                    HardwareSmartcard sc = (HardwareSmartcard) this.cardStorage.getSmartcard(scUri);
+                    BigInteger hd = sc.computeDevicePublicKey(this.cardStorage.getPin(scUri));
+                    com.microsoft.schemas._2003._10.serialization.ObjectFactory fact = new com.microsoft.schemas._2003._10.serialization.ObjectFactory();
+                    JAXBElement<byte[]> hdB = fact.createBase64Binary(hd.toByteArray());
+                    cryptoEvidence.getAny().add(hdB);
+
+                    //CryptoParams innerCryptoEvidence = of.createCryptoParams();
+                    //innerCryptoEvidence.getAny().add(hdB);
+                    //PresentationToken token = of.createPresentationToken();
+                    //token.setCryptoEvidence(innerCryptoEvidence);
+                    //cryptoEvidence.getAny().add(token);
+                    //					String xml = UProveUtils.toXml();
+                    //					System.out.println("\n\n"+xml+"\n\n");
+                }
+            }
+        } catch (KeyManagerException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         return cryptoEvidence;
     }
@@ -361,12 +366,12 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
                 revInfoUidToRevInfo.put(revInfoUid, revInfo);
             }
         }
-        
+
         try {
 
             UProveEvidenceGenerator generator = new UProveEvidenceGenerator(
                     this.credManager, this.keyManager, this.cryptoEngineUtil,
-                    ctxt.binding, this.cardStorage, this.reloadTokens);
+                    this.ctxt.binding, this.cardStorage, this.reloadTokens);
 
             List<Object> presentationEvidence = generator.getPresentationEvidence(ptdwc, aliasCreds, aliasNyms);
             if (presentationEvidence == null) {
@@ -380,22 +385,22 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
                 ObjectOutput out = null;
                 com.microsoft.schemas._2003._10.serialization.ObjectFactory fact = new com.microsoft.schemas._2003._10.serialization.ObjectFactory();
                 try {
-                	out = new ObjectOutputStream(bos);   
-                	out.writeObject(revocationProofData);
-                	out.writeObject(revInfoUidToRevInfo);
-                	out.flush();
-                	byte[] 	bytes = bos.toByteArray();
-                	serializedProofData = fact.createBase64Binary(bytes);
+                    out = new ObjectOutputStream(bos);
+                    out.writeObject(revocationProofData);
+                    out.writeObject(revInfoUidToRevInfo);
+                    out.flush();
+                    byte[] 	bytes = bos.toByteArray();
+                    serializedProofData = fact.createBase64Binary(bytes);
                 } finally {
-                	out.close();
-                	bos.close();
+                    out.close();
+                    bos.close();
                 }
             }catch(Exception e){
-            	System.err.println("Failed to serialize revocation proof data");
-            	throw new RuntimeException(e);
+                System.err.println("Failed to serialize revocation proof data");
+                throw new RuntimeException(e);
             }
-            
-                
+
+
             // Iterate over the newly created proof to find any committed
             // values and place that data into the committedattributes in
             // the credentials in the presentationtokendescription
@@ -416,7 +421,7 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
                                     URI committedIndexType = this.keyManager.getCredentialSpecification(c.getCredentialSpecUID()).getAttributeDescriptions().getAttributeDescription().get(index).getType();
                                     for(CommittedAttribute ca: c.getCommittedAttribute()){
                                         if(ca.getAttributeType().equals(committedIndexType)){
-                                        	// Set opening information = TildeO
+                                            // Set opening information = TildeO
                                             CryptoParams opening = of.createCryptoParams();
                                             opening.getAny().add(tildeO.getChildNodes().item(count));
                                             ca.setOpeningInformation(opening);
@@ -462,7 +467,7 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
             cryptoEvidence.getAny().addAll(presentationEvidence);
             cryptoEvidence.getAny().add(serializedProofData);
         } catch (Exception ex) {
-        	ex.printStackTrace();
+            ex.printStackTrace();
             throw new RuntimeException(ex);
         }
         ret.setCryptoEvidence(cryptoEvidence);
@@ -490,12 +495,11 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         try {
             UProveEvidenceGenerator generator = new UProveEvidenceGenerator(
                     this.credManager, this.keyManager, this.cryptoEngineUtil,
-                    ctxt.binding, this.cardStorage, this.reloadTokens);
-            System.out.println("Trying to get a uprove token from the list: " + Arrays.toString(aliasCreds.values().toArray()));
+                    this.ctxt.binding, this.cardStorage, this.reloadTokens);
             List<Object> presentationEvidence = generator.getPresentationEvidence(ptd, aliasCreds, aliasNyms);
             if (presentationEvidence == null) {
-                // We have run out of U-Prove tokens.            	
-            	throw new RuntimeException("We have run out of U-Prove tokens");
+                // We have run out of U-Prove tokens.
+                throw new RuntimeException("We have run out of U-Prove tokens");
             }
             cryptoEvidence.getAny().addAll(presentationEvidence);
         } catch (Exception ex) {
@@ -523,7 +527,7 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         p.setPseudonymUID(pseudonymUri);
         pwm.setPseudonym(p);
 
-        URI scURI = UProveUtils.getSmartcardUri(cardStorage);
+        URI scURI = UProveUtils.getSmartcardUri(this.cardStorage);
         String sessionKey = null;
         SystemParameters syspars;
         try {
@@ -533,14 +537,14 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         }
 
         int keyLength = new UProveSystemParameters(syspars).getKeyLength();
-        
-        if(scURI != null){                
-        	int credID = -1;
-        	sessionKey = utils.getSessionKey(ctxt.binding, cardStorage, credID, keyLength);                	
+
+        if(scURI != null){
+            int credID = -1;
+            sessionKey = this.utils.getSessionKey(this.ctxt.binding, this.cardStorage, credID, keyLength);
         }else{
-        	sessionKey = utils.getSessionKey(ctxt.binding, keyLength);
+            sessionKey = this.utils.getSessionKey(this.ctxt.binding, keyLength);
         }
-        
+
         try {
             // this.binding.setSecret(secret.getSecretKey().toByteArray());
             UProveSerializer serializer = new UProveSerializer();
@@ -548,8 +552,8 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
             IssuerParametersComposite ipc = this
                     .createIssuerParametersForPseudonym();
 
-            ctxt.binding.verifyIssuerParameters(ipc, sessionKey);
-            PseudonymComposite pc = ctxt.binding.presentPseudonym(scope, exclusive ? scope : null, sessionKey);
+            this.ctxt.binding.verifyIssuerParameters(ipc, sessionKey);
+            PseudonymComposite pc = this.ctxt.binding.presentPseudonym(scope, exclusive ? scope : null, sessionKey);
             p.setPseudonymValue(pc.getP().getValue());
             ObjectFactory of = new ObjectFactory();
             CryptoParams cryptoEvidence = of.createCryptoParams();
@@ -656,17 +660,17 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         }
 
         int keyLength = new UProveSystemParameters(syspars).getKeyLength();
-        
-        if (!ctxt.sessionKeyCache.containsKey(uriId)) {
-        	sessionKey = utils.getSessionKey(ctxt.binding, keyLength);
-        	ctxt.sessionKeyCache.put(uriId, sessionKey);
+
+        if (!this.ctxt.sessionKeyCache.containsKey(uriId)) {
+            sessionKey = this.utils.getSessionKey(this.ctxt.binding, keyLength);
+            this.ctxt.sessionKeyCache.put(uriId, sessionKey);
         } else {
-        	sessionKey = ctxt.sessionKeyCache.get(uriId);
+            sessionKey = this.ctxt.sessionKeyCache.get(uriId);
         }
-        
+
         byte[] attributeEncoding = new byte[0];
 
-        IssuerKeyAndParametersComposite issuerKeyAndParametersComposite = ctxt.binding
+        IssuerKeyAndParametersComposite issuerKeyAndParametersComposite = this.ctxt.binding
                 .setupIssuerParameters(uniqueIdentifier, attributeEncoding,
                         hash.toString(), sessionKey);
 
@@ -679,6 +683,11 @@ public class UProveCryptoEngineUserImpl implements CryptoEngineUser {
         IssuerParametersComposite ipc = issuerKeyAndParametersComposite
                 .getIssuerParameters().getValue();
         return ipc;
+    }
+
+    @Override
+    public boolean isRevoked(Credential cred) throws CryptoEngineException {
+        return this.userRevocation.isRevoked(cred);
     }
 
 }

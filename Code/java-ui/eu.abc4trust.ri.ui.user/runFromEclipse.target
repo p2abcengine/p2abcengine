@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target name="Run ABC4Trust UI from within Eclipse" sequenceNumber="45">
+<locations>
+<location path="C:\Users\frp\.m2\repository\p2\osgi\bundle\javax.activation\1.1.0.v201108011116" type="Directory"/>
+<location path="C:\Users\frp\.m2\repository\p2\osgi\bundle\javax.mail\1.4.0.v201005080615" type="Directory"/>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="slicer" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.rap.incubator.feature.feature.group" version="1.4.0.201108091246"/>
+<repository location="http://download.eclipse.org/rt/rap/1.4/incubator"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="slicer" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.equinox.sdk.feature.group" version="3.8.0.v20120522-1841-7M7fA78g5_y-g-jtHxcd5k8q8lFR"/>
+<unit id="org.eclipse.rap.runtime.requirements.feature.group" version="1.5.1.20120917-1130"/>
+<unit id="org.eclipse.rap.runtime.feature.group" version="1.5.1.20120917-1130"/>
+<repository location="http://download.eclipse.org/releases/juno"/>
+</location>
+</locations>
+</target>

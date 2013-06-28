@@ -13,7 +13,9 @@ package eu.abc4trust.ri.servicehelper.verifier;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -22,12 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.JAXBElement;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import eu.abc4trust.abce.external.verifier.SynchronizedVerifierAbcEngineImpl;
 import eu.abc4trust.abce.external.verifier.VerifierAbcEngine;
+import eu.abc4trust.abce.internal.verifier.tokenManager.TokenStorage;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveBindingManager;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.exceptions.TokenVerificationException;
@@ -42,6 +47,7 @@ import eu.abc4trust.xml.ApplicationData;
 import eu.abc4trust.xml.CredentialInPolicy;
 import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives;
 import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives.IssuerParametersUID;
+import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.Message;
@@ -232,7 +238,9 @@ public class VerificationHelper extends AbstractHelper {
     public VerifierAbcEngine engine;
     // public KeyManager verifierKeyManager;
     private Random random;
+    private TokenStorage tokenStorage;
 
+    
     // needed for 'reset'
     private UProveBindingManager uproveBindingManager = null;
 
@@ -242,6 +250,10 @@ public class VerificationHelper extends AbstractHelper {
     private final Map<String, byte[]> policyResouceMap = new HashMap<String, byte[]>();
     private final ObjectFactory of = new ObjectFactory();
 
+    /**
+     * Used when creating a presentationPolicy to be later fetched when verifying a presentation token.
+     */
+    Map<URI, RevocationInformation> revocationInformationStore = new HashMap<URI, RevocationInformation>();
 
     /**
      * Private constructor - initializes ABCE
@@ -265,12 +277,14 @@ public class VerificationHelper extends AbstractHelper {
 
             Injector injector = Guice.createInjector(ProductionModuleFactory.newModule(configuration, cryptoEngine));
 
-            this.engine = injector.getInstance(VerifierAbcEngine.class);
+            VerifierAbcEngine e = injector.getInstance(VerifierAbcEngine.class);
 
+            this.engine = new SynchronizedVerifierAbcEngineImpl(e);
             this.keyManager = injector.getInstance(KeyManager.class);
 
             this.random = injector.getInstance(Random.class);
             
+            this.tokenStorage = injector.getInstance(TokenStorage.class);
 
             if((cryptoEngine == CryptoEngine.UPROVE) || (cryptoEngine == CryptoEngine.BRIDGED)) {
                 this.uproveBindingManager = injector.getInstance(UProveBindingManager.class);
@@ -352,7 +366,7 @@ public class VerificationHelper extends AbstractHelper {
                 + applicationData);
 
         PresentationPolicyAlternatives pp_alternatives =
-                this.createPresentationPolicy(policyName, nonce, applicationData);
+                this.createPresentationPolicy(policyName, nonce, applicationData, null);
         JAXBElement<PresentationPolicyAlternatives> result =
                 this.of.createPresentationPolicyAlternatives(pp_alternatives);
 
@@ -363,15 +377,22 @@ public class VerificationHelper extends AbstractHelper {
         return xml;
 
     }
+    
+    public PresentationPolicyAlternatives modifyPresentationPolicy(PresentationPolicyAlternatives ppa, 
+    		byte[] nonce, String applicationData, Map<URI, URI> revInfoUIDs) throws Exception{
+    	modifyPPA(ppa, applicationData, nonce, revInfoUIDs);
+    	return ppa;
+    }
 
     /**
      * @param policyName name of policy resource (without path)
      * @param applicationData if present - will be inserted on all presentation policies
+     * @param revInfoUIDs if present - will try to fetch revocation information based on the uids.
      * @return PresentationPolicyAlternatives - patched with applicationData
      * @throws Exception
      */
     public PresentationPolicyAlternatives createPresentationPolicy(String policyName, byte[] nonce,
-            String applicationData) throws Exception {
+            String applicationData, Map<URI, URI> revInfoUIDs) throws Exception {
         System.out.println("VerificationHelper - create policy : " + policyName + " - data : "
                 + applicationData);
 
@@ -393,11 +414,23 @@ public class VerificationHelper extends AbstractHelper {
                     "Could not init PresentationPolicy - event though it should have been verifed...");
         }
 
-        for (PresentationPolicy pp : pp_alternatives.getPresentationPolicy()) {
+        modifyPPA(pp_alternatives, applicationData, nonce, revInfoUIDs);
+
+        return pp_alternatives;
+    }
+    
+    private PresentationPolicyAlternatives modifyPPA(PresentationPolicyAlternatives pp_alternatives, String applicationData, 
+    		byte[] nonce, Map<URI, URI> revInfoUIDs) throws Exception{
+
+        // try to make sure that RevocationInformation is only fetch once per RevAuth
+        Map<URI, RevocationInformation> revocationInformationMap = new HashMap<URI, RevocationInformation>();
+
+    	for (PresentationPolicy pp : pp_alternatives.getPresentationPolicy()) {
 
             Message message = pp.getMessage();
             // set nonce
-            message.setNonce(nonce);
+	        message.setNonce(nonce);
+
 
             // set application data
             if (applicationData != null) {
@@ -413,10 +446,11 @@ public class VerificationHelper extends AbstractHelper {
             for (CredentialInPolicy cred : pp.getCredential()) {
                 List<URI> credSpecURIList = cred.getCredentialSpecAlternatives().getCredentialSpecUID();
                 boolean containsRevoceableCredential = false;
+                CredentialSpecification credSpec = null;
                 for(URI uri : credSpecURIList) {
                     try {
-                        CredentialSpecification credSped = keyManager.getCredentialSpecification(uri);
-                        if(credSped.isRevocable()) {
+                        credSpec = keyManager.getCredentialSpecification(uri);
+                        if(credSpec.isRevocable()) {
                             containsRevoceableCredential = true;
                             break;
                         }
@@ -424,24 +458,32 @@ public class VerificationHelper extends AbstractHelper {
                     }
                 }
                 if(containsRevoceableCredential) {
-                    Map<URI, RevocationInformation> revocationInformationMap = new HashMap<URI, RevocationInformation>();
-                  
-                  
                     IssuerAlternatives ia = cred.getIssuerAlternatives();
                     System.out.println("WE HAVE REVOCEABLE CREDENTIAL : " + ia);
                     for (IssuerParametersUID ipUid : ia.getIssuerParametersUID()) {
                         IssuerParameters ip = keyManager.getIssuerParameters(ipUid.getValue());
                         if(ip!=null && ip.getRevocationParametersUID()!=null) {
                             // issuer params / credspec has revocation...
-                            RevocationInformation ri = revocationInformationMap.get(ip.getRevocationParametersUID());
+                        	RevocationInformation ri;
+                        	System.out.println("revInfoUIDs: " + revInfoUIDs);
+                        	if(revInfoUIDs != null){
+                        		System.out.println("Trying to get revInfo under "+ credSpec.getSpecificationUID());
+                        		URI revInformationUid = revInfoUIDs.get(credSpec.getSpecificationUID());
+                        		ri = this.revocationInformationStore.get(revInformationUid);
+                        		System.out.println("Got revInfo: " + ri.getInformationUID()+", which should be the same as: "+revInformationUid);
+                        	}else{
+                        		ri = revocationInformationMap.get(ip.getRevocationParametersUID());
+                        	}
                             System.out.println("RevocationInformation : " + ri);
                             if(ri==null) {
+                            	System.out.println("Getting rev parameters uid information: " + ip.getRevocationParametersUID());
                                 ri = keyManager.getLatestRevocationInformation(ip.getRevocationParametersUID());
                                 revocationInformationMap.put(ip.getRevocationParametersUID(), ri);
+                                this.revocationInformationStore.put(ri.getInformationUID(), ri);
                             }
                             System.out.println("RevocationInformation : " + ri.getInformationUID());
                             URI revInfoUid = ri.getInformationUID();
-                            ipUid.setRevocationInformationUID(revInfoUid);
+                            ipUid.setRevocationInformationUID(revInfoUid);                            
                         }
                     }
                 }
@@ -486,7 +528,7 @@ public class VerificationHelper extends AbstractHelper {
                 + " - applicationData : " + applicationData + " - token : " + presentationTokenXml);
 
         PresentationPolicyAlternatives pp =
-                this.createPresentationPolicy(policyName, nonce, applicationData);
+                this.createPresentationPolicy(policyName, nonce, applicationData, null);
         return this.verifyToken(pp, this.getPatchedPresetationToken(presentationTokenXml));
     }
 
@@ -506,10 +548,33 @@ public class VerificationHelper extends AbstractHelper {
         String orig = XmlUtils.toXml(this.of.createPresentationToken(presentationToken));
         presentationToken = this.getPatchedPresetationToken(orig);
 
+        Map<URI, URI> revInfoUIDs = this.extractRevInfoUIDs(presentationToken);        
+        
         PresentationPolicyAlternatives pp =
-                this.createPresentationPolicy(policyName, nonce, applicationData);
+                this.createPresentationPolicy(policyName, nonce, applicationData, revInfoUIDs);
 
         return this.verifyToken(pp, presentationToken);
+    }    
+    
+    private Map<URI, URI> extractRevInfoUIDs(PresentationToken pt){
+    	Map<URI, URI> revInfoUIDs = null;
+    	for(CredentialInToken cred : pt.getPresentationTokenDescription().getCredential()){
+            boolean containsRevoceableCredential = false;            
+            try {
+                CredentialSpecification credSpec = keyManager.getCredentialSpecification(cred.getCredentialSpecUID());
+                if(credSpec.isRevocable()) {
+                    containsRevoceableCredential = true;
+                }
+            } catch(KeyManagerException ignore) {
+            }
+            if(containsRevoceableCredential) {
+            	if(revInfoUIDs == null){
+            		revInfoUIDs = new HashMap<URI, URI>();
+            	}
+            	revInfoUIDs.put(cred.getCredentialSpecUID(), cred.getRevocationInformationUID());
+            }
+        }
+    	return revInfoUIDs;
     }
 
     /**
@@ -556,4 +621,25 @@ public class VerificationHelper extends AbstractHelper {
         this.random.nextBytes(nonceBytes);
         return nonceBytes;
     }
+
+    
+    public void registerSmartcardScopeExclusivePseudonym(BigInteger pse) throws IOException {
+    	String primaryKey = DatatypeConverter.printBase64Binary(pse.toByteArray());
+    	registerSmartcardScopeExclusivePseudonym(primaryKey);
+    }
+    public void registerSmartcardScopeExclusivePseudonym(byte[] pseValueAsBytes) throws IOException {
+    	String primaryKey = DatatypeConverter.printBase64Binary(pseValueAsBytes);
+    	registerSmartcardScopeExclusivePseudonym(primaryKey);
+    }
+	public void registerSmartcardScopeExclusivePseudonym(String b64Encoded_pseudonymValue) throws IOException {
+    	String primaryKey = b64Encoded_pseudonymValue;
+        
+        if(! tokenStorage.checkForPseudonym(primaryKey)) {
+        	System.out.println("registerSmartcardScopeExclusivePseudonym - register new pseudonym  - PseudonymPrimaryKey : " + primaryKey);
+        	tokenStorage.addPseudonymPrimaryKey(primaryKey);
+        } else {
+        	System.out.println("registerSmartcardScopeExclusivePseudonym - already registered");
+        }
+    }
+
 }

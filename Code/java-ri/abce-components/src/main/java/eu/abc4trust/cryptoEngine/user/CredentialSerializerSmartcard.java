@@ -97,9 +97,10 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
   
   private static final int AS_XML = 0;
   private static final int IDEMIX_CREDENTIAL = 1;
-  private static final int NON_REVOCATION_EVIDENCE = 2;
-  private static final int AS_JAVA_OBJECT = 3;
-  private static final int UPROVE_KEY_AND_TOKEN = 4;
+  private static final int NON_REVOCATION_EVIDENCE_AS_JAXB = 2;
+  private static final int NON_REVOCATION_EVIDENCE = 3;
+  private static final int AS_JAVA_OBJECT = 4;
+  private static final int UPROVE_KEY_AND_TOKEN = 5;
   
   @Inject
   public CredentialSerializerSmartcard(KeyManager keyManager,
@@ -387,8 +388,11 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
         debug(ser, "= Xml");
       }
     } else if(o instanceof JAXBElement && ((JAXBElement)o).getValue().getClass().equals(NonRevocationEvidence.class)) {
-      serializeNre(ser, (NonRevocationEvidence)XmlUtils.unwrap(o, NonRevocationEvidence.class), mycd);
+      serializeNre(ser, (NonRevocationEvidence)XmlUtils.unwrap(o, NonRevocationEvidence.class), mycd, true);
       debug(ser, "= Nre");
+    }else if(o instanceof NonRevocationEvidence){
+    	serializeNre(ser, (NonRevocationEvidence)o, mycd, false);
+    	debug(ser, "=Nre");
     } else if(o instanceof ArrayList<?>){
     	ArrayList<?> arr = (ArrayList<?>)o;
     	if(arr.size() > 0 && arr.get(0) instanceof UProveKeyAndToken){
@@ -401,9 +405,16 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
     			debug(ser, "= UProveKeyAndToken");
     		}
     	}else{
-    		//Should not happen, as UProve should not contain arraylists of other types than UProveKeyAndToken?
-    		System.err.println("\n\n Cred compression - Ensure that this does not happen. Serializing arraylist of unknown type \n\n");
-    		serializeAsJavaObject(ser, o);	
+    		if(arr.size() == 0){
+    			//TODO: Serializing empty array list. Must be able to do this smarter somehow using a few bytes.
+    			CompressorUtils.writeLength(ser, UPROVE_KEY_AND_TOKEN);
+    			CompressorUtils.writeLength(ser, arr.size());
+    			//serializeAsJavaObject(ser, o);
+    		}else{
+	    		//Should not happen, as UProve should not contain arraylists of other types than UProveKeyAndToken!
+	    		System.err.println("\n\n Cred compression - Ensure that this does not happen. Serializing arraylist of unknown type \n\n");
+	    		serializeAsJavaObject(ser, o);
+    		}
     	}	    	
     } else {
       serializeAsJavaObject(ser, o);
@@ -460,9 +471,13 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
   }
 
   
-  private void serializeNre(ByteArrayOutputStream ser, NonRevocationEvidence nre, MyCredentialDescription mycd) throws KeyManagerException {
+  private void serializeNre(ByteArrayOutputStream ser, NonRevocationEvidence nre, MyCredentialDescription mycd, boolean asJAXB) throws KeyManagerException {
     
-    CompressorUtils.writeLength(ser, NON_REVOCATION_EVIDENCE);
+    if(asJAXB){
+    	CompressorUtils.writeLength(ser, NON_REVOCATION_EVIDENCE_AS_JAXB);
+    }else{
+    	CompressorUtils.writeLength(ser, NON_REVOCATION_EVIDENCE);
+    }
     debug(ser, "-    Header NRE");
     // Skip UID
     CompressorUtils.writeStringSmart(ser, nre.getRevocationAuthorityParametersUID().toString(), invertedListOfPrefixes);
@@ -486,10 +501,12 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
     debug(ser, "-    wit");
     CompressorUtils.writeBigInteger(ser, wit.getState().getAccumulatorValue());
     debug(ser, "-    acc");
+    CompressorUtils.writeBigInteger(ser, wit.getValue());
+    debug(ser, "-    acc value");
   }
   
   
-  private Object unserializeNre(ByteArrayInputStream bais, MyCredentialDescription cd, URI nreuri) {
+  private Object unserializeNre(ByteArrayInputStream bais, MyCredentialDescription cd, URI nreuri, boolean asJAXB) {
     try {
       BigInteger rh = cd.getAttributeValue(URI.create(MyCredentialSpecification.REVOCATION_HANDLE)).getIntegerValueOrNull();
       
@@ -499,6 +516,7 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
       int epoch = CompressorUtils.readBigInteger(bais).intValue();
       BigInteger witness = CompressorUtils.readBigInteger(bais);
       BigInteger accValue = CompressorUtils.readBigInteger(bais);
+      BigInteger accValue2 = CompressorUtils.readBigInteger(bais);
       
       RevocationAuthorityParameters rap = keyManager.getRevocationAuthorityParameters(URI.create(rapid));
       AccumulatorPublicKey apk = (AccumulatorPublicKey)Parser.getInstance().parse((Element)rap.getCryptoParams().getAny().get(0));
@@ -510,7 +528,7 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
       GregorianCalendar gc2 = new GregorianCalendar(tz);
       gc2.setTimeInMillis(expires.longValue());
       XMLGregorianCalendar lastChange = DatatypeFactory.newInstance().newXMLGregorianCalendar(gc1);
-      AccumulatorWitness aw = new AccumulatorWitness(new AccumulatorState(apk, epoch, accValue, lastChange), rh, witness);
+      AccumulatorWitness aw = new AccumulatorWitness(new AccumulatorState(apk, epoch, accValue, lastChange), accValue2, witness);      
       Element awel = XMLSerializer.getInstance().serializeAsElement(aw);
       
       NonRevocationEvidence nre = new NonRevocationEvidence();
@@ -525,7 +543,11 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
       nre.setNonRevocationEvidenceUID(nreuri);
       nre.setRevocationAuthorityParametersUID(URI.create(rapid));
       nre.getAttribute().add(cd.getAttribute(URI.create(MyCredentialSpecification.REVOCATION_HANDLE)).getXmlAttribute());
-      return new ObjectFactory().createNonRevocationEvidence(nre);
+      if(asJAXB){
+    	  return new ObjectFactory().createNonRevocationEvidence(nre);
+      }else{
+    	  return nre;
+      }
     } catch(Exception e) {
       throw new RuntimeException(e);
     }
@@ -659,8 +681,10 @@ public class CredentialSerializerSmartcard implements CredentialSerializer {
         return unserializeFromXml(bais);
       case IDEMIX_CREDENTIAL:
         return unserializeAsIdemixCredential(bais, cd);
+      case NON_REVOCATION_EVIDENCE_AS_JAXB:
+    	  return unserializeNre(bais, cd, listIter.next(), true);
       case NON_REVOCATION_EVIDENCE:
-        return unserializeNre(bais, cd, listIter.next());
+        return unserializeNre(bais, cd, listIter.next(), false);      
       case UPROVE_KEY_AND_TOKEN:
     	return unserializeUProveKeyAndTokenArray(bais);
       case AS_JAVA_OBJECT:

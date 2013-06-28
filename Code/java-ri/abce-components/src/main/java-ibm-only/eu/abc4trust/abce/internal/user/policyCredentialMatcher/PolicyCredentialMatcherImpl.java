@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,16 +29,22 @@ import com.google.inject.Inject;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.abce.internal.user.evidenceGeneration.EvidenceGenerationOrchestration;
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.exceptions.TokenIssuanceException;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
+import eu.abc4trust.returnTypes.UiIssuanceArguments;
+import eu.abc4trust.returnTypes.UiIssuanceReturn;
+import eu.abc4trust.returnTypes.UiPresentationArguments;
+import eu.abc4trust.returnTypes.UiPresentationReturn;
 import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUiConverter;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUiPrinter;
 import eu.abc4trust.util.ContextGenerator;
+import eu.abc4trust.util.DummyForNewABCEInterfaces;
 import eu.abc4trust.util.MyCandidateToken;
 import eu.abc4trust.util.MyCredentialDescription;
 import eu.abc4trust.util.MyCredentialSpecification;
@@ -70,7 +77,19 @@ import eu.abc4trust.xml.util.XmlUtils;
 public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
 
     // Flag
+  /**
+   * If this flag is true:
+   * If a policy requests a secret (either because it contains secret bound credentials
+   * or contains pseudonyms) and no secret is found in the credential store,
+   * the policy credential matcher will create a new secret.
+   */
     public static boolean GENERATE_SECRET_IF_NONE_EXIST = true;
+    
+    /**
+     * Maximal number of simultaneous presentation and issuance calls.
+     * (If more than maximum, the oldest will be deleted)
+     */
+    public static int MAXIMAL_CONCURRENT_UI_CALLS = 10;
 
     private final CredentialManager credentialManager;
     private final KeyManager keyManager;
@@ -78,6 +97,9 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
     private final ContextGenerator contextGenerator;
     private final Logger logger;
     private final String EXPECTED_ABC_XML_VERSION = "1.0";
+    
+    private final LinkedHashMap<URI, PresentationState> presentationState;
+    private final LinkedHashMap<URI, IssuanceState> issuanceState;
 
     @Inject
     PolicyCredentialMatcherImpl(CredentialManager credentialManager,
@@ -88,61 +110,25 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
         this.contextGenerator = contextGenerator;
         this.keyManager = keyManager;
         this.logger = logger;
+        this.presentationState = new LinkedHashMap<URI, PresentationState>();
+        this.issuanceState = new LinkedHashMap<URI, IssuanceState>();
     }
 
     @Override
     public boolean canBeSatisfied(PresentationPolicyAlternatives ppa)
             throws CredentialManagerException, KeyManagerException {
-        List<MyCandidateToken> candidateTokens = this.generateCandidateTokens(ppa);
-        return candidateTokens.size() > 0;
-    }
-
-    @Override
-    public IssuanceMessage createIssuanceToken(IssuanceMessage im, IdentitySelection identitySelection)
-            throws CredentialManagerException, KeyManagerException, IdentitySelectionException {
-      return createIssuanceToken(im, new IdentitySelectionUiPrinter(new IdentitySelectionUiConverter(identitySelection)));
+      return createPresentationToken(ppa, new DummyForNewABCEInterfaces()) != null;
     }
     
-    @Override
+    /*
+     * TODO(enr): Still used by reloadTokens, otherwise ignore
+     * */
+    @Override @Deprecated
     public IssuanceMessage createIssuanceToken(IssuanceMessage im, IdentitySelectionUi identitySelection)
             throws CredentialManagerException, KeyManagerException, IdentitySelectionException {
-        IssuancePolicy ip = (IssuancePolicy) XmlUtils.unwrap(im.getAny(), IssuancePolicy.class);
-        if (ip == null) {
-            String errorMessage = "Expected that the issuanceMessage contained an IssuancePolicy.";
-            this.logger.severe(errorMessage);
-            throw new RuntimeException(errorMessage);
-        }
-        this.checkVersionOrThrow(ip.getVersion());
-
-        List<MyCandidateToken> candidateTokens = this.generateCandidateTokens(ip);
-
-        updateRevocationInformation(candidateTokens);
-        MyUiIssuanceReturn uiReturn = MyCandidateToken.callIssuanceUi(identitySelection, candidateTokens);
-
-
-        MyCandidateToken chosenCandidateToken = uiReturn.token;
-
-        this.populateInspectors(chosenCandidateToken, uiReturn.chosenInspectors);
-        this.populatePseudonyms(chosenCandidateToken, uiReturn.chosenPseudonyms);
-        List<URI> chosenCredentials = chosenCandidateToken.getCredentialUriList();
-
-        IssuanceMessage ret;
-        try {
-            // TODO(enr): Remove empty list of user attributes
-            List<Attribute> userAtts = new ArrayList<Attribute>();
-            IssuanceTokenDescription chosenToken = chosenCandidateToken.getIssuanceToken();
-
-            ret =
-                    this.evidenceOrchestration.createIssuanceToken(chosenToken, chosenCredentials, userAtts,
-                            uiReturn.chosenPseudonyms, im.getContext());
-        } catch (TokenIssuanceException e) {
-            String errorMessage = "Cannot create issuance token: " + e.getMessage();
-            this.logger.severe(errorMessage);
-            throw new RuntimeException(errorMessage, e);
-        }
-
-        this.storePseudonymMetadata(candidateTokens, uiReturn.metadataToChange);
-        return ret;
+      UiIssuanceArguments args = createIssuanceToken(im, new DummyForNewABCEInterfaces());
+      UiIssuanceReturn ret = identitySelection.selectIssuanceTokenDescription(args);
+      return createIssuanceToken(ret);
     }
 
     private List<MyCandidateToken> generateCandidateTokens(PresentationPolicyAlternatives ppa)
@@ -192,7 +178,7 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
 
         // List of all acceptable pseudonyms
         List<List<PseudonymWithMetadata>> pseudonymChoice =
-                mypp.computePseudonymChoice(this.credentialManager, this.contextGenerator);
+                mypp.computePseudonymChoice(this.credentialManager, this.contextGenerator, this.evidenceOrchestration);
 
         // List of acceptable credential assignments
         List<ArrayList<MyCredentialDescription>> assignments =
@@ -242,6 +228,9 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
         }
     }
 
+    /*
+     * Still used by testEmptyPolicy and testPolicyHotel
+     */
     @Deprecated
     @Override
     public PresentationToken createPresentationToken(PresentationPolicyAlternatives ppa,
@@ -250,36 +239,27 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
       return createPresentationToken(ppa, new IdentitySelectionUiPrinter(new IdentitySelectionUiConverter(identitySelection)));
     }
     
+    /*
+     * Still used by previous method
+     */
+    @Deprecated
     @Override
     public PresentationToken createPresentationToken(PresentationPolicyAlternatives ppa,
             IdentitySelectionUi identitySelection)
             throws CredentialManagerException, CryptoEngineException, KeyManagerException, IdentitySelectionException {
 
-        List<MyCandidateToken> candidateTokens = this.generateCandidateTokens(ppa);
-
-        if (candidateTokens.size() == 0) {
-            this.logger.warning("Presentation policy cannot be satisfied");
-            return null;
-        }
-
-        updateRevocationInformation(candidateTokens);
-        MyUiPresentationReturn uiReturn = MyCandidateToken.callPresentationUi(identitySelection, candidateTokens);
-
-        MyCandidateToken chosenCandidateToken = uiReturn.token;
-        this.populateInspectors(chosenCandidateToken, uiReturn.chosenInspectors);
-        this.populatePseudonyms(chosenCandidateToken, uiReturn.chosenPseudonyms);
-        List<URI> chosenCredentials = chosenCandidateToken.getCredentialUriList();
-        PresentationTokenDescription chosenToken = chosenCandidateToken.getPresentationToken();
-
-        PresentationToken presTok =
-                this.evidenceOrchestration.createPresentationToken(chosenToken, chosenCredentials,
-                        uiReturn.chosenPseudonyms);
-
-        this.storePseudonymMetadata(candidateTokens, uiReturn.metadataToChange);
-        return presTok;
+      UiPresentationArguments arg = createPresentationToken(ppa, new DummyForNewABCEInterfaces());
+      UiPresentationReturn ret = identitySelection.selectPresentationTokenDescription(arg);
+      return createPresentationToken(ret);
     }
 
-    private void updateRevocationInformation(List<MyCandidateToken> candidateTokens) {
+    /**
+     * 
+     * @param candidateTokens
+     * @return true if no revoked credential was discovered
+     */
+    private boolean updateRevocationInformation(List<MyCandidateToken> candidateTokens) {
+      boolean noCredentialRevoked = true;
       try {
         Map<URI, URI> issuerToRevocationInfoMap = new HashMap<URI, URI>();
         List<URI> revokedAtts = new ArrayList<URI>();
@@ -302,23 +282,27 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
             URI revInfoUri = issuerToRevocationInfoMap.get(issuer);
             IssuerParameters ip = keyManager.getIssuerParameters(issuer);
             URI revAuth = ip.getRevocationParametersUID();
-            if ( revInfoUri != null) {
-              evidenceOrchestration.updateNonRevocationEvidence(cred, revAuth, revokedAtts, revInfoUri);
-            } else {
-              evidenceOrchestration.updateNonRevocationEvidence(cred, revAuth, revokedAtts);
+            try {
+              if ( revInfoUri != null) {
+                evidenceOrchestration.updateNonRevocationEvidence(cred, revAuth, revokedAtts, revInfoUri);
+              } else {
+                evidenceOrchestration.updateNonRevocationEvidence(cred, revAuth, revokedAtts);
+              }
+            } catch(CredentialWasRevokedException e) {
+              cred.getCredentialDescription().setRevokedByIssuer(true);
+              noCredentialRevoked = false;
             }
-            // TODO(enr): This that necessary?
-            credentialManager.deleteCredential(cred.getCredentialDescription().getCredentialUID());
-            credentialManager.storeCredential(cred);
+            credentialManager.updateCredential(cred);
           }
         }
-      } catch(CryptoEngineException e) {
+      } catch (CryptoEngineException e) {
         throw new RuntimeException(e);
       } catch (CredentialManagerException e) {
         throw new RuntimeException(e);
       } catch (KeyManagerException e) {
         throw new RuntimeException(e);
       }
+      return noCredentialRevoked;
     }
 
     /**
@@ -415,5 +399,124 @@ public class PolicyCredentialMatcherImpl implements PolicyCredentialMatcher {
         } else {
             return pwm.getPseudonym().getPseudonymValue();
         }
+    }
+
+    //// NEW METHODS
+    @Override
+    public UiIssuanceArguments createIssuanceToken(IssuanceMessage im, DummyForNewABCEInterfaces d)
+        throws CredentialManagerException, KeyManagerException {
+      IssuancePolicy ip = (IssuancePolicy) XmlUtils.unwrap(im.getAny(), IssuancePolicy.class);
+      if (ip == null) {
+          String errorMessage = "Expected that the issuanceMessage contained an IssuancePolicy.";
+          this.logger.severe(errorMessage);
+          throw new RuntimeException(errorMessage);
+      }
+      this.checkVersionOrThrow(ip.getVersion());
+
+      boolean selectionOk = false;
+      List<MyCandidateToken> candidateTokens = null;
+      do {
+        candidateTokens = this.generateCandidateTokens(ip);
+        if(candidateTokens.size() == 0) {
+          this.logger.warning("Issuance policy cannot be satisfied");
+          return null;
+        }
+        selectionOk = updateRevocationInformation(candidateTokens);
+      } while(!selectionOk);
+      
+      UiIssuanceArguments arg = MyCandidateToken.prepareUiIssuanceArguments(candidateTokens, keyManager, contextGenerator);
+      
+      IssuanceState state = new IssuanceState(arg, candidateTokens, im.getContext());
+      issuanceState.put(arg.uiContext, state);
+      trimState(issuanceState);
+      
+      return arg;
+    }
+    
+    @Override
+    public IssuanceMessage createIssuanceToken(UiIssuanceReturn uir) {
+      IssuanceState state = this.issuanceState.remove(uir.uiContext);
+      if(state == null) {
+        throw new RuntimeException("Cannot retrieve state for UI Context: " + uir.uiContext);
+      }
+      MyUiIssuanceReturn uiReturn = new MyUiIssuanceReturn(state.arg, uir, state.candidateTokens);
+      MyCandidateToken chosenCandidateToken = uiReturn.token;
+
+      this.populateInspectors(chosenCandidateToken, uiReturn.chosenInspectors);
+      this.populatePseudonyms(chosenCandidateToken, uiReturn.chosenPseudonyms);
+      List<URI> chosenCredentials = chosenCandidateToken.getCredentialUriList();
+
+      IssuanceMessage ret;
+      try {
+          // TODO(enr): Remove empty list of user attributes
+          List<Attribute> userAtts = new ArrayList<Attribute>();
+          IssuanceTokenDescription chosenToken = chosenCandidateToken.getIssuanceToken();
+
+          ret =
+                  this.evidenceOrchestration.createIssuanceToken(chosenToken, chosenCredentials, userAtts,
+                          uiReturn.chosenPseudonyms, state.issuanceContext);
+      } catch (TokenIssuanceException e) {
+          String errorMessage = "Cannot create issuance token: " + e.getMessage();
+          this.logger.severe(errorMessage);
+          throw new RuntimeException(errorMessage, e);
+      }
+
+      this.storePseudonymMetadata(state.candidateTokens, uiReturn.metadataToChange);
+      return ret;
+    }
+
+    @Override
+    public UiPresentationArguments createPresentationToken(PresentationPolicyAlternatives ppa,
+        DummyForNewABCEInterfaces d)
+            throws CredentialManagerException, KeyManagerException {
+      boolean selectionOk = false;
+      List<MyCandidateToken> candidateTokens = null;
+      do {
+        candidateTokens = this.generateCandidateTokens(ppa);
+        if (candidateTokens.size() == 0) {
+            this.logger.warning("Presentation policy cannot be satisfied");
+            return null;
+        }
+        selectionOk = updateRevocationInformation(candidateTokens);
+      } while(!selectionOk);
+
+      UiPresentationArguments arg =  MyCandidateToken.prepareUiPresentationArguments(candidateTokens, keyManager, contextGenerator);
+
+      PresentationState state = new PresentationState(arg, candidateTokens);
+      presentationState.put(arg.uiContext, state);
+      trimState(presentationState);
+      
+      return arg;
+    }
+    
+
+    @Override
+    public PresentationToken createPresentationToken(UiPresentationReturn ret) throws CryptoEngineException {
+      PresentationState state = this.presentationState.remove(ret.uiContext);
+      if(state == null) {
+        throw new RuntimeException("Cannot retrieve state for UI Context: " + ret.uiContext);
+      }
+      
+      MyUiPresentationReturn myupr = new MyUiPresentationReturn(state.arg, ret, state.candidateTokens);
+      MyCandidateToken chosenCandidateToken = myupr.token;
+      this.populateInspectors(chosenCandidateToken, myupr.chosenInspectors);
+      this.populatePseudonyms(chosenCandidateToken, myupr.chosenPseudonyms);
+      List<URI> chosenCredentials = chosenCandidateToken.getCredentialUriList();
+      PresentationTokenDescription chosenToken = chosenCandidateToken.getPresentationToken();
+
+      PresentationToken presTok =
+              this.evidenceOrchestration.createPresentationToken(chosenToken, chosenCredentials,
+                myupr.chosenPseudonyms);
+
+      this.storePseudonymMetadata(state.candidateTokens, myupr.metadataToChange);
+      return presTok;
+    }
+    
+    private void trimState(LinkedHashMap<URI, ?> map) {
+      Iterator<URI> it = map.keySet().iterator();
+      while(map.size() > MAXIMAL_CONCURRENT_UI_CALLS) {
+        it.next();
+        it.remove();
+      }
     }
 }

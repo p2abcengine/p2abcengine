@@ -26,7 +26,6 @@ import org.apache.commons.lang.SystemUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-//import java.util.Map;
 
 public class UProveLauncher {
 
@@ -66,8 +65,10 @@ public class UProveLauncher {
     }
 
     public void start(int port, String name) {
-        startCalled = true;
-        // System.out.println("UProveLauncher.start - instance : " + this + " - port : " + launchName + " :" + launchPort + " - is stopped == " + stopped + " - uproveProcess " + this.uproveProcess );
+        this.startCalled = true;
+        // System.out.println("UProveLauncher.start - instance : " + this +
+        // " - port : " + launchName + " :" + launchPort + " - is stopped == " +
+        // stopped + " - uproveProcess " + this.uproveProcess );
         ProcessBuilder processBuilder;
         if (this.isWindows()) {
             processBuilder = new ProcessBuilder(this.WINDOWS_COMMAND);
@@ -81,20 +82,22 @@ public class UProveLauncher {
         processBuilder.directory(this.workingDirectory);
         try {
             this.uproveProcess = processBuilder.start();
+            // System.out.println(this.uproveProcess.exitValue());
             InputStream is = this.uproveProcess.getInputStream();
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
             String line;
+            String terminationString = "Press Enter to exit";
             boolean done = false;
             while (!done) {
-                line = br.readLine();
-                if (line != null) {
-                    System.out.println(line);
-                    done = line.equals("Press Enter to exit");
-                } else {
-                    System.out.println("UProveLauncher - we get null on stdout from process - process has died..");
-                    break;
-                }
+                    line = br.readLine();
+                    if (line != null) {
+                        System.out.println(line);
+                        done = line.endsWith(terminationString);
+                    } else {
+                        System.out.println("UProveLauncher - we get null on stdout from process - process has died..");
+                        break;
+                    }
             }
             this.debugOutputCollector = new DebugOutputCollector(
                     this.uproveProcess, name);
@@ -140,7 +143,7 @@ public class UProveLauncher {
                 throw new RuntimeException(ex);
             }
         }
-        if(startCalled) {
+        if(this.startCalled) {
             return Integer.MIN_VALUE;
         } else {
             return 0;
@@ -157,13 +160,13 @@ public class UProveLauncher {
 
     public List<String> getOutput() {
         // System.out.println("UProveLauncher.getOutput for instance : " + this + " : " + launchName + " - port : " + launchPort + " - is stopped == " + stopped + " : " + debugOutputCollector);
-      if(uproveProcess!=null && debugOutputCollector!=null) {
-          return this.debugOutputCollector.getCurrentDebugOutput();
-      } else {
-          List<String> notattaced = new ArrayList<String>();
-          notattaced.add("Launcher not attached to process - No debug output");
-          return notattaced;
-      }
+        if((this.uproveProcess!=null) && (this.debugOutputCollector!=null)) {
+            return this.debugOutputCollector.getCurrentDebugOutput();
+        } else {
+            List<String> notattaced = new ArrayList<String>();
+            notattaced.add("Launcher not attached to process - No debug output");
+            return notattaced;
+        }
     }
 
 }

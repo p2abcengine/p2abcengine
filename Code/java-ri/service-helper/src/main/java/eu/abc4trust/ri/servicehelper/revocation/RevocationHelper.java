@@ -11,18 +11,26 @@
 
 package eu.abc4trust.ri.servicehelper.revocation;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
+
+import org.w3c.dom.Element;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.showproof.accumulator.AccumulatorPublicKey;
+import com.ibm.zurich.idmx.utils.Parser;
+import com.ibm.zurich.idmx.utils.StructureStore;
 
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.guice.ProductionModule;
 import eu.abc4trust.guice.ProductionModuleFactory;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -34,55 +42,60 @@ import eu.abc4trust.xml.SystemParameters;
 
 public class RevocationHelper extends AbstractHelper {
 
-  public static class RevocationReferences {
-    public final URI revocationAuthorityUID;
-    public final URI revocationInfoServiceURI;
-    public final URI nonRevocationEvidenceServiceURI;
-    public final URI nonRevocationUpdateServiceURI;
+    public static class RevocationReferences {
+        public final URI revocationAuthorityUID;
+        public final URI revocationInfoServiceURI;
+        public final URI nonRevocationEvidenceServiceURI;
+        public final URI nonRevocationUpdateServiceURI;
 
-    public RevocationReferences(final URI revocationAuthorityUID,
-    final URI revocationInfoServiceURI,
-    final URI nonRevocationEvidenceServiceURI,
-    final URI nonRevocationUpdateServiceURI) {
-      this.revocationAuthorityUID = revocationAuthorityUID;
-      this.revocationInfoServiceURI = revocationInfoServiceURI;
-      this.nonRevocationEvidenceServiceURI = nonRevocationEvidenceServiceURI;
-      this.nonRevocationUpdateServiceURI = nonRevocationUpdateServiceURI;
-    }
+        public RevocationReferences(final URI revocationAuthorityUID,
+                final URI revocationInfoServiceURI,
+                final URI nonRevocationEvidenceServiceURI,
+                final URI nonRevocationUpdateServiceURI) {
+            this.revocationAuthorityUID = revocationAuthorityUID;
+            this.revocationInfoServiceURI = revocationInfoServiceURI;
+            this.nonRevocationEvidenceServiceURI = nonRevocationEvidenceServiceURI;
+            this.nonRevocationUpdateServiceURI = nonRevocationUpdateServiceURI;
+        }
 
-    public RevocationReferences(final String revocationAuthority,
-    final String revocationInfoService,
-    final String nonRevocationEvidenceService,
-    final String nonRevocationUpdateService) {
-      this.revocationAuthorityUID = URI.create(revocationAuthority);
-      this.revocationInfoServiceURI = URI.create(revocationInfoService);
-      this.nonRevocationEvidenceServiceURI = URI.create(nonRevocationEvidenceService);
-      this.nonRevocationUpdateServiceURI = URI.create(nonRevocationUpdateService);
-    }
+        public RevocationReferences(final String revocationAuthority,
+                final String revocationInfoService,
+                final String nonRevocationEvidenceService,
+                final String nonRevocationUpdateService) {
+            this.revocationAuthorityUID = URI.create(revocationAuthority);
+            this.revocationInfoServiceURI = URI.create(revocationInfoService);
+            this.nonRevocationEvidenceServiceURI = URI.create(nonRevocationEvidenceService);
+            this.nonRevocationUpdateServiceURI = URI.create(nonRevocationUpdateService);
+        }
 
-    public Reference getRevocationInfoReference() {
-      Reference revocationInfoReference = new Reference();
-      revocationInfoReference.setReferenceType(URI.create(revocationInfoServiceURI.getScheme()));
-      revocationInfoReference.getAny().add(revocationInfoServiceURI);
-      return revocationInfoReference;
+        public Reference getRevocationInfoReference() {
+            Reference revocationInfoReference = new Reference();
+            revocationInfoReference.setReferenceType(URI.create(this.revocationInfoServiceURI.getScheme()));
+            revocationInfoReference.getReferences().add(this.revocationInfoServiceURI);
+            return revocationInfoReference;
+        }
+        public Reference getNonRevocationEvidenceReference() {
+            Reference nonRevocationEvidenceReference = new Reference();
+            nonRevocationEvidenceReference.setReferenceType(URI.create(this.nonRevocationEvidenceServiceURI.getScheme()));
+            nonRevocationEvidenceReference.getReferences().add(this.nonRevocationEvidenceServiceURI);
+            return nonRevocationEvidenceReference;
+        }
+        public Reference getNonRevocationUpdateReference() {
+            Reference nonRevocationUpdateReference = new Reference();
+            nonRevocationUpdateReference.setReferenceType(URI.create(this.nonRevocationUpdateServiceURI.getScheme()));
+            nonRevocationUpdateReference.getReferences().add(this.nonRevocationUpdateServiceURI);
+            return nonRevocationUpdateReference;
+        }
     }
-    public Reference getNonRevocationEvidenceReference() {
-      Reference nonRevocationEvidenceReference = new Reference();
-      nonRevocationEvidenceReference.setReferenceType(URI.create(nonRevocationEvidenceServiceURI.getScheme()));
-      nonRevocationEvidenceReference.getAny().add(nonRevocationEvidenceServiceURI);
-      return nonRevocationEvidenceReference;
-    }
-    public Reference getNonRevocationUpdateReference() {
-      Reference nonRevocationUpdateReference = new Reference();
-      nonRevocationUpdateReference.setReferenceType(URI.create(nonRevocationUpdateServiceURI.getScheme()));
-      nonRevocationUpdateReference.getAny().add(nonRevocationUpdateServiceURI);
-      return nonRevocationUpdateReference;
-    }
-  }
     private static RevocationHelper instance;
-    
+
+    // deprecated - but please keep until after pilot has been released...
+    @Deprecated
+    public static synchronized RevocationHelper initInstance(ProductionModule.CryptoEngine cryptoEngine, String revocationStoragePrefix, String revocationResourcesPrefix, String systemParametersResource, String[] issuerParamsResourceList, String[] credSpecResourceList, RevocationReferences... revocationReferences) throws Exception {
+        return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), revocationStoragePrefix, revocationResourcesPrefix, systemParametersResource, issuerParamsResourceList, credSpecResourceList, revocationReferences);
+    }
     /**
-     * @param cryptoEngine 
+     * @param cryptoEngine
      * @param revocationStoragePrefix - private storage files (private keys) will be stored here
      * @param revocationResourcesPrefix - public keys will be exported here
      * @param systemParametersResource - the system parameter
@@ -92,45 +105,149 @@ public class RevocationHelper extends AbstractHelper {
      * @return
      * @throws Exception
      */
-    public static synchronized RevocationHelper initInstance(ProductionModule.CryptoEngine oldCryptoEngine, String revocationStoragePrefix, String revocationResourcesPrefix, String systemParametersResource, String[] issuerParamsResourceList, String[] credSpecResourceList, RevocationReferences... revocationReferences)
-        throws Exception {
+    public static synchronized RevocationHelper initInstance(CryptoEngine cryptoEngine, String revocationStoragePrefix, String revocationResourcesPrefix, String systemParametersResource, String[] issuerParamsResourceList, String[] credSpecResourceList, RevocationReferences... revocationReferences)
+            throws Exception {
         if (instance != null) {
             throw new IllegalStateException(
                     "initInstance can only be called once!");
         }
         System.out.println("RevocationHelper.initInstance");
 
-        instance = new RevocationHelper(oldCryptoEngineToNewCryptoEngine(oldCryptoEngine), revocationStoragePrefix, revocationResourcesPrefix);
+        instance = new RevocationHelper(cryptoEngine, revocationStoragePrefix, revocationResourcesPrefix);
         instance.addCredentialSpecifications(credSpecResourceList);
         instance.addIssuerParameters(issuerParamsResourceList);
         //
         SystemParameters systemParameters = null;
         // system params...
         if (!instance.keyManager.hasSystemParameters()) {
-          
-          // read systemparameters - both Idemix and UProve
-          if(systemParametersResource!=null) {
-            System.out.println("- load systemparameters from resource! " + systemParametersResource);
-            systemParameters= loadObjectFromResource(systemParametersResource);
-            instance.keyManager.storeSystemParameters(systemParameters);
-          } else {
-              systemParameters = new SystemParametersUtil().generatePilotSystemParameters_WithIdemixSpecificKeySize(IDEMIX_KEY_LENGTH);
-              instance.keyManager.storeSystemParameters(systemParameters);
-              System.out.println("WARN - using static SystemParameters");
-          }
-      } else {
-          System.out.println(" - system params exists!");
-          systemParameters = instance.keyManager.getSystemParameters();
-          System.out.println("systemParameters : " + systemParameters);
-      }
-      // register Idemix system parameters
-      instance.setupIdemixEngine();
-      
-      instance.setupRevocationReferences(revocationReferences, revocationResourcesPrefix);
-      // 
-      return instance;
+
+            // read systemparameters - both Idemix and UProve
+            if(systemParametersResource!=null) {
+                System.out.println("- load systemparameters from resource! " + systemParametersResource);
+                systemParameters= loadObjectFromResource(systemParametersResource);
+                instance.keyManager.storeSystemParameters(systemParameters);
+            } else {
+                new SystemParametersUtil();
+                systemParameters = SystemParametersUtil
+                        .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                                IDEMIX_KEY_LENGTH, UPROVE_KEY_LENGTH);
+                instance.keyManager.storeSystemParameters(systemParameters);
+                System.out.println("WARN - using static SystemParameters");
+            }
+        } else {
+            System.out.println(" - system params exists!");
+            systemParameters = instance.keyManager.getSystemParameters();
+            System.out.println("systemParameters : " + systemParameters);
+        }
+        // register Idemix system parameters
+        instance.setupIdemixEngine();
+
+        instance.setupRevocationReferences(revocationReferences, revocationResourcesPrefix);
+        //
+        return instance;
     }
 
+    public static synchronized RevocationHelper initInstance(String revocationStoragePrefix, String[] issuerParamsResourceList,
+            String[] credSpecResourceList, String systemParametersResource, String[] revocationAuthorityResourceList)
+                    throws Exception {
+        if (instance != null) {
+            throw new IllegalStateException(
+                    "initInstance can only be called once!");
+        }
+        System.out.println("RevocationHelper.initInstance");
+
+        instance = new RevocationHelper(ProductionModuleFactory.CryptoEngine.BRIDGED, revocationStoragePrefix, revocationStoragePrefix);
+        instance.addCredentialSpecifications(credSpecResourceList);
+        instance.addIssuerParameters(issuerParamsResourceList);
+
+        SystemParameters systemParameters = null;
+        // system params...
+        if (!instance.keyManager.hasSystemParameters()) {
+
+            // read systemparameters - both Idemix and UProve
+            if(systemParametersResource!=null) {
+                System.out.println("- load systemparameters from resource! " + systemParametersResource);
+                systemParameters= loadObjectFromResource(systemParametersResource);
+                instance.keyManager.storeSystemParameters(systemParameters);
+            } else {
+                new SystemParametersUtil();
+                systemParameters = SystemParametersUtil
+                        .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                                IDEMIX_KEY_LENGTH, UPROVE_KEY_LENGTH);
+                instance.keyManager.storeSystemParameters(systemParameters);
+                System.out.println("WARN - using static SystemParameters");
+            }
+        } else {
+            System.out.println(" - system params exists!");
+            systemParameters = instance.keyManager.getSystemParameters();
+            System.out.println("systemParameters : " + systemParameters);
+        }
+        // register Idemix system parameters
+        instance.setupIdemixEngine();
+
+        if(revocationAuthorityResourceList.length!=0){
+            for(String resource: revocationAuthorityResourceList){
+                try{
+                    RevocationAuthorityParameters revocationAuthorityParameters = loadObjectFromResource(resource);
+                    // 	register key for IDEMIX!
+                    System.out.println("- Try to register Revocation public key in IDEMIX StructureStore : " + revocationAuthorityParameters.getParametersUID());
+                    List<Object> any = revocationAuthorityParameters.getCryptoParams().getAny();
+                    Element publicKeyStr = (Element) any.get(0);
+                    Object publicKeyObj = Parser.getInstance().parse(publicKeyStr);
+
+                    AccumulatorPublicKey publicKey = (AccumulatorPublicKey) publicKeyObj;
+
+                    StructureStore.getInstance().add(publicKey.getUri().toString(),
+                            publicKey);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+        return instance;
+    }
+
+
+    public static synchronized RevocationAuthorityParameters setupParameters(
+            URI mechanism, int keyLength, URI uid, Reference revocationInfoReference, Reference nonRevocationEvidenceReference,
+            Reference nonRevocationUpdateReference, String revocationResourcesPrefix) throws CryptoEngineException {
+
+
+        RevocationAuthorityParameters revocationAuthorityParameters = instance.engine.setupRevocationAuthorityParameters(keyLength, mechanism, uid, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference);
+
+
+        boolean urnScheme = "urn".equals(uid.getScheme());
+        String revocation_authority_filename = "revocation_authority_";
+        if (urnScheme) {
+            revocation_authority_filename += uid.toASCIIString().replaceAll(":", "_");
+        } else {
+            revocation_authority_filename +=
+                    uid.getHost().replace(".", "_")
+                    + uid.getPath().replace("/", "_");
+        }
+        try {
+            if(!new File(revocationResourcesPrefix+revocation_authority_filename).exists()){
+                storeObjectInFile(revocationAuthorityParameters, revocationResourcesPrefix, revocation_authority_filename);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to store RevocationAuthorityParameters : " + uid + " : " + revocationResourcesPrefix + revocation_authority_filename, e);
+        }
+
+        // register key for IDEMIX!
+        System.out.println("- Try to register Revocation public key in IDEMIX StructureStore : " + uid);
+        List<Object> any = revocationAuthorityParameters.getCryptoParams().getAny();
+        Element publicKeyStr = (Element) any.get(0);
+        Object publicKeyObj = Parser.getInstance().parse(publicKeyStr);
+
+        AccumulatorPublicKey publicKey = (AccumulatorPublicKey) publicKeyObj;
+
+        StructureStore.getInstance().add(publicKey.getUri().toString(),
+                publicKey);
+
+
+
+        return revocationAuthorityParameters;
+    }
     /**
      * @return true if IssuanceHelper has been initialized
      */
@@ -162,7 +279,7 @@ public class RevocationHelper extends AbstractHelper {
 
     // public CredentialManager credentialManager;
 
-    // 
+    //
     public RevocationAbcEngine engine;
     public RevocationProxyAuthority revocationProxyAuthority;
 
@@ -181,7 +298,6 @@ public class RevocationHelper extends AbstractHelper {
         System.out.println("RevocationHelper : create instance - storage prefix : "
                 + revocationStoragePrefix + " - resouces prefix : " + revocationResourcesPrefix);
         try {
-            System.out.println("WARN : cryptoEngine fix to IDEMIX for now!");
             this.cryptoEngine = cryptoEngine;
 
             AbceConfigurationImpl configuration = this
@@ -204,60 +320,71 @@ public class RevocationHelper extends AbstractHelper {
             throw new IllegalStateException("Could not setup issuer !", e);
         }
     }
-    
-    private void setupRevocationReferences(RevocationReferences[] revocationReferences, String revocationResourcesPrefix) {
-        
-        for(RevocationReferences r : revocationReferences) {
-          RevocationAuthorityParameters exists;
-          try {
-            exists = this.keyManager.getRevocationAuthorityParameters(r.revocationAuthorityUID);
-          } catch (KeyManagerException e) {
-            throw new IllegalStateException("Failed to get RevocationAuthorityParameters from KeyStore : " + r.revocationAuthorityUID, e);
-          }
-          if(exists!=null) {
-              System.out.println("RevocationAuthorityParameters already exists for : " + r.revocationAuthorityUID);
-          } else {
-            System.out.println("Initialize RevocationAuthorityParameters for : " + r.revocationAuthorityUID);
-            URI cryptographicMechanism;
-            switch (cryptoEngine) {
-              case UPROVE:
-                cryptographicMechanism = URI.create("urn:abc4trust:1.0:algorithm:uprove");
-                break;
-              case BRIDGED:
-                cryptographicMechanism = URI.create("urn:abc4trust:1.0:algorithm:bridging");
-                break;
 
-              default:
-                cryptographicMechanism = URI.create("urn:abc4trust:1.0:algorithm:idemix");
-                break;
-            }
+
+    private void setupRevocationReferences(RevocationReferences[] revocationReferences, String revocationResourcesPrefix) {
+
+        for(RevocationReferences r : revocationReferences) {
             RevocationAuthorityParameters revocationAuthorityParameters;
             try {
-              revocationAuthorityParameters = engine.setupRevocationAuthorityParameters(REVOCATION_KEY_LENGTH, cryptographicMechanism, r.revocationAuthorityUID, r.getRevocationInfoReference(), r.getNonRevocationEvidenceReference(), r.getNonRevocationUpdateReference());
-            } catch (CryptoEngineException e) {
-              throw new IllegalStateException("Failed to setup RevocationAuthorityParameters : " + r.revocationAuthorityUID, e);
+                revocationAuthorityParameters = this.keyManager.getRevocationAuthorityParameters(r.revocationAuthorityUID);
+            } catch (KeyManagerException e) {
+                throw new IllegalStateException("Failed to get RevocationAuthorityParameters from KeyStore : " + r.revocationAuthorityUID, e);
             }
-              
-              boolean urnScheme = "urn".equals(r.revocationAuthorityUID.getScheme());
-              String revocation_authority_filename = "revocation_authority_";
-              if (urnScheme) {
+            if(revocationAuthorityParameters!=null) {
+                System.out.println("RevocationAuthorityParameters already exists for : " + r.revocationAuthorityUID);
+            } else {
+                System.out.println("Initialize RevocationAuthorityParameters for : " + r.revocationAuthorityUID);
+                URI cryptographicMechanism;
+                switch (this.cryptoEngine) {
+                case UPROVE:
+                    cryptographicMechanism = URI.create("urn:abc4trust:1.0:algorithm:uprove");
+                    break;
+                case BRIDGED:
+                    cryptographicMechanism = URI.create("urn:abc4trust:1.0:algorithm:bridging");
+                    break;
+
+                default:
+                    cryptographicMechanism = URI.create("urn:abc4trust:1.0:algorithm:idemix");
+                    break;
+                }
+                try {
+                    revocationAuthorityParameters = this.engine.setupRevocationAuthorityParameters(REVOCATION_KEY_LENGTH, cryptographicMechanism, r.revocationAuthorityUID, r.getRevocationInfoReference(), r.getNonRevocationEvidenceReference(), r.getNonRevocationUpdateReference());
+                } catch (CryptoEngineException e) {
+                    throw new IllegalStateException("Failed to setup RevocationAuthorityParameters : " + r.revocationAuthorityUID, e);
+                }
+            }
+            boolean urnScheme = "urn".equals(r.revocationAuthorityUID.getScheme());
+            String revocation_authority_filename = "revocation_authority_";
+            if (urnScheme) {
                 revocation_authority_filename += r.revocationAuthorityUID.toASCIIString().replaceAll(":", "_");
-              } else {
+            } else {
                 revocation_authority_filename +=
-                    r.revocationAuthorityUID.getHost().replace(".", "_")
+                        r.revocationAuthorityUID.getHost().replace(".", "_")
                         + r.revocationAuthorityUID.getPath().replace("/", "_");
-              }
-              try {
-                storeObjectInFile(revocationAuthorityParameters, revocationResourcesPrefix, revocation_authority_filename);
-              } catch (IOException e) {
+            }
+            try {
+                if(!new File(revocationResourcesPrefix+revocation_authority_filename).exists()){
+                    storeObjectInFile(revocationAuthorityParameters, revocationResourcesPrefix, revocation_authority_filename);
+                }
+            } catch (IOException e) {
                 throw new IllegalStateException("Failed to store RevocationAuthorityParameters : " + r.revocationAuthorityUID + " : " + revocationResourcesPrefix + revocation_authority_filename, e);
-              }
+            }
 
-          }
-          
+            // register key for IDEMIX!
+            System.out.println("- Try to register Revocation public key in IDEMIX StructureStore : " + r.revocationAuthorityUID);
+            List<Object> any = revocationAuthorityParameters.getCryptoParams().getAny();
+            Element publicKeyStr = (Element) any.get(0);
+            Object publicKeyObj = Parser.getInstance().parse(publicKeyStr);
+
+            AccumulatorPublicKey publicKey = (AccumulatorPublicKey) publicKeyObj;
+
+            StructureStore.getInstance().add(publicKey.getUri().toString(),
+                    publicKey);
+
         }
-    }        
+    }
 
-    
+
 
 }

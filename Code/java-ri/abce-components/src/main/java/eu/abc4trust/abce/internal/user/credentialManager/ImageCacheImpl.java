@@ -48,7 +48,8 @@ public class ImageCacheImpl implements ImageCache {
             URL url = image.toURL();
             URLConnection connection = url
                     .openConnection();
-
+            
+            connection.setConnectTimeout(10000);
             connection.connect();
 
             InputStream reader = connection.getInputStream();

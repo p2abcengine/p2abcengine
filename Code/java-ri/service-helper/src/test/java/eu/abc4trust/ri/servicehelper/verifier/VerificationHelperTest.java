@@ -85,7 +85,7 @@ public class VerificationHelperTest {
     VerificationHelper helper = VerificationHelper.getInstance();
 
     byte[] nonce = VerificationHelper.getInstance().generateNonce();
-    PresentationPolicyAlternatives ppa = helper.createPresentationPolicy("presentationPolicySimpleIdentitycard.xml", nonce, null);
+    PresentationPolicyAlternatives ppa = helper.createPresentationPolicy("presentationPolicySimpleIdentitycard.xml", nonce, null, null);
 
 //    PresentationPolicyAlternatives ppa = helper.createPresentationPolicy("presentationPolicyAlternativesHotelBooking.xml", null);
 

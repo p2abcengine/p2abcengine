@@ -54,7 +54,7 @@ import eu.abc4trust.returnTypes.SitdReturn;
 import eu.abc4trust.returnTypes.SptdReturn;
 import eu.abc4trust.ri.servicehelper.AbstractHelper;
 import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper;
-import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper.SpecAndPolicy;
+import eu.abc4trust.ri.servicehelper.issuer.SpecAndPolicy;
 import eu.abc4trust.ri.servicehelper.user.JSonIdentitySelection;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
 import eu.abc4trust.ri.servicehelper.verifier.VerificationHelper;
@@ -85,6 +85,7 @@ import eu.abc4trust.xml.util.XmlUtils;
 
 
 
+@Deprecated
 @Path("/")
 public class UserService {
 
@@ -176,7 +177,7 @@ public class UserService {
             //            System.out.println(" - " + issuerParamsFileList[ix].getAbsolutePath());
             issuerParamsResourceList[ix] = issuerParamsFileList[ix].getAbsolutePath();
         }
-        
+
         String[] inspectorPublicKeyResourceList = new String[0];
 
         // should be able to handle 'Bridged' in suer
@@ -401,10 +402,10 @@ public class UserService {
 
         System.out.println("UserService : Creating presentation token - ClientEngine : " + clientEngine);
         try {
-          System.out.println(" - : " + XmlUtils.toXml(of.createPresentationPolicyAlternatives(presentationPolicy)));
+            System.out.println(" - : " + XmlUtils.toXml(this.of.createPresentationPolicyAlternatives(presentationPolicy)));
         } catch(Exception e) {
-          System.err.println(" - could not validate PresentationPolicy XML!");
-          e.printStackTrace();
+            System.err.println(" - could not validate PresentationPolicy XML!");
+            e.printStackTrace();
         }
 
         PresentationToken pt = null;
@@ -427,10 +428,10 @@ public class UserService {
 
         System.out.println(" - return pt : " + pt);
         try {
-          System.out.println(" - : " + XmlUtils.toXml(of.createPresentationToken(pt), true));
+            System.out.println(" - : " + XmlUtils.toXml(this.of.createPresentationToken(pt), true));
         } catch(Exception e) {
-          System.err.println(" - could not validate PresentationToken XML!");
-          e.printStackTrace();
+            System.err.println(" - could not validate PresentationToken XML!");
+            e.printStackTrace();
         }
 
         return Response.ok(this.of.createPresentationToken(pt)).build();
@@ -950,7 +951,7 @@ public class UserService {
         String applicationData = null;
 
         System.out.println("VerificationHelper.getInstance() :  " + VerificationHelper.getInstance());
-        PresentationPolicyAlternatives ppa = VerificationHelper.getInstance().createPresentationPolicy("presentationPolicyForTestingUI.xml", nonce, applicationData);
+        PresentationPolicyAlternatives ppa = VerificationHelper.getInstance().createPresentationPolicy("presentationPolicyForTestingUI.xml", nonce, applicationData, null);
         //      PresentationPolicyAlternatives ppa = VerificationHelper.getInstance().createPresentationPolicy("presentationPolicyAlternativesHotelBooking.xml", null);
         //      PresentationPolicyAlternatives ppa = VerificationHelper.getInstance().createPresentationPolicy("presentationPolicyPseudonymOrCredentials.xml", null);
 
@@ -1153,7 +1154,7 @@ public class UserService {
         }
 
         byte[] nonce = VerificationHelper.getInstance().generateNonce();
-        PresentationPolicyAlternatives ppa = VerificationHelper.getInstance().createPresentationPolicy(policyName, nonce, null);
+        PresentationPolicyAlternatives ppa = VerificationHelper.getInstance().createPresentationPolicy(policyName, nonce, null, null);
 
         JSonIdentitySelection jsonIDSelect = new JSonIdentitySelection();
         userHelper.getEngine().createPresentationToken(ppa, jsonIDSelect);

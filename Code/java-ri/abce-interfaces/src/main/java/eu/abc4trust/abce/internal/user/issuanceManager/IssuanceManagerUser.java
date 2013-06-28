@@ -16,8 +16,14 @@ import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
+import eu.abc4trust.returnTypes.IssuanceReturn;
+import eu.abc4trust.returnTypes.UiIssuanceReturn;
+import eu.abc4trust.returnTypes.UiPresentationArguments;
+import eu.abc4trust.returnTypes.UiPresentationReturn;
 import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
+import eu.abc4trust.util.DummyForNewABCEInterfaces;
+import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
@@ -65,16 +71,29 @@ public interface IssuanceManagerUser {
    */
   @Deprecated
   public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage im,
-      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException;
+      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException;
 
+  @Deprecated
   public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m,
-      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException;
+      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException;
 
   @Deprecated
   public PresentationToken createPresentationToken(PresentationPolicyAlternatives p,
-      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException;
+      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException;
 
+  @Deprecated
   public PresentationToken createPresentationToken(PresentationPolicyAlternatives p,
-      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException;
+      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException;
+
+  public boolean isRevoked(Credential cred) throws CryptoEngineException;
+
+  
+  public UiPresentationArguments createPresentationToken(PresentationPolicyAlternatives p, DummyForNewABCEInterfaces d) throws CredentialManagerException, KeyManagerException;
+
+  public PresentationToken createPresentationToken(UiPresentationReturn upr) throws CryptoEngineException;
+
+  public IssuanceReturn issuanceProtocolStep(IssuanceMessage im, DummyForNewABCEInterfaces d) throws CryptoEngineException, CredentialManagerException, KeyManagerException;
+
+  public IssuanceMessage issuanceProtocolStep(UiIssuanceReturn uir);
 
 }

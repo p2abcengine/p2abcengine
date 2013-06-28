@@ -30,11 +30,12 @@ public class UProveSystemParameters {
   private final SystemParameters systemParameters;
   private int keyLength = -1;
   private String groupOID = null;
-
+  
+  
   public UProveSystemParameters(SystemParameters syspars) {
     this.systemParameters = syspars;
   }
-
+  
   public int getKeyLength() {
     if (keyLength > -1) {
       return keyLength;

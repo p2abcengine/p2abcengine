@@ -143,6 +143,7 @@ public class MyPredicate {
 			case GREATEREQ: return OperationType.LESSEQ;
 			case LESS: return OperationType.GREATER;
 			case LESSEQ: return OperationType.GREATEREQ;
+			case NOTEQUAL: return OperationType.NOTEQUAL;
 			default: throw new Exception("Unknown operator: " + op);
 		}
 	}
@@ -157,6 +158,11 @@ public class MyPredicate {
 		}
 		ret.addArgument(getRight());
 		ret.addArgument(getLeft());
+		ret.addArgumentRef(getRightRef());
+		ret.addArgumentRef(getLeftRef());
+		ret.setTypeOfFunction(getTypeOfArguments());
+		ret.setEncoding(getEncoding());
+			
 		return ret;
 	}
 	
@@ -200,7 +206,7 @@ public class MyPredicate {
 	//only for 2 paramater functions:
 	public Map<MyAttributeReference, MyAttributeValue> getRight(){
 		//TODO: check for 2-parameters function
-		return arguments.get(0);
+		return arguments.get(1);
 	}
 	
 	//only for 2 parameter function
@@ -229,7 +235,7 @@ public class MyPredicate {
 			if (this.function == null)
 				throw new Exception("No function specified");			
 			switch (this.function) {
-			case EQUAL: return " equals to ";
+			case EQUAL: return " is equal to ";
 			case NOTEQUAL: return " is not equal to ";
 			case GREATER: return " is greater than ";
 			case GREATEREQ: return " is greater or equal than ";

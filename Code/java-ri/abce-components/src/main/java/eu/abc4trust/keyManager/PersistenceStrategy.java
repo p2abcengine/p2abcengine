@@ -70,6 +70,25 @@ public class PersistenceStrategy {
         }
     }
 
+    public boolean writeObjectAndOverwrite(URI uid, Object o) throws PersistenceException{
+    	ByteArrayOutputStream byteArrayOutputStream = null;
+        ObjectOutputStream objectOutput = null;
+        try {
+            byteArrayOutputStream = new ByteArrayOutputStream();
+            objectOutput = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutput.writeObject(o);
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+            this.storage.addValueAndOverwrite(uid, bytes);
+            return true;
+        } catch (Exception ex) {
+            throw new PersistenceException(ex);
+        } finally {
+            // Close the streams.
+            this.closeIgnoringException(objectOutput);
+            this.closeIgnoringException(byteArrayOutputStream);
+        }
+    }
+    
     private void closeIgnoringException(Closeable c) {
         if (c != null) {
             try {

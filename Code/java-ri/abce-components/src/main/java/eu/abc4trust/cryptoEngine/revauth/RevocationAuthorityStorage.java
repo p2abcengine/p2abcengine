@@ -49,6 +49,7 @@ public class RevocationAuthorityStorage {
     }
 
     public RevocationAuthorityState get(URI uid) throws Exception {
+    	System.out.println("GETTING REVOCATIONAUTHORITYSTATE FROM UID: "+uid);
         if (uid == null) {
             throw new Exception("UID is null");
         }
@@ -79,6 +80,7 @@ public class RevocationAuthorityStorage {
     public void store(URI revAuthParamsUid,
             RevocationAuthorityState revocationAuthorityState)
                     throws Exception {
+    	System.out.println("STORING REVOCATION_AUTHORITY_STATE IN UID: "+revAuthParamsUid);
         ByteArrayOutputStream byteArrayOutputStream = null;
         ObjectOutputStream objectOutput = null;
         try {

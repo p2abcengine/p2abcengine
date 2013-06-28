@@ -45,6 +45,18 @@ public class PersistentKeyStorage implements KeyStorage {
     public void addValue(URI uri, byte[] key) throws IOException {
         StorageUtil.appendData(this.file, uri, key);
     }
+    
+    @Override
+	public void addValueAndOverwrite(URI uri, byte[] key) throws IOException {
+    	try {
+			if(StorageUtil.HasUri(this.file, uri)){
+				StorageUtil.deleteData(this.file, uri);
+			}
+			this.addValue(uri, key);
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+	}
 
     @Override
     public URI[] listUris() throws Exception {
@@ -69,6 +81,6 @@ public class PersistentKeyStorage implements KeyStorage {
         } catch (EOFException ex) {
             return ls.toArray(new URI[0]);
         }
-    }
+    }	
 
 }

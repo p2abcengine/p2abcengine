@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+  
+  <groupId>eu.abc4trust.ui</groupId>
+  <artifactId>ui-project-pom</artifactId>
+  <version>1.0.4-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  
+  <modules>
+    <module>parent</module>
+    <module>parent/parent</module>
+    <module>firefox-extension</module>
+    <module>ie-active-x</module>
+    <module>idselect-user-service</module>
+    <module>eu.abc4trust.ri.ui.user</module>
+    <module>eu.abc4trust.ri.ui.user.feature</module>
+    <module>eu.abc4trust.ri.ui.user.product</module>
+    <module>user-abce-service</module>
+  </modules>
+  
+  <properties>
+    <abc4trust.version>1.0.9-SNAPSHOT</abc4trust.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  
+  <dependencyManagement>
+    <dependencies>
+	    <!-- This Project -->
+      <dependency>
+        <groupId>eu.abc4trust.ui</groupId>
+        <artifactId>idselect-user-service</artifactId>
+   	    <version>1.0.4-SNAPSHOT</version>
+        <type>war</type>
+      </dependency>
+      <dependency>
+        <groupId>eu.abc4trust.ui</groupId>
+        <artifactId>eu.abc4trust.ri.ui.user.product</artifactId>
+   	    <version>1.0.4.qualifier</version>
+        <type>war</type>
+      </dependency>
+
+	    <!-- for ABCE service -->
+      <dependency>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>service-helper</artifactId>
+        <version>${abc4trust.version}</version>
+      </dependency>
+	    <!-- for UI service -->
+      <dependency>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>ui-osgi-dependencies</artifactId>
+        <version>${abc4trust.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.4</version>
+      </dependency>
+      <!-- for UI service -->
+      <dependency>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>abc4trust-xml</artifactId>
+        <version>${abc4trust.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>abce-interfaces</artifactId>
+        <version>${abc4trust.version}</version>
+      </dependency>
+
+      <!-- Jersey -->
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-servlet</artifactId>
+        <version>1.10</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-client</artifactId>
+        <version>1.10</version>
+      </dependency>
+      <!-- Servlet context -->
+      <dependency>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>servlet-api-2.5</artifactId>
+        <version>6.1.14</version>
+        <scope>provided</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  
+  <repositories>
+    <repository>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public/</url>
+    </repository>
+  </repositories>
+  
+  <pluginRepositories>
+    <pluginRepository>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public</url>
+    </pluginRepository>
+  </pluginRepositories>
+  
+  <scm>
+    <connection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ui/trunk</connection>
+    <developerConnection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ui/trunk</developerConnection>
+  </scm>
+  
+  <distributionManagement>
+    <downloadUrl>https://abc4trust.miracleas.dk/nexus/content/groups/public</downloadUrl>
+    <repository>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.releases</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.snapshots</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+  
+  <!-- BUILD -->
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.2</version>
+          <configuration>
+            <tagNameFormat>@{project.version}</tagNameFormat>
+            <tagBase>https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ui/tags</tagBase>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>2.3.2</version>
+          <inherited>true</inherited>
+          <configuration>
+            <source>1.6</source>
+            <target>1.6</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>2.10</version>
+        </plugin>
+        <plugin>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>maven-jetty-plugin</artifactId>
+          <version>6.1.26</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-eclipse-plugin</artifactId>
+          <version>2.8</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>1.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.8.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.2</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

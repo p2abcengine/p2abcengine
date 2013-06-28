@@ -17,6 +17,7 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 import javax.xml.bind.JAXBException;
 
@@ -188,6 +189,16 @@ public class KeyManagerPrinter implements KeyManager {
   public RevocationInformation getLatestRevocationInformation(URI rapuid)
       throws KeyManagerException {
     return km.getLatestRevocationInformation(rapuid);
+  }
+
+  @Override
+  public ArrayList<?> getCredentialTokens(URI uid){
+  return km.getCredentialTokens(uid);
+  }
+
+  @Override
+  public void storeCredentialTokens(URI uid, ArrayList<?> tokens) throws KeyManagerException {
+  km.storeCredentialTokens(uid, tokens);
   }
 
 }

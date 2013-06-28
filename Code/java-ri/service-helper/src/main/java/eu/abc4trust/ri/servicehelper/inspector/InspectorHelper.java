@@ -40,7 +40,7 @@ import eu.abc4trust.xml.SystemParameters;
 public class InspectorHelper extends AbstractHelper {
 
     private static InspectorHelper instance;
-    
+
     /**
      * @param ignoredCryptoEngine ignored as only Idemix inspection keys are used
      * @param inspectorStoragePrefix - private storage files (private keys) will be stored here
@@ -52,10 +52,56 @@ public class InspectorHelper extends AbstractHelper {
      * @throws Exception
      */
     public static synchronized InspectorHelper initInstance(ProductionModule.CryptoEngine ignoredCryptoEngine, String inspectorStoragePrefix, String inspectorResourcesPrefix, String systemParametersResource, URI[] inspectorKeyUIDs, String[] credSpecResourceList)
-        throws Exception {
-      return initInstance(inspectorStoragePrefix, inspectorResourcesPrefix, systemParametersResource, inspectorKeyUIDs, credSpecResourceList);
+            throws Exception {
+        return initInstance(inspectorStoragePrefix, inspectorResourcesPrefix, systemParametersResource, inspectorKeyUIDs, credSpecResourceList);
     }
-    
+
+    public static synchronized InspectorHelper initInstance(String inspectorStoragePrefix, String systemParametersResource, String[] credSpecResourceList, String[] inspectorPKResourceList)
+            throws Exception {
+        if (instance != null) {
+            throw new IllegalStateException(
+                    "initInstance can only be called once!");
+        }
+        System.out.println("InspectorHelper.initInstance");
+
+        instance = new InspectorHelper(inspectorStoragePrefix, null, null);
+        instance.addCredentialSpecifications(credSpecResourceList);
+        //
+        SystemParameters systemParameters = null;
+        // system params...
+        if (!instance.keyManager.hasSystemParameters()) {
+
+            // read systemparameters - both Idemix and UProve
+            if(systemParametersResource!=null) {
+                System.out.println("- load systemparameters from resource! " + systemParametersResource);
+                systemParameters= loadObjectFromResource(systemParametersResource);
+                instance.keyManager.storeSystemParameters(systemParameters);
+            } else {
+                new SystemParametersUtil();
+                systemParameters = SystemParametersUtil
+                        .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                                IDEMIX_KEY_LENGTH, UPROVE_KEY_LENGTH);
+                instance.keyManager.storeSystemParameters(systemParameters);
+                System.out.println("WARN - using static SystemParameters");
+            }
+        } else {
+            System.out.println(" - system params exists!");
+            systemParameters = instance.keyManager.getSystemParameters();
+            System.out.println("systemParameters : " + systemParameters);
+        }
+        // register Idemix system parameters
+        instance.setupIdemixEngine();
+
+        for(String s: inspectorPKResourceList){
+            InspectorPublicKey publicKey = loadObjectFromResource(s);
+            VEPublicKey vePubKey = (VEPublicKey)Parser.getInstance().parse((org.w3c.dom.Element)publicKey.getCryptoParams().getAny().get(0));
+            StructureStore.getInstance().add(publicKey.getPublicKeyUID().toString(), vePubKey);
+
+        }
+        return instance;
+    }
+
+
     /**
      * @param inspectorStoragePrefix - private storage files (private keys) will be stored here
      * @param inspectorResourcesPrefix - public keys will be exported here
@@ -66,7 +112,7 @@ public class InspectorHelper extends AbstractHelper {
      * @throws Exception
      */
     public static synchronized InspectorHelper initInstance(String inspectorStoragePrefix, String inspectorResourcesPrefix, String systemParametersResource, URI[] inspectorKeyUIDs, String[] credSpecResourceList)
-                    throws Exception {
+            throws Exception {
         if (instance != null) {
             throw new IllegalStateException(
                     "initInstance can only be called once!");
@@ -79,26 +125,29 @@ public class InspectorHelper extends AbstractHelper {
         SystemParameters systemParameters = null;
         // system params...
         if (!instance.keyManager.hasSystemParameters()) {
-          
-          // read systemparameters - both Idemix and UProve
-          if(systemParametersResource!=null) {
-            System.out.println("- load systemparameters from resource! " + systemParametersResource);
-            systemParameters= loadObjectFromResource(systemParametersResource);
-            instance.keyManager.storeSystemParameters(systemParameters);
-          } else {
-              systemParameters = new SystemParametersUtil().generatePilotSystemParameters_WithIdemixSpecificKeySize(IDEMIX_KEY_LENGTH);
-              instance.keyManager.storeSystemParameters(systemParameters);
-              System.out.println("WARN - using static SystemParameters");
-          }
-      } else {
-          System.out.println(" - system params exists!");
-          systemParameters = instance.keyManager.getSystemParameters();
-          System.out.println("systemParameters : " + systemParameters);
-      }
-      // register Idemix system parameters
-      instance.setupIdemixEngine();        
-      instance.initInspectorKeys(inspectorKeyUIDs, inspectorResourcesPrefix);
-      // 
+
+            // read systemparameters - both Idemix and UProve
+            if(systemParametersResource!=null) {
+                System.out.println("- load systemparameters from resource! " + systemParametersResource);
+                systemParameters= loadObjectFromResource(systemParametersResource);
+                instance.keyManager.storeSystemParameters(systemParameters);
+            } else {
+                new SystemParametersUtil();
+                systemParameters = SystemParametersUtil
+                        .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                                IDEMIX_KEY_LENGTH, UPROVE_KEY_LENGTH);
+                instance.keyManager.storeSystemParameters(systemParameters);
+                System.out.println("WARN - using static SystemParameters");
+            }
+        } else {
+            System.out.println(" - system params exists!");
+            systemParameters = instance.keyManager.getSystemParameters();
+            System.out.println("systemParameters : " + systemParameters);
+        }
+        // register Idemix system parameters
+        instance.setupIdemixEngine();
+        instance.initInspectorKeys(inspectorKeyUIDs, inspectorResourcesPrefix);
+        //
         return instance;
     }
 
@@ -131,7 +180,7 @@ public class InspectorHelper extends AbstractHelper {
         return instance;
     }
 
-    private InspectorAbcEngine engine;
+    public InspectorAbcEngine engine;
     public CredentialManager credentialManager;
 
     /**
@@ -171,7 +220,7 @@ public class InspectorHelper extends AbstractHelper {
             e.printStackTrace();
             throw new IllegalStateException("Could not setup Inspector !", e);
         }
-    }        
+    }
 
 
     private void initInspectorKeys(URI[] inspectorKeyUIDs, String inspectorResourcesPrefix) {
@@ -179,32 +228,32 @@ public class InspectorHelper extends AbstractHelper {
             for(URI uid : inspectorKeyUIDs) {
                 InspectorPublicKey publicKey = this.keyManager.getInspectorPublicKey(uid);
                 if(publicKey == null) {
-                      // key does not exist!
+                    // key does not exist!
                     System.out.println("Generate Inspector Keys with UID : " + uid);
                     URI mechanism = CryptoUriUtil.getIdemixMechanism();
                     int inspectorKeySize = INSPECTOR_KEY_LENGTH;
                     publicKey = this.engine.setupInspectorPublicKey(inspectorKeySize, mechanism, uid);
-                    
+
                     String inspector_publickey = "inspector_publickey_";
                     boolean urnScheme = "urn".equals(uid.getScheme());
                     if (urnScheme) {
-                      inspector_publickey += uid.toASCIIString().replaceAll(":", "_");
+                        inspector_publickey += uid.toASCIIString().replaceAll(":", "_");
                     } else {
-                      inspector_publickey +=
-                          uid.getHost().replace(".", "_")
-                              + uid.getPath().replace("/", "_");
+                        inspector_publickey +=
+                                uid.getHost().replace(".", "_")
+                                + uid.getPath().replace("/", "_");
                     }
                     storeObjectInFile(publicKey, inspectorResourcesPrefix, inspector_publickey);
-                    
+
                 } else {
-                     System.out.println("We already have inspector keys with UID : " + uid);
+                    System.out.println("We already have inspector keys with UID : " + uid);
                 }
                 // TODO : is this needed on inspector side ?
                 VEPublicKey vePubKey = (VEPublicKey)Parser.getInstance().parse((org.w3c.dom.Element)publicKey.getCryptoParams().getAny().get(0));
                 StructureStore.getInstance().add(publicKey.getPublicKeyUID().toString(), vePubKey);
 
             }
-            
+
         } catch (Exception e) {
             System.err.println("Init Failed");
             e.printStackTrace();
@@ -216,9 +265,31 @@ public class InspectorHelper extends AbstractHelper {
     public List<Attribute> inspect(PresentationToken value) throws Exception {
         return this.engine.inspect(value);
     }
-    
+
+    public static synchronized InspectorPublicKey setupPublicKey(URI mechanism, int keyLength, URI uid, String inspectorResourcesPrefix) throws Exception{
+        if (instance == null) {
+            throw new IllegalStateException(
+                    "getInstance not called before using IssuanceHelper!");
+        }
+        InspectorPublicKey ipk = instance.engine.setupInspectorPublicKey(keyLength, mechanism, uid);
+        String inspector_publickey = "inspector_publickey_";
+        boolean urnScheme = "urn".equals(uid.getScheme());
+        if (urnScheme) {
+            inspector_publickey += uid.toASCIIString().replaceAll(":", "_");
+        } else {
+            inspector_publickey +=
+                    uid.getHost().replace(".", "_")
+                    + uid.getPath().replace("/", "_");
+        }
+        VEPublicKey vePubKey = (VEPublicKey)Parser.getInstance().parse((org.w3c.dom.Element)ipk.getCryptoParams().getAny().get(0));
+        StructureStore.getInstance().add(ipk.getPublicKeyUID().toString(), vePubKey);
+
+        storeObjectInFile(ipk, inspectorResourcesPrefix, inspector_publickey);
+        return ipk;
+    }
+
     public SecretKey exportPrivateKey(URI inspectorPublicKeyUID) throws Exception {
-        return credentialManager.getInspectorSecretKey(inspectorPublicKeyUID);
+        return this.credentialManager.getInspectorSecretKey(inspectorPublicKeyUID);
     }
 
 }

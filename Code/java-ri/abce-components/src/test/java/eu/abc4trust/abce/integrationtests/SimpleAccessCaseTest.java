@@ -26,6 +26,7 @@ import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
 import eu.abc4trust.abce.testharness.PolicySelector;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
@@ -56,12 +57,12 @@ public class SimpleAccessCaseTest {
     public void loginForYoungstersTest() throws Exception {
         Injector governmentInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1984),
-                        CryptoEngine.MOCK));
+                        CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1987), CryptoEngine.MOCK));
+                new Random(1987), CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
         Injector serviceInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1988),
-                        CryptoEngine.MOCK));
+                        CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
 
         IssuanceHelper issuanceHelper = new IssuanceHelper();
 
@@ -125,12 +126,12 @@ public class SimpleAccessCaseTest {
     public void loginForAdultsTest() throws Exception {
         Injector governmentInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1984),
-                        CryptoEngine.MOCK));
+                        CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1987), CryptoEngine.MOCK));
+                new Random(1987), CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
         Injector serviceInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1988),
-                        CryptoEngine.MOCK));
+                        CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
 
         IssuanceHelper issuanceHelper = new IssuanceHelper();
 
@@ -159,12 +160,12 @@ public class SimpleAccessCaseTest {
     public void loginForAdultsTestTwoCreditcards() throws Exception {
         Injector governmentInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1984),
-                        CryptoEngine.MOCK));
+                        CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1987), CryptoEngine.MOCK));
+                new Random(1987), CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
         Injector serviceInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1988),
-                        CryptoEngine.MOCK));
+                        CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
 
         IssuanceHelper issuanceHelper = new IssuanceHelper();
 

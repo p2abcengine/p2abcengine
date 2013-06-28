@@ -47,6 +47,7 @@ import eu.abc4trust.abce.testharness.IssuanceHelper;
 import eu.abc4trust.abce.testharness.PolicySelector;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspector;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -102,26 +103,26 @@ public class HotelBookingTest {
 
         Injector revocationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        CryptoEngine.IDEMIX));
+                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
 
         Injector governmentInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, 8888));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector universityInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, 8889));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector bankInjector = Guice.createInjector(BridgingModuleFactory.newModule(
-                new Random(1986), IssuerCryptoEngine.UPROVE, 8890, revocationProxyAuthority));
+                new Random(1986), IssuerCryptoEngine.UPROVE, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(
-                new Random(1987), 8891, revocationProxyAuthority));
+                new Random(1987), UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         Injector hotelInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, 8892));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector inspectorInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                cryptoEngine, 8893));
+                cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
 
         // Create URIs.
@@ -144,28 +145,28 @@ public class HotelBookingTest {
 
         Injector revocationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        CryptoEngine.IDEMIX));
+                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
 
         Injector governmentInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector universityInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector bankInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1986),
-                        cryptoEngine, revocationProxyAuthority));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         Injector userInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1987),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector hotelInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, revocationProxyAuthority));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         Injector inspectorInjector = Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                cryptoEngine));
+                cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
         // Create URIs.
         int keyLength = 1024;
@@ -186,24 +187,24 @@ public class HotelBookingTest {
 
         Injector revocationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
 
         Injector governmentInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        9090));
+                  UProveUtils.UPROVE_COMMON_PORT));
         Injector universityInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        9091));
+                  UProveUtils.UPROVE_COMMON_PORT));
         Injector bankInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1986), 9092, revocationProxyAuthority));
+                new Random(1986), UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1987), 9093));
+                new Random(1987), UProveUtils.UPROVE_COMMON_PORT));
         Injector hotelInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        9094));
+                  UProveUtils.UPROVE_COMMON_PORT));
 
         // Create URIs.
         int keyLength = 1024;
@@ -403,13 +404,13 @@ public class HotelBookingTest {
                 .getInstance(RevocationAbcEngine.class);
         Reference revocationInfoReference = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(URI.create("example.org"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
 
         // Generate issuer parameters.
         URI hash = new URI("urn:abc4trust:1.0:hashalgorithm:sha-256");
@@ -425,13 +426,13 @@ public class HotelBookingTest {
 
             governementPassportIssuerParameters = governmentEngine
                     .setupIssuerParameters(passportCredSpec, systemParameters,
-                            passportIssuancePolicyUid, hash, CryptoUriUtil.getIdemixMechanism(), revocationId);
+                            passportIssuancePolicyUid, hash, CryptoUriUtil.getIdemixMechanism(), revocationId, null);
 
             revocationId = new URI("revocationUID2");
             universityStudentCardIssuerParameters = universityEngine
                     .setupIssuerParameters(credentialSpecificationStudent,
                             systemParameters, studentCardIssuancePolicyUid, hash,
-                            URI.create("uprove"), revParamsUid);
+                            URI.create("uprove"), revParamsUid, null);
 
 
             revocationAuthorityParameters = revocationEngine
@@ -445,23 +446,23 @@ public class HotelBookingTest {
             revocationId = new URI("revocationUID3");
             bankCreditcardIssuerParameters = bankEngine.setupIssuerParameters(
                     credentialSpecificationCreditcard, uproveParams,
-                    creditCardIssuancePolicyUid, hash, CryptoUriUtil.getUproveMechanism(), revocationId);
+                    creditCardIssuancePolicyUid, hash, CryptoUriUtil.getUproveMechanism(), revocationId, null);
         } else {
             governementPassportIssuerParameters = governmentEngine
                     .setupIssuerParameters(passportCredSpec, systemParameters,
-                            passportIssuancePolicyUid, hash, cryptoMechanism, revocationId);
+                            passportIssuancePolicyUid, hash, cryptoMechanism, revocationId, null);
 
             revocationId = new URI("revocationUID2");
             universityStudentCardIssuerParameters = universityEngine
                     .setupIssuerParameters(
                             credentialSpecificationStudent, systemParameters,
-                            studentCardIssuancePolicyUid, hash, cryptoMechanism, revocationId);
+                            studentCardIssuancePolicyUid, hash, cryptoMechanism, revocationId, null);
 
             revocationId = new URI("revocationUID3");
             bankCreditcardIssuerParameters = bankEngine
                     .setupIssuerParameters(
                             credentialSpecificationCreditcard, systemParameters,
-                            creditCardIssuancePolicyUid, hash, cryptoMechanism, revocationId);
+                            creditCardIssuancePolicyUid, hash, cryptoMechanism, revocationId, null);
 
         }
         

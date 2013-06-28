@@ -26,22 +26,22 @@ public class ITSoderhamnPilot extends AbstractIT {
     }
 
     private void setupCryptoEngines(CryptoEngine cryptoEngine, CryptoEngine clientEngine,
-                                    String pupil) throws Exception {
-        initIssuer(cryptoEngine, clientEngine);
+            String pupil) throws Exception {
+        this.initIssuer(cryptoEngine, clientEngine);
 
         String storagePrefix = pupil.toLowerCase();
         if(cryptoEngine == CryptoEngine.BRIDGED) {
             storagePrefix += "_bridged";
         }
         storagePrefix += "_" + clientEngine.toString().toLowerCase();
-        initHelper(cryptoEngine, clientEngine, storagePrefix);
+        this.initHelper(cryptoEngine, clientEngine, storagePrefix);
     }
 
 
     private void issueSoederhamnCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, String pupil) throws Exception {
         System.out.println("-- issueSoederhamnCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - pupil : " + pupil);
-        setupCryptoEngines(cryptoEngine, clientEngine, pupil);
-        
+        this.setupCryptoEngines(cryptoEngine, clientEngine, pupil);
+
         String soderhamnScope = "urn:soderhamn:registration";
 
         this.initPseudonym(clientEngine, soderhamnScope, 42);
@@ -59,13 +59,13 @@ public class ITSoderhamnPilot extends AbstractIT {
 
     private void verifySoederhamnCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, String pupil) throws Exception {
         System.out.println("-- issueSoederhamnCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - pupil : " + pupil);
-        setupCryptoEngines(cryptoEngine, clientEngine, pupil);
+        this.setupCryptoEngines(cryptoEngine, clientEngine, pupil);
 
         // School credential
         System.out.println("Present Soderhamn Smartcard Pseudonym!");
         String soderhamnScope = "urn:soderhamn:registration";
         this.runVerification(cryptoEngine, clientEngine, "presentationPolicySoderhamnSchool.xml", true, soderhamnScope);
-        
+
         // Subject credential
         String frenchScope = "urn:soderhamn:restrictedarea:french";
         System.out.println("Present Soderhamn Subject Credential - pseudonym being established!");
@@ -81,9 +81,10 @@ public class ITSoderhamnPilot extends AbstractIT {
         this.runVerification(cryptoEngine, clientEngine, "presentationPolicyRASubjectMustBeEnglish.xml", false, englishScope);
 
     }
-    
+
     @Test
     public void testPupil_Emil_Idemix() throws Exception {
+        this.copySystemParameters();
         this.issueSoederhamnCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "Emil");
         this.verifySoederhamnCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "Emil");
     }
@@ -96,6 +97,7 @@ public class ITSoderhamnPilot extends AbstractIT {
 
     @Test
     public void testPupil_Emil_Bridged_Idemix() throws Exception {
+        this.copySystemParameters();
         this.issueSoederhamnCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, "Emil");
         this.verifySoederhamnCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX,"Emil");
     }

@@ -16,6 +16,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -34,6 +35,7 @@ import com.ibm.zurich.idmx.issuance.Message.IssuanceProtocolValues;
 import com.ibm.zurich.idmx.key.IssuerPublicKey;
 import com.ibm.zurich.idmx.showproof.ProofSpec;
 import com.ibm.zurich.idmx.showproof.ProverInput;
+import com.ibm.zurich.idmx.showproof.accumulator.AccumulatorPublicKey;
 import com.ibm.zurich.idmx.utils.GroupParameters;
 import com.ibm.zurich.idmx.utils.Parser;
 import com.ibm.zurich.idmx.utils.StructureStore;
@@ -44,6 +46,7 @@ import eu.abc4trust.abce.internal.revocation.RevocationProof;
 import eu.abc4trust.abce.internal.revocation.UserRevocation;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.idemix.util.IdemixClaim;
 import eu.abc4trust.cryptoEngine.idemix.util.IdemixConstants;
@@ -51,6 +54,7 @@ import eu.abc4trust.cryptoEngine.idemix.util.IdemixProofSpecGenerator;
 import eu.abc4trust.cryptoEngine.idemix.util.IdemixSystemParameters;
 import eu.abc4trust.cryptoEngine.idemix.util.IdemixUtils;
 import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
+import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
@@ -85,6 +89,7 @@ import eu.abc4trust.xml.PresentationTokenDescriptionWithCommitments;
 import eu.abc4trust.xml.PresentationTokenWithCommitments;
 import eu.abc4trust.xml.Pseudonym;
 import eu.abc4trust.xml.PseudonymWithMetadata;
+import eu.abc4trust.xml.RevocationAuthorityParameters;
 import eu.abc4trust.xml.Secret;
 import eu.abc4trust.xml.SecretDescription;
 import eu.abc4trust.xml.SmartcardSystemParameters;
@@ -145,9 +150,9 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
     public PresentationTokenWithCommitments createPresentationTokenWithCommitments(
             PresentationTokenDescriptionWithCommitments ptd, List<URI> creds, List<URI> pseudonyms) throws CryptoEngineException{
 
-        Map<URI, Credential> aliasCreds =
+        LinkedHashMap<URI, Credential> aliasCreds =
                 this.cryptoEngineUtil.fetchCredentialsFromPresentationTokenWithCommitments(ptd, creds);
-        Map<URI, PseudonymWithMetadata> aliasNyms =
+        LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms =
                 this.cryptoEngineUtil.fetchPseudonymsFromPresentationTokenWithCommitments(ptd, pseudonyms);
         ObjectFactory of = new ObjectFactory();
         PresentationTokenWithCommitments ret = of.createPresentationTokenWithCommitments();
@@ -181,8 +186,8 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
         // put attributes to the attribute cache
         this.fillInAttributeCache(ctxt, atts);
 
-        Map<URI, Credential> aliasCreds = null;
-        Map<URI, PseudonymWithMetadata> aliasNyms = null;
+        LinkedHashMap<URI, Credential> aliasCreds = null;
+        LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms = null;
         try {
             aliasCreds = this.cryptoEngineUtil.fetchCredentialsFromIssuanceToken(itd, creduids);
             aliasNyms = this.cryptoEngineUtil.fetchPseudonymsFromIssuanceToken(itd, pseudonyms);
@@ -231,13 +236,14 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
             PresentationTokenDescription ptd, List<URI> creds,
             List<URI> pseudonyms) throws CryptoEngineException {
 
-        Map<URI, Credential> aliasCreds =
+        LinkedHashMap<URI, Credential> aliasCreds =
                 this.cryptoEngineUtil.fetchCredentialsFromPresentationToken(ptd, creds);
-        Map<URI, PseudonymWithMetadata> aliasNyms =
+        LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms =
                 this.cryptoEngineUtil.fetchPseudonymsFromPresentationToken(ptd, pseudonyms);
         ObjectFactory of = new ObjectFactory();
         PresentationToken ret = of.createPresentationToken();
-        ret.setCryptoEvidence(this.generatePresentationCryptoEvidenceIdemix(ptd, aliasCreds, aliasNyms));
+        CryptoParams cp = this.generatePresentationCryptoEvidenceIdemix(ptd, aliasCreds, aliasNyms);
+        ret.setCryptoEvidence(cp);
         ret.setVersion("1.0");
         ret.setPresentationTokenDescription(ptd);
 
@@ -307,6 +313,26 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
             NonRevocationEvidence nre = null;
 
             if (credSpec.isRevocable()) {
+                try{
+                    IssuerParameters ip = this.keyManager.getIssuerParameters(credDesc.getIssuerParametersUID());
+                    URI revParUid = ip.getRevocationParametersUID();
+                    boolean pkInStorage = false;
+                    try{
+                        pkInStorage = (StructureStore.getInstance().get(revParUid) != null);
+                    }catch(RuntimeException e){}
+                    if(!pkInStorage){
+                        RevocationAuthorityParameters revParams = this.keyManager.getRevocationAuthorityParameters(revParUid);
+                        List<Object> any = revParams.getCryptoParams().getAny();
+                        Element publicKeyStr = (Element) any.get(0);
+                        Object publicKeyObj = Parser.getInstance().parse(publicKeyStr);
+
+                        AccumulatorPublicKey publicKey = (AccumulatorPublicKey) publicKeyObj;
+                        StructureStore.getInstance().add(revParUid.toString(), publicKey);
+                    }
+                }catch(KeyManagerException e){
+                    throw new CryptoEngineException(e);
+                }
+
                 nre = (NonRevocationEvidence) XmlUtils.unwrap(
                         m.getAny().get(2), NonRevocationEvidence.class);
 
@@ -375,7 +401,7 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
 
     @Override
     public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
-            List<URI> revokedatts) throws CryptoEngineException {
+            List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException {
         return this.userRevocation.updateNonRevocationEvidence(cred, raparsuid,
                 revokedatts);
     }
@@ -383,7 +409,7 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
     @Override
     public Credential updateNonRevocationEvidence(Credential cred,
             URI raparsuid, List<URI> revokedatts, URI revinfouid)
-                    throws CryptoEngineException {
+                    throws CryptoEngineException, CredentialWasRevokedException {
         return this.userRevocation.updateNonRevocationEvidence(cred, raparsuid,
                 revokedatts, revinfouid);
     }
@@ -532,8 +558,8 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
     }
 
     public CryptoParams generatePresentationCryptoEvidenceWithCommitmentsIdemix(
-            PresentationTokenDescriptionWithCommitments ptd, Map<URI, Credential> aliasCreds,
-            Map<URI, PseudonymWithMetadata> aliasNyms) throws CryptoEngineException{
+            PresentationTokenDescriptionWithCommitments ptd, LinkedHashMap<URI, Credential> aliasCreds,
+            LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms) throws CryptoEngineException{
         IdemixClaimGenerator idmxGenerator = new IdemixClaimGenerator(
                 this.smartcardManager, this.keyManager, this.credManager,
                 this.revocationProof, this.contextGen);
@@ -562,7 +588,7 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
         this.loadIdemixSystemParameters();
 
         //create a list of credspecs
-        Map<String, CredentialSpecification> aliasCredSpecsMap = this.getCredSpecList(aliasCreds, null);
+        LinkedHashMap<String, CredentialSpecification> aliasCredSpecsMap = this.getCredSpecList(aliasCreds, null);
 
         List<CredentialSpecification> credSpecsList = new ArrayList<CredentialSpecification>();
         for(CredentialSpecification cs: aliasCredSpecsMap.values()){
@@ -625,8 +651,8 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
     }
 
     public CryptoParams generatePresentationCryptoEvidenceIdemix(PresentationTokenDescription ptd,
-            Map<URI, Credential> aliasCreds,
-            Map<URI, PseudonymWithMetadata> aliasNyms)
+            LinkedHashMap<URI, Credential> aliasCreds,
+            LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms)
                     throws CryptoEngineException {
         IdemixClaimGenerator idmxGenerator = new IdemixClaimGenerator(
                 this.smartcardManager, this.keyManager, this.credManager,
@@ -647,7 +673,7 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
         this.loadIdemixIssuerParameters(issuerParamsURIList);
 
         // create a list of credspecs
-        Map<String, CredentialSpecification> aliasCredSpecsMap = this.getCredSpecList(aliasCreds, null);
+        LinkedHashMap<String, CredentialSpecification> aliasCredSpecsMap = this.getCredSpecList(aliasCreds, null);
 
         List<CredentialSpecification> credSpecsList = new ArrayList<CredentialSpecification>();
         for (CredentialSpecification cs : aliasCredSpecsMap.values()) {
@@ -658,8 +684,8 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
         this.loadIdemixCredentialStructuresForPresentation(credSpecsList);
 
         try {
-            cryptoEvidence.getAny().add(
-                    idmxGenerator.getPresentationEvidence(ptd, aliasCreds, aliasCredSpecsMap, aliasNyms));
+            Element presentationEvidence = idmxGenerator.getPresentationEvidence(ptd, aliasCreds, aliasCredSpecsMap, aliasNyms);
+            cryptoEvidence.getAny().add(presentationEvidence);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -775,10 +801,10 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
         return ret;
     }
 
-    private Map<String, CredentialSpecification> getCredSpecList(Map<URI, Credential> aliasCreds,
+    private LinkedHashMap<String, CredentialSpecification> getCredSpecList(Map<URI, Credential> aliasCreds,
             CredentialTemplate ct) {
 
-        Map<String, CredentialSpecification> aliasCredSpecs = new HashMap<String, CredentialSpecification>();
+        LinkedHashMap<String, CredentialSpecification> aliasCredSpecs = new LinkedHashMap<String, CredentialSpecification>();
         CredentialSpecification credSpec = null;
         for (URI credAlias : aliasCreds.keySet()) {
             try {
@@ -904,46 +930,17 @@ public class IdemixCryptoEngineUserImpl implements CryptoEngineUser {
     private SmartcardSystemParameters getSystemParameters() {
         SmartcardSystemParameters smartCardSysParams;
         try {
-            smartCardSysParams =
-                    this.createSmartcardSystemParameters(this.keyManager.getSystemParameters());
+            smartCardSysParams = SystemParametersUtil
+                    .createSmartcardSystemParameters(this.keyManager
+                            .getSystemParameters());
         } catch (KeyManagerException ex) {
             throw new RuntimeException(ex);
         }
         return smartCardSysParams;
     }
 
-    private SmartcardSystemParameters createSmartcardSystemParameters(SystemParameters sysParams) {
-
-        IdemixSystemParameters idemixSystemParameters = new IdemixSystemParameters(sysParams);
-
-        // this will throw illegal state exception if not found!
-        GroupParameters gp = idemixSystemParameters.getGroupParameters();
-
-        if (gp.getSystemParams() == null) {
-            throw new RuntimeException("System parameters are not correctly set up");
-        }
-
-        SmartcardSystemParameters scSysParams = new SmartcardSystemParameters();
-
-        BigInteger p = gp.getCapGamma();
-        BigInteger g = gp.getG();
-        BigInteger subgroupOrder = gp.getRho();
-        int zkChallengeSizeBytes = 256 / 8;
-        int zkStatisticalHidingSizeBytes = 80 / 8;
-        int deviceSecretSizeBytes = 256 / 8;
-        int signatureNonceLengthBytes = 128 / 8;
-        int zkNonceSizeBytes = 256 / 8;
-        int zkNonceOpeningSizeBytes = 256 / 8;
-
-        scSysParams.setPrimeModulus(p);
-        scSysParams.setGenerator(g);
-        scSysParams.setSubgroupOrder(subgroupOrder);
-        scSysParams.setZkChallengeSizeBytes(zkChallengeSizeBytes);
-        scSysParams.setZkStatisticalHidingSizeBytes(zkStatisticalHidingSizeBytes);
-        scSysParams.setDeviceSecretSizeBytes(deviceSecretSizeBytes);
-        scSysParams.setSignatureNonceLengthBytes(signatureNonceLengthBytes);
-        scSysParams.setZkNonceSizeBytes(zkNonceSizeBytes);
-        scSysParams.setZkNonceOpeningSizeBytes(zkNonceOpeningSizeBytes);
-        return scSysParams;
+    @Override
+    public boolean isRevoked(Credential cred) throws CryptoEngineException {
+        return this.userRevocation.isRevoked(cred);
     }
 }

@@ -19,10 +19,12 @@ import com.google.inject.Inject;
 import eu.abc4trust.abce.internal.issuer.issuanceManager.IssuanceManagerIssuer;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.issuer.CryptoEngineIssuer;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.returnTypes.IssuerParametersAndSecretKey;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.FriendlyDescription;
+import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
@@ -54,10 +56,10 @@ public class IssuerAbcEngineImpl implements IssuerAbcEngine {
 
     @Override
     public IssuerParameters setupIssuerParameters(CredentialSpecification credspec,
-            SystemParameters syspars, URI uid, URI hash, URI algorithm, URI revParsUid) {
+            SystemParameters syspars, URI uid, URI hash, URI algorithm, URI revParsUid, List<FriendlyDescription> friendlyIssuerDescription) {
 
         // TODO(enr): switch the cryptoEngine based on the algorithm
-        IssuerParametersAndSecretKey ret = this.cryptoEngine.setupIssuerParameters(credspec, syspars, uid, hash, revParsUid);
+        IssuerParametersAndSecretKey ret = this.cryptoEngine.setupIssuerParameters(credspec, syspars, uid, hash, revParsUid, friendlyIssuerDescription);
 
         //TODO(enr): What do we do with the secret key?
         SecretKey secretKey = ret.issuerSecretKey;
@@ -69,5 +71,22 @@ public class IssuerAbcEngineImpl implements IssuerAbcEngine {
     public SystemParameters setupSystemParameters(int keyLength, URI cryptographicMechanism) {
         return this.cryptoEngine.setupSystemParameters(keyLength, cryptographicMechanism);
     }
+
+ @Override
+ public IssuanceMessageAndBoolean initReIssuanceProtocol(IssuancePolicy clonedIssuancePolicy)
+ throws CryptoEngineException {
+ return this.issuanceManager.initReIssuanceProtocol(clonedIssuancePolicy);
+ }
+
+ @Override
+ public IssuanceMessageAndBoolean reIssuanceProtocolStep(IssuanceMessage m)
+ throws CryptoEngineException {
+ return this.issuanceManager.reIssuanceProtocolStep(m);
+ }
+
+@Override
+public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid) throws Exception {
+  return this.issuanceManager.getIssuanceLogEntry(issuanceEntryUid);
+}
 
 }

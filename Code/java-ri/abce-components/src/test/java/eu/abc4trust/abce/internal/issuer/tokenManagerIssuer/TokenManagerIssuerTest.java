@@ -48,7 +48,7 @@ public class TokenManagerIssuerTest {
 
         File temp3 = File.createTempFile(LOG_FILE, EXTENSION);
         temp3.deleteOnExit();
-        
+
         PersistentFileTokenStorageIssuer persistentStorage = new PersistentFileTokenStorageIssuer(temp1, temp2, temp3);
         TokenManagerIssuer tokenManager = new TokenManagerIssuerImpl(persistentStorage);
 
@@ -149,7 +149,7 @@ public class TokenManagerIssuerTest {
         // Retrieve the first saved IssuanceToken again to make sure it has been removed
         savedIssuanceToken = tokenManager.getToken(uid);
         assertEquals(null, savedIssuanceToken);
-        
+
         IssuanceLogEntry logEntry = new IssuanceLogEntry();
         logEntry.setIssuanceLogEntryUID(URI.create("logEntryUID"));
         logEntry.setIssuerParametersUID(URI.create("issuerParamsUID"));
@@ -157,17 +157,19 @@ public class TokenManagerIssuerTest {
         AttributeInLogEntry attributeInLogEntry = new AttributeInLogEntry();
         attributeInLogEntry.setAttributeType(URI.create("nullAttribute"));
         attributeInLogEntry.setAttributeValue(null);
-        logEntry.setIssuerAttributes(attributeInLogEntry);
-        
+        logEntry.getIssuerAttributes().add(attributeInLogEntry);
+
         URI storedUID = tokenManager.storeIssuanceLogEntry(logEntry);
         IssuanceLogEntry storedEntry = tokenManager.getIssuanceLogEntry(storedUID);
         assertEquals(logEntry.getIssuanceLogEntryUID(), storedEntry.getIssuanceLogEntryUID());
         assertEquals(logEntry.getIssuerParametersUID(), storedEntry.getIssuerParametersUID());
-        assertEquals(logEntry.getIssuerAttributes().getAttributeType(), storedEntry.getIssuerAttributes().getAttributeType());
-        assertEquals(logEntry.getIssuerAttributes().getAttributeValue(), storedEntry.getIssuerAttributes().getAttributeValue());
+        assertEquals(logEntry.getIssuerAttributes().get(0).getAttributeType(),
+                storedEntry.getIssuerAttributes().get(0).getAttributeType());
+        assertEquals(logEntry.getIssuerAttributes().get(0).getAttributeValue(),
+                storedEntry.getIssuerAttributes().get(0).getAttributeValue());
         assertEquals(logEntry.getIssuanceToken().getIssuanceTokenDescription().getPresentationTokenDescription().getPolicyUID(), storedEntry.getIssuanceToken().getIssuanceTokenDescription().getPresentationTokenDescription().getPolicyUID());
-        
-        
-        
+
+
+
     }
 }

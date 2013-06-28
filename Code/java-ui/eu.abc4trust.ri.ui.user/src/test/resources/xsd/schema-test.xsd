@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://abc4trust.eu/wp2/abcschemav1.0"
+  attributeFormDefault="unqualified" elementFormDefault="qualified">
+  
+  <xs:include schemaLocation="schema.xsd" />
+    
+  <xs:element name="TestCryptoParams" type="TestCryptoParams" />
+  <xs:complexType name="TestCryptoParams">
+    <xs:sequence>
+      <xs:element name="Data" minOccurs="0" maxOccurs="unbounded" type="xs:anySimpleType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="TestReference" type="TestReference" />
+  <xs:complexType name="TestReference">
+    <xs:sequence>
+      <xs:element name="Data" minOccurs="0" maxOccurs="unbounded" type="xs:anySimpleType" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="TestIssuanceMessage" type="TestIssuanceMessage" />
+  <xs:complexType name="TestIssuanceMessage">
+    <xs:sequence>
+      <xs:element name="Data" minOccurs="0" maxOccurs="unbounded" type="xs:anySimpleType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="TestApplicationData" type="TestApplicationData" />
+  <xs:complexType name="TestApplicationData">
+    <xs:sequence>
+      <xs:element name="Data" minOccurs="0" maxOccurs="unbounded" type="xs:anySimpleType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="TestSystemParameters" type="TestSystemParameters" />
+  <xs:complexType name="TestSystemParameters">
+    <xs:sequence>
+      <xs:element name="Data" minOccurs="0" maxOccurs="unbounded" type="xs:anySimpleType" />
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

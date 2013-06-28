@@ -12,6 +12,7 @@
 package eu.abc4trust.ri.service.issuer;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -28,12 +29,12 @@ import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBElement;
 
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper;
-import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper.SpecAndPolicy;
+import eu.abc4trust.ri.servicehelper.issuer.SpecAndPolicy;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
 import eu.abc4trust.ri.servicehelper.verifier.VerificationHelper;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.util.XmlUtils;
 
@@ -57,38 +58,41 @@ public class IssuanceService {
     ObjectFactory of = new ObjectFactory();
 
     public IssuanceService() {
-      System.out.println("IssuanceService ");
+        System.out.println("IssuanceService ");
     }
-    
+
     private static CryptoEngine clientEngine = null;
     private void initIssuanceHelper(CryptoEngine cryptoEngine, CryptoEngine clientEngine) {
         if(cryptoEngine==CryptoEngine.BRIDGED) {
             IssuanceService.clientEngine = clientEngine;
         } else {
-          IssuanceService.clientEngine = cryptoEngine;
+            IssuanceService.clientEngine = cryptoEngine;
         }
-      
+
         try {
             IssuanceHelper.resetInstance();
             System.out.println("IssuanceHelper - try to - init!");
 
             String uprovePath;
             String fileStoragePrefix; // = "issuer_";
+            String folderName;
             if (new File("target").exists()) {
-              fileStoragePrefix = "target/issuer_";
-              uprovePath = "./../../../../dotNet/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release";
+                fileStoragePrefix = "target/issuer_";
+                folderName = "target";
+                uprovePath = "./../../../../dotNet/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release";
             } else {
-              fileStoragePrefix = "integration-test-issuer/target/issuer_";
-              uprovePath = "./../../../dotNet/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release";
+                fileStoragePrefix = "integration-test-issuer/target/issuer_";
+                folderName = "integration-test-issuer/target";
+                uprovePath = "./../../../dotNet/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release";
             }
             if(System.getProperty("PathToUProveExe",null) == null) {
-              System.setProperty("PathToUProveExe", uprovePath);
+                System.setProperty("PathToUProveExe", uprovePath);
             }
 
             SpecAndPolicy idcard =
-                new SpecAndPolicy(IDCARD_ISSUANCE_WITH_KEY,
-                  "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationSimpleIdentitycard.xml",
-                  "/eu/abc4trust/sampleXml/issuance/issuancePolicySimpleIdentitycard.xml");
+                    new SpecAndPolicy(IDCARD_ISSUANCE_WITH_KEY,
+                            "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationSimpleIdentitycard.xml",
+                            "/eu/abc4trust/sampleXml/issuance/issuancePolicySimpleIdentitycard.xml");
             // null, "http://my.country/identitycard/issuancekey_v1.0", null);
             //        SpecAndPolicy creditcard_visa =
             //            new SpecAndPolicy(CREDITCARD_VISA,
@@ -110,13 +114,13 @@ public class IssuanceService {
             //                "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationStudentCardForHotelBooking.xml",
             //                "/eu/abc4trust/sampleXml/issuance/issuancePolicyStudentCard.xml");
 
-                    //
-                    SpecAndPolicy university =
-                        new SpecAndPolicy(CREDSPEC_UNIVERSITY,
+            //
+            SpecAndPolicy university =
+                    new SpecAndPolicy(CREDSPEC_UNIVERSITY,
                             "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasUniversity.xml",
                             "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasUniversity.xml");
-                    SpecAndPolicy cource =
-                        new SpecAndPolicy(CREDSPEC_COURCE,
+            SpecAndPolicy cource =
+                    new SpecAndPolicy(CREDSPEC_COURCE,
                             "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasCourse.xml",
                             "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasCourse.xml");
             //        SpecAndPolicy attendance =
@@ -124,12 +128,17 @@ public class IssuanceService {
             //                "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationPatrasAttendance.xml",
             //                "/eu/abc4trust/sampleXml/issuance/issuancePolicyPatrasAttendance.xml");
 
-                    SpecAndPolicy soderhamn_school = new SpecAndPolicy(SODERHAMN_SCHOOL, "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchool.xml","/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnSchool.xml");
-                    SpecAndPolicy soderhamn_subject = new SpecAndPolicy(SODERHAMN_SUBJECT, "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSubject.xml","/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnSubject.xml");
-                    
+            SpecAndPolicy soderhamn_school = new SpecAndPolicy(SODERHAMN_SCHOOL, "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchool.xml","/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnSchool.xml");
+            SpecAndPolicy soderhamn_subject = new SpecAndPolicy(SODERHAMN_SUBJECT, "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSubject.xml","/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnSubject.xml");
+
             String systemAndIssuerParamsPrefix = fileStoragePrefix;
 
-            IssuanceHelper.initInstance(cryptoEngine, systemAndIssuerParamsPrefix, fileStoragePrefix, idcard, university, cource, soderhamn_school, soderhamn_subject);
+            // Create a list to allow for rev auth parameters to be passed
+            SpecAndPolicy[] specsAndPolicies = {idcard, university, cource, soderhamn_school, soderhamn_subject};
+
+            String[] revAuthParamsResource = this.getRevParams(folderName);
+
+            IssuanceHelper.initInstance(cryptoEngine, systemAndIssuerParamsPrefix, fileStoragePrefix, specsAndPolicies, revAuthParamsResource);
             // ,creditcard_visa,
             // creditcard_amex,
             // passport_ch,
@@ -140,18 +149,40 @@ public class IssuanceService {
 
             // Idemix : soderhamn 'registration' on static default secret...
             IssuanceHelper.getInstance().registerSmartcardScopeExclusivePseudonym(IssuanceHelper.TEST_CONSTANTS.soderhamnPseudonymValue_Idemix);
-      
+
             // Idemix : patras 'registration' on static default secret...
             IssuanceHelper.getInstance().registerSmartcardScopeExclusivePseudonym(IssuanceHelper.TEST_CONSTANTS.patrasPseudonymValue_Idemix);
 
             // UPROVE : default pseudonym value...
             IssuanceHelper.getInstance().registerSmartcardScopeExclusivePseudonym(IssuanceHelper.TEST_CONSTANTS.patrasPseudonymValue_UProve);
-            
+
             System.out.println("IssuanceHelper - done!");
         } catch (Exception e) {
             System.out.println("Create Domain FAILED " + e);
             e.printStackTrace();
         }
+    }
+
+    private String[] getRevParams(String path){
+        File folder = new File(path);
+
+        File[] revAuthParamsFileList = folder.listFiles(new FilenameFilter() {
+
+            @Override
+            public boolean accept(File arg0, String arg1) {
+                if (arg1.startsWith("revocation_authority_")) {
+                    System.out.println("Test : " + arg1);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        });
+        String[] ret = new String[revAuthParamsFileList.length];
+        for(int i = 0; i< ret.length; i++){
+            ret[i] = revAuthParamsFileList[i].getAbsolutePath();
+        }
+        return ret;
     }
 
     @GET()
@@ -160,7 +191,7 @@ public class IssuanceService {
     public String init(@PathParam("CryptoEngine") final String cryptoEngineName, final @QueryParam("clientEngine") CryptoEngine clientEngine) {
         System.out.println("issuance service.init : " + cryptoEngineName + " - client : " + clientEngine);
         CryptoEngine cryptoEngine = CryptoEngine.valueOf(cryptoEngineName);
-        initIssuanceHelper(cryptoEngine, clientEngine);
+        this.initIssuanceHelper(cryptoEngine, clientEngine);
         return "OK";
     }
 
@@ -172,7 +203,7 @@ public class IssuanceService {
         IssuanceHelper.resetInstance();
         UserHelper.resetInstance();
         VerificationHelper.resetInstance();
-        
+
         return "OK";
     }
 
@@ -336,7 +367,7 @@ public class IssuanceService {
         }
 
         System.out.println(" - return inital message - for context : " + im_with_policy.getContext());
-        System.out.println(" - return inital message : " + XmlUtils.toXml(of.createIssuanceMessage(im_with_policy)));
+        System.out.println(" - return inital message : " + XmlUtils.toXml(this.of.createIssuanceMessage(im_with_policy)));
         return this.of.createIssuanceMessage(im_with_policy);
     }
 
@@ -348,7 +379,7 @@ public class IssuanceService {
     public JAXBElement<IssuanceMessage> issueStep(final IssuanceMessage issuanceMessage) throws Exception {
 
         System.out.println("IssuanceService - step - request - context : " + issuanceMessage.getContext());
-        System.out.println(" - step - request from client  : " + XmlUtils.toXml(of.createIssuanceMessage(issuanceMessage)));
+        System.out.println(" - step - request from client  : " + XmlUtils.toXml(this.of.createIssuanceMessage(issuanceMessage)));
 
         IssuanceMessageAndBoolean response;
         try {
@@ -360,21 +391,26 @@ public class IssuanceService {
             throw new IllegalStateException("Failed to proces IssuanceMessage from server");
         }
 
-        if (response.lastMessage) {
-            System.out.println(" - last message for context : " + response.im.getContext());
+        if (response.isLastMessage()) {
+            System.out.println(" - last message for context : "
+                    + response.getIssuanceMessage().getContext());
             try {
                 System.out.println(" - IssuanceMessage : "
-                        + XmlUtils.toXml(this.of.createIssuanceMessage(response.im)));
+                        + XmlUtils.toXml(this.of.createIssuanceMessage(response
+                                .getIssuanceMessage())));
             } catch (Exception e) {
                 System.out.println(" - IssuanceMessage - LOG FAILED!: ");
                 e.printStackTrace();
             }
         } else {
-            System.out.println(" - more steps context : " + response.im.getContext());
+            System.out.println(" - more steps context : "
+                    + response.getIssuanceMessage().getContext());
         }
-        System.out.println(" - step - response to client  : " + XmlUtils.toXml(of.createIssuanceMessage(response.im)));
+        System.out.println(" - step - response to client  : "
+                + XmlUtils.toXml(this.of.createIssuanceMessage(response
+                        .getIssuanceMessage())));
 
-        return this.of.createIssuanceMessage(response.im);
+        return this.of.createIssuanceMessage(response.getIssuanceMessage());
     }
 
 
@@ -399,17 +435,17 @@ public class IssuanceService {
         attributeValueMap.put("urn:patras:credspec:credUniv:matriculationnr", matriculationnumber);
 
         if (matriculationnumber == 42) {
-          attributeValueMap.put("urn:patras:credspec:credUniv:firstname", "Stewart");
-          attributeValueMap.put("urn:patras:credspec:credUniv:lastname", "Dent");
+            attributeValueMap.put("urn:patras:credspec:credUniv:firstname", "Stewart");
+            attributeValueMap.put("urn:patras:credspec:credUniv:lastname", "Dent");
         } else if (matriculationnumber == 1235332) {
-          attributeValueMap.put("urn:patras:credspec:credUniv:firstname", "John");
-          attributeValueMap.put("urn:patras:credspec:credUniv:lastname", "Doe");
+            attributeValueMap.put("urn:patras:credspec:credUniv:firstname", "John");
+            attributeValueMap.put("urn:patras:credspec:credUniv:lastname", "Doe");
         } else if (matriculationnumber == 666) {
-          attributeValueMap.put("urn:patras:credspec:credUniv:firstname", "Eve");
-          attributeValueMap.put("urn:patras:credspec:credUniv:lastname", "Cheater");
+            attributeValueMap.put("urn:patras:credspec:credUniv:firstname", "Eve");
+            attributeValueMap.put("urn:patras:credspec:credUniv:lastname", "Cheater");
         } else {
-          throw new IllegalStateException(
-              "Matriculationnumber issuance only defined for john(1235332), stewart (42) + Eve (666)!");
+            throw new IllegalStateException(
+                    "Matriculationnumber issuance only defined for john(1235332), stewart (42) + Eve (666)!");
         }
 
         return this.finishStartIssuance(CREDSPEC_UNIVERSITY, attributeValueMap);
@@ -428,11 +464,11 @@ public class IssuanceService {
 
         Map<String, Object> attributeValueMap = new HashMap<String, Object>();
 
-        if (matriculationnumber == 42 || matriculationnumber == 1235332 || matriculationnumber == 666) {
-          // ok - matriculationnumber accepted...
+        if ((matriculationnumber == 42) || (matriculationnumber == 1235332) || (matriculationnumber == 666)) {
+            // ok - matriculationnumber accepted...
         } else {
-          throw new IllegalStateException(
-              "Matriculationnumber issuance only defined for john(1235332) and stewart (42)!");
+            throw new IllegalStateException(
+                    "Matriculationnumber issuance only defined for john(1235332) and stewart (42)!");
         }
 
         attributeValueMap.put("urn:patras:credspec:credCourse:courseid", "The-very-cool-course");
@@ -457,7 +493,7 @@ public class IssuanceService {
         System.out.println("- Pupil : " + pupil);
 
         Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-        
+
         if("Emil".equalsIgnoreCase(pupil)) {
 
             // School credential
@@ -476,7 +512,7 @@ public class IssuanceService {
 
         } else {
             throw new IllegalStateException(
-                "Pupil (name) supported : 'Emil'!");
+                    "Pupil (name) supported : 'Emil'!");
         }
 
         return this.finishStartIssuance(SODERHAMN_SCHOOL, attributeValueMap);
@@ -487,8 +523,8 @@ public class IssuanceService {
     @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
     @Produces(MediaType.TEXT_XML)
     public JAXBElement<IssuanceMessage> startSubject(
-      @PathParam("CredentialRequest") final String credentialRequest,
-      @QueryParam("pupil") String pupil) throws Exception {
+            @PathParam("CredentialRequest") final String credentialRequest,
+            @QueryParam("pupil") String pupil) throws Exception {
 
         System.out.println("IssuanceService - start - issue Subject Credential: "
                 + credentialRequest);
@@ -498,13 +534,13 @@ public class IssuanceService {
         Map<String, Object> attributeValueMap = new HashMap<String, Object>();
         if("Emil".equalsIgnoreCase(pupil)) {
             subject = "French";
-//            attributeValueMap.put("urn:soderhamn:credspec:credSubject:subject", "French");
+            //            attributeValueMap.put("urn:soderhamn:credspec:credSubject:subject", "French");
 
         } else {
             throw new IllegalStateException(
-                "Pupil (name) supported : 'Emil'!");
+                    "Pupil (name) supported : 'Emil'!");
         }
-        
+
         attributeValueMap.put("urn:soderhamn:credspec:credSubject:maths" , "maths".equals(subject));
         attributeValueMap.put("urn:soderhamn:credspec:credSubject:physics" , "physics".equals(subject));
         attributeValueMap.put("urn:soderhamn:credspec:credSubject:English" , "English".equals(subject));
@@ -517,8 +553,8 @@ public class IssuanceService {
 
         return this.finishStartIssuance(SODERHAMN_SUBJECT, attributeValueMap);
     }
-    
-    
+
+
     //  @GET()
     //  @Path("/startAttendance")
     //  // /{CredentialRequest}")
@@ -584,7 +620,7 @@ public class IssuanceService {
         }
 
         System.out.println(" - return inital message - for context : " + im_with_policy.getContext());
-        System.out.println(" - return inital message : " + XmlUtils.toXml(of.createIssuanceMessage(im_with_policy)));
+        System.out.println(" - return inital message : " + XmlUtils.toXml(this.of.createIssuanceMessage(im_with_policy)));
         return this.of.createIssuanceMessage(im_with_policy);
     }
 

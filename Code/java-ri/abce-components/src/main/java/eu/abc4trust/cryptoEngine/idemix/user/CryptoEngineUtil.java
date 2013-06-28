@@ -16,6 +16,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -56,7 +57,7 @@ public class CryptoEngineUtil {
         this.contextGen = contextGen;
     }
 
-    public Map<URI, Credential> fetchCredentialsFromIssuanceToken(
+    public LinkedHashMap<URI, Credential> fetchCredentialsFromIssuanceToken(
             IssuanceTokenDescription tokenDesc, List<URI> credentialAssignment)
                     throws CredentialManagerException {
         return this.fetchCredentialsFromPresentationToken(
@@ -64,16 +65,16 @@ public class CryptoEngineUtil {
                 credentialAssignment);
     }
 
-    public Map<URI, PseudonymWithMetadata> fetchPseudonymsFromIssuanceToken(
+    public LinkedHashMap<URI, PseudonymWithMetadata> fetchPseudonymsFromIssuanceToken(
             IssuanceTokenDescription itd, List<URI> pseudonymAssignment) {
         return this.fetchPseudonymsFromPresentationToken(
                 itd.getPresentationTokenDescription(), pseudonymAssignment);
     }
 
-    public Map<URI, Credential> fetchCredentialsFromPresentationToken(
+    public LinkedHashMap<URI, Credential> fetchCredentialsFromPresentationToken(
             PresentationTokenDescription tokenDesc,
             List<URI> credentialAssignment) {
-        Map<URI, Credential> ret = new HashMap<URI, Credential>();
+      LinkedHashMap<URI, Credential> ret = new LinkedHashMap<URI, Credential>();
 
         Iterator<URI> credIterator = credentialAssignment.iterator();
         int credIndex = 0;
@@ -97,10 +98,10 @@ public class CryptoEngineUtil {
         return ret;
     }
 
-    public Map<URI, Credential> fetchCredentialsFromPresentationTokenWithCommitments(
+    public LinkedHashMap<URI, Credential> fetchCredentialsFromPresentationTokenWithCommitments(
             PresentationTokenDescriptionWithCommitments tokenDesc,
             List<URI> credentialAssignment) {
-        Map<URI, Credential> ret = new HashMap<URI, Credential>();
+        LinkedHashMap<URI, Credential> ret = new LinkedHashMap<URI, Credential>();
 
         //THe problem is credentialAssignment only contains 1 URI, however we iterate over all credentialsin the commitment, which might contains more
         // ie. we get a idemix uri, but have both idemix and uprove credential in the token
@@ -133,10 +134,10 @@ public class CryptoEngineUtil {
         throw new UnsupportedOperationException();
     }
 
-    public Map<URI, PseudonymWithMetadata> fetchPseudonymsFromPresentationToken(
+    public LinkedHashMap<URI, PseudonymWithMetadata> fetchPseudonymsFromPresentationToken(
             PresentationTokenDescription ptd, List<URI> pseudonymAssignment) {
 
-        Map<URI, PseudonymWithMetadata> ret = new HashMap<URI, PseudonymWithMetadata>();
+        LinkedHashMap<URI, PseudonymWithMetadata> ret = new LinkedHashMap<URI, PseudonymWithMetadata>();
         Iterator<URI> credIterator = pseudonymAssignment.iterator();
         int nymIndex = 0;
         for (PseudonymInToken pit : ptd.getPseudonym()) {
@@ -160,11 +161,11 @@ public class CryptoEngineUtil {
         return ret;
     }
 
-    public Map<URI, PseudonymWithMetadata> fetchPseudonymsFromPresentationTokenWithCommitments(
+    public LinkedHashMap<URI, PseudonymWithMetadata> fetchPseudonymsFromPresentationTokenWithCommitments(
             PresentationTokenDescriptionWithCommitments ptd,
             List<URI> pseudonymAssignment) {
 
-        Map<URI, PseudonymWithMetadata> ret = new HashMap<URI, PseudonymWithMetadata>();
+        LinkedHashMap<URI, PseudonymWithMetadata> ret = new LinkedHashMap<URI, PseudonymWithMetadata>();
         Iterator<URI> credIterator = pseudonymAssignment.iterator();
         int nymIndex = 0;
         for (PseudonymInToken pit : ptd.getPseudonym()) {

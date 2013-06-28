@@ -1,0 +1,9 @@
+content	abc4trust	content/
+overlay	chrome://browser/content/browser.xul	chrome://abc4trust/content/overlay.xul
+
+locale	abc4trust	en-US	locale/en-US/
+locale	abc4trust	sv-SE	locale/sv-SE/
+
+skin	abc4trust	classic/1.0	skin/
+style	chrome://global/content/customizeToolbar.xul	chrome://abc4trust/skin/overlay.css
+resource abc4trust	modules/

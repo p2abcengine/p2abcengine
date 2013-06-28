@@ -69,6 +69,7 @@ import eu.abc4trust.xml.SystemParameters;
 public class UProveEvidenceGenerator {
     private static final int CRYPTO_PARAMS_TOKEN_INDEX = 0;
     private static final int CRYPTO_PARAMS_ISSUER_PARAMETER = 2;
+	public static boolean DELETE_TOKEN = true;
 
     private final KeyManager keyManager;
     private final UProveBindingManager binding;
@@ -316,7 +317,7 @@ public class UProveEvidenceGenerator {
                     verifierScopeParam, ipc, compositeToken, sessionKey);
 
             System.out.println("\n\n\n PROOF VERIFIED? ::: "+verified+" \n\n\n");
-
+            
             UProveSerializer serializer = new UProveSerializer();
             evidence.add(serializer.serialize(proof, credAlias,
                     disclosedAttributes.getArrayOfIntDisclosedParam(),
@@ -698,11 +699,14 @@ public class UProveEvidenceGenerator {
         // ArrayList<UProveKeyAndToken> == one ABC4Trust Credential with
         // array size amount of usage before the credential must be renewed
         // (Minus Tokens saved for a scope))
-        CryptoParams cryptoEvidence = cred.getCryptoParams();
-
-        @SuppressWarnings("unchecked")
-        ArrayList<UProveKeyAndToken> keysAndTokens = (ArrayList<UProveKeyAndToken>) cryptoEvidence.
-        getAny().get(CRYPTO_PARAMS_TOKEN_INDEX);
+//        CryptoParams cryptoEvidence = cred.getCryptoParams();
+//
+//        @SuppressWarnings("unchecked")
+//        ArrayList<UProveKeyAndToken> keysAndTokens = (ArrayList<UProveKeyAndToken>) cryptoEvidence.
+//        getAny().get(CRYPTO_PARAMS_TOKEN_INDEX);
+    	
+    	URI credUid = cred.getCredentialDescription().getCredentialUID();
+    	ArrayList<UProveKeyAndToken> keysAndTokens = this.getUProveTokensInStorage(credUid); 
 
         int tokenIndex = -1;
         int savedTokenIndex = -1;
@@ -742,6 +746,7 @@ public class UProveEvidenceGenerator {
         if ((unUsedCount==0) && (savedTokenIndex==-1)) {
             //0 tokens left and no previous saved token found. Reload!
             try {
+            	System.out.println("\n\nRELOADING TOKENS!!!! \n\n");
                 cred = this.reloadTokens.reloadTokens(cred);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -749,9 +754,15 @@ public class UProveEvidenceGenerator {
             }
 
             //use tmp to allow for @SuppressWarnings
-            @SuppressWarnings("unchecked")
-            ArrayList<UProveKeyAndToken> tmp = (ArrayList<UProveKeyAndToken>) cred.getCryptoParams().getAny().get(CRYPTO_PARAMS_TOKEN_INDEX);
-            keysAndTokens = tmp;
+//            @SuppressWarnings("unchecked")
+//            ArrayList<UProveKeyAndToken> tmp = (ArrayList<UProveKeyAndToken>) cred.getCryptoParams().getAny().get(CRYPTO_PARAMS_TOKEN_INDEX);
+//            keysAndTokens = tmp;
+            
+            //refresh list since it should now be reflected in the persistent storage
+            keysAndTokens = this.getUProveTokensInStorage(credUid);
+            if(keysAndTokens.size() == 0){
+            	throw new ReloadTokensCommunicationStrategy.ReloadException("Reloaded tokens, but they where not stored correctly in persistent memory.");
+            }
 
             tokenIndex=0;
         } else {
@@ -782,37 +793,58 @@ public class UProveEvidenceGenerator {
         
         // We have not run out of UProve tokens
         // assert( tokenIndex != -1)
-        
+      
         res = keysAndTokens.get(tokenIndex);
+        
         if (pseudonyms == null) {
         	//non pseudonym token, only use once, delete from storage
-        	keysAndTokens.remove(tokenIndex); 
-        }
-
-        //update crypto params in credential (in storage) 
-        ObjectFactory of = new ObjectFactory();
-        CryptoParams cryptoEvidenceNew = of.createCryptoParams();
-
-        // We need only want to change the keysAndTokens of the credential
-        // other cryptoparams (eg. revocation information) need to remain
-        List<Object> any = cred.getCryptoParams().getAny();
-        for (int i = 0;i< any.size();i++) {
-        	Object o = any.get(i);
-        	if (i!=CRYPTO_PARAMS_TOKEN_INDEX) {
-        		cryptoEvidenceNew.getAny().add(o);
-        	} else {
-        		cryptoEvidenceNew.getAny().add(keysAndTokens);
+        	if(DELETE_TOKEN){
+        		keysAndTokens.remove(tokenIndex);
         	}
         }
-        cred.setCryptoParams(cryptoEvidenceNew);
-
+        
+//        //update crypto params in credential (in storage) 
+//        ObjectFactory of = new ObjectFactory();
+//        CryptoParams cryptoEvidenceNew = of.createCryptoParams();
+//
+//        // We need only want to change the keysAndTokens of the credential
+//        // other cryptoparams (eg. revocation information) need to remain
+//        List<Object> any = cred.getCryptoParams().getAny();
+//        for (int i = 0;i< any.size();i++) {
+//        	Object o = any.get(i);
+//        	if (i!=CRYPTO_PARAMS_TOKEN_INDEX) {
+//        		cryptoEvidenceNew.getAny().add(o);
+//        	} else {
+//        		cryptoEvidenceNew.getAny().add(keysAndTokens);
+//        	}
+//        }
+//        cred.setCryptoParams(cryptoEvidenceNew);
+//
+//        try {
+//        	System.out.println("Updating credential...");
+//        	this.credManager.updateCredential(cred);
+//        } catch (CredentialManagerException e) {
+//        	throw new RuntimeException(new CryptoEngineException(e));
+//        }
+        
+        //update token array in persistent storage
         try {
-        	System.out.println("Updating credential...");
-        	this.credManager.updateCredential(cred);
-        } catch (CredentialManagerException e) {
-        	throw new RuntimeException(new CryptoEngineException(e));
-        }
+			this.keyManager.storeCredentialTokens(credUid, keysAndTokens);
+		} catch (KeyManagerException e) {
+			throw new RuntimeException(e);
+		}
 
         return res;
     }
+
+	@SuppressWarnings("unchecked")
+	private ArrayList<UProveKeyAndToken> getUProveTokensInStorage(URI uid) {
+		ArrayList<?> tokens = this.keyManager.getCredentialTokens(uid);
+		if(tokens == null){
+			System.out.println("WARNING: No Uprove token file where found! Returning an empty one to UProveEvidenceGenerator");
+			return new ArrayList<UProveKeyAndToken>();
+		}
+		System.out.println("Found this amount of tokens: " + tokens.size());
+		return (ArrayList<UProveKeyAndToken>) tokens;
+	}
 }

@@ -18,6 +18,7 @@ import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,8 @@ import com.fasterxml.uuid.Generators;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PolicyCredentialMatcherImpl;
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializerSmartcard;
@@ -66,6 +69,9 @@ public class CredentialManagerImpl implements CredentialManager {
     private final CredentialSerializer credentialSerializer;
     private final PseudonymSerializer pseudonymSerializer;
 
+    // TODO : hgk - FIND SOLUTION : for Soderhamn - save pseudonyms in map - to be able to run through presentation when pseudonyms arenot stored on card
+    private final Map<String,PseudonymWithMetadata> soderhamnTmpPseudonymMap = new HashMap<String, PseudonymWithMetadata>();
+    
     @Inject
     public CredentialManagerImpl(CredentialStorage credentialStore,
             SecretStorage secretStore, KeyManager keyManager,
@@ -87,7 +93,7 @@ public class CredentialManagerImpl implements CredentialManager {
         //this.credentialSerializer = new CredentialSerializerDelegator(serializer, new CredentialSerializerObjectGzip());
         //The optimized serializer should also work for UProve now.
         this.credentialSerializer = serializer;
-        this.pseudonymSerializer = new PseudonymSerializerObjectGzip();        
+        this.pseudonymSerializer = new PseudonymSerializerObjectGzip(cardStorage);        
     }
     
     private URI getSmartcardUri(){
@@ -112,8 +118,12 @@ public class CredentialManagerImpl implements CredentialManager {
             PseudonymMetadata md)
                     throws CredentialManagerException {
         try {
-            PseudonymWithMetadata pwm = this
-                    .getPseudonymWithMetadata(pseudonym);
+        	PseudonymWithMetadata pwm = null;
+        	try{
+        		pwm = this.getPseudonymWithMetadata(pseudonym);
+        	}catch(Exception e){
+        		//pwm not present, creating new.
+        	}
             if (pwm != null) {
                 URI pseudonymUri = pseudonym.getPseudonymUID();
                 URI SCuri = this.getSmartcardUri();
@@ -249,10 +259,13 @@ public class CredentialManagerImpl implements CredentialManager {
             Credential updatedCred = this.cryptoEngineUser
                     .updateNonRevocationEvidence(cred, revparsuid, revokedatts);
             this.storeCredential(updatedCred);
-            return true;
-        }
-        catch (CryptoEngineException ex) {
             return false;
+        } catch (CredentialWasRevokedException ex) {
+          cred.getCredentialDescription().setRevokedByIssuer(true);
+          this.storeCredential(cred);
+          return true;
+        } catch (CryptoEngineException ex) {
+          throw new CredentialManagerException(ex);
         }
     }
 
@@ -260,15 +273,19 @@ public class CredentialManagerImpl implements CredentialManager {
     public boolean hasBeenRevoked(URI creduid, URI revparsuid,
             List<URI> revokedatts, URI revinfouid)
                     throws CredentialManagerException {
+        Credential cred = this.getCredential(creduid);
         try {
-            Credential cred = this.getCredential(creduid);
             Credential updatedCred = this.cryptoEngineUser
                     .updateNonRevocationEvidence(cred, revparsuid, revokedatts,
                             revinfouid);
             this.storeCredential(updatedCred);
+            return false;
+        } catch (CredentialWasRevokedException ex) {
+            cred.getCredentialDescription().setRevokedByIssuer(true);
+            this.storeCredential(cred);
             return true;
         } catch (CryptoEngineException ex) {
-            return false;
+            throw new CredentialManagerException(ex);
         }
     }
 
@@ -315,9 +332,16 @@ public class CredentialManagerImpl implements CredentialManager {
             URI cardUid = cred.getCredentialDescription().getSecretReference();
             BasicSmartcard bsc = this.cardStorage.getSmartcards().get(cardUid);
             if(cardUid != null &&  bsc != null && !(bsc instanceof SecretBasedSmartcard)){            	
-            	Smartcard sc = (Smartcard)this.cardStorage.getSmartcards().get(cardUid);            	            	
-        		sc.storeCredential(this.cardStorage.getPin(cardUid), credUid, cred, credentialSerializer);
+              if(!cred.getCredentialDescription().isRevokedByIssuer()) {
+                Smartcard sc = (Smartcard)this.cardStorage.getSmartcards().get(cardUid);            	            	
+        		SmartcardStatusCode status = sc.storeCredential(this.cardStorage.getPin(cardUid), credUid, cred, credentialSerializer);
+        		if(status != SmartcardStatusCode.OK){
+        			throw new CredentialManagerException("Could not store credential. Reason: " + status);
+        		}
         		return credUid;
+              } else {
+            	  throw new CredentialManagerException("Should never get here - trying to store a revoked credential");
+              }
             }else{
             	byteArrayOutputStream = new ByteArrayOutputStream();
                 objectOutput = new ObjectOutputStream(
@@ -339,22 +363,26 @@ public class CredentialManagerImpl implements CredentialManager {
     
     @Override
     public void updateCredential(Credential cred) throws CredentialManagerException{
-     URI credUid = cred.getCredentialDescription().getCredentialUID();
-     try {
-            URI cardUid = cred.getCredentialDescription().getSecretReference();
-            BasicSmartcard bsc = this.cardStorage.getSmartcards().get(cardUid);
-            if(cardUid != null &&  bsc != null && !(bsc instanceof SecretBasedSmartcard)){
-             Smartcard sc = (Smartcard)this.cardStorage.getSmartcards().get(cardUid);
-         sc.removeCredentialUri(this.cardStorage.getPin(cardUid), credUid);
-         this.storeCredential(cred);
-            }else{
-             this.deleteCredential(credUid);
-             this.storeCredential(cred);
-            }
-     }
-        catch(Exception e){
-         throw new CredentialManagerException(e);
-        }
+    	URI credUid = cred.getCredentialDescription().getCredentialUID();
+    	try {
+    		URI cardUid = cred.getCredentialDescription().getSecretReference();
+    		BasicSmartcard bsc = this.cardStorage.getSmartcards().get(cardUid);
+    		if(cardUid != null &&  bsc != null && !(bsc instanceof SecretBasedSmartcard)){
+    			Smartcard sc = (Smartcard)this.cardStorage.getSmartcards().get(cardUid);
+    			if(cred.getCredentialDescription().isRevokedByIssuer()){
+    				this.deleteCredential(credUid);
+    			}else{
+    				sc.removeCredentialUri(this.cardStorage.getPin(cardUid), credUid);
+    				this.storeCredential(cred);
+    			}
+    		}else{
+    			this.deleteCredential(credUid);
+    			this.storeCredential(cred);
+    		}
+    	}
+    	catch(Exception e){
+    		throw new CredentialManagerException(e);
+    	}
     }
 
     private void storeImageAndUpdateCredentialDescription(
@@ -387,7 +415,7 @@ public class CredentialManagerImpl implements CredentialManager {
     public void storePseudonym(PseudonymWithMetadata pwm)
             throws CredentialManagerException {
 
-        Pseudonym pseudonym = pwm.getPseudonym();
+        Pseudonym pseudonym = pwm.getPseudonym();        
 
         ByteArrayOutputStream byteArrayOutputStream = null;
         ObjectOutputStream objectOutput = null;
@@ -405,12 +433,19 @@ public class CredentialManagerImpl implements CredentialManager {
 
             	this.storage.addPseudonymWithMetadata(pseudonymUri, pwmBytes);
             }else{
+                if(pseudonym.isExclusive()){
+                    // TODO: hgk : find solution to specify if pseudonyms needs to be stored.
+                    // System.out.println("For Soederhamn pilot, we do not store scope-exclusive pseudonyms. Returning without storing.");
+                    String key = scUri + "::" + pseudonymUri;
+                    System.out.println("For Soederhamn pilot, we do not store scope-exclusive pseudonyms on Smartcard. Store in Memory Map with key : " + key + " : " + pwm.getPseudonym().getScope());
+                    soderhamnTmpPseudonymMap.put(key, pwm);
+                    return;
+            	}
             	Smartcard sc = (Smartcard)this.cardStorage.getSmartcard(scUri);
             	pseudonymUri = this.escapeUri(pseudonymUri);
             	pseudonymUri = URI.create(PSEUDONYM_PREFIX+pseudonymUri.toString());
             	SmartcardStatusCode code = sc.storePseudonym(this.cardStorage.getPin(scUri), pseudonymUri, pwm, pseudonymSerializer);
             	System.out.println("Result of storing pseudonym on card: " + code);
-            	this.listPseudonyms(null, true);
             }
         } catch (Exception ex) {
             throw new CredentialManagerException(ex);
@@ -448,8 +483,7 @@ public class CredentialManagerImpl implements CredentialManager {
                 cred = this.cryptoEngineUser.updateNonRevocationEvidence(cred,
                         revocationAuthorityParameters, revokedatts);
 
-                this.deleteCredential(credUid);
-                this.storeCredential(cred);
+                this.updateCredential(cred);
             }
         } catch (Exception ex) {
             throw new CredentialManagerException(ex);
@@ -503,9 +537,6 @@ public class CredentialManagerImpl implements CredentialManager {
         		for(URI uri: blobs.keySet()){
         			String uriString = uri.toString();
         			if(uriString.startsWith(PSEUDONYM_PREFIX)){
-// TODO: Kasper verify : cant we just read directly with uri[0..len-2] - which does test for smartcard and prepends prefix again??      			  
-//        				URI pseudonymUri = URI.create(uriString.substring(PSEUDONYM_PREFIX.length(), uriString.length()-2));
-//        				PseudonymWithMetadata pwm = this.getPseudonym(pseudonymUri);
                         URI pseudonymUri = URI.create(uriString.substring(0, uriString.length()-2));
                         PseudonymWithMetadata pwm = sc.getPseudonym(this.cardStorage.getPin(scUri), pseudonymUri, pseudonymSerializer);
         				Pseudonym pseudonym = pwm.getPseudonym();
@@ -525,6 +556,11 @@ public class CredentialManagerImpl implements CredentialManager {
     @Override
     public PseudonymWithMetadata getPseudonymWithMetadata(Pseudonym pseudonym)
             throws CredentialManagerException {
+        URI pseudonymUid = pseudonym.getPseudonymUID();
+        // TODO: hgk : I think this is correct 
+        // delegate to getPseudonym(...
+        return getPseudonym(pseudonymUid);
+/*      
         try {
             URI pseudonymUid = pseudonym.getPseudonymUID();
             URI scUri = this.getSmartcardUri();
@@ -540,6 +576,7 @@ public class CredentialManagerImpl implements CredentialManager {
         } catch (Exception ex) {
             throw new CredentialManagerException(ex);
         }
+*/        
     }
 
     @Override
@@ -548,26 +585,51 @@ public class CredentialManagerImpl implements CredentialManager {
         if (pseudonymUid == null) {
             throw new CredentialManagerException("Pseudonym UID is null");
         }
-        try {
-        	URI scUri = this.getSmartcardUri();
-        	if(scUri == null){        	
-	            byte[] tokenBytes = this.storage.getPseudonymWithData(pseudonymUid);
-	            if (tokenBytes == null) {
-	                throw new PseudonymIsNoInStorageException(
-	                        "Pseudonym with UID: \"" + pseudonymUid
+        URI scUri = this.getSmartcardUri();
+        if(scUri == null) {
+            // storage based
+            byte[] tokenBytes = null;
+            try {
+                tokenBytes = this.storage.getPseudonymWithData(pseudonymUid);
+            } catch (Exception ex) {
+                throw new CredentialManagerException(ex);
+            }
+            if (tokenBytes == null) {
+                throw new PseudonymIsNoInStorageException(
+                    "Pseudonym with UID: \"" + pseudonymUid
 	                        + "\"is not in storage");
-	            }
-                return this.parseBytesAsPseudonymWithMetaData(tokenBytes);
-        	}else{
+            }
+            return this.parseBytesAsPseudonymWithMetaData(tokenBytes);
+        } else{
+            // smartcard based
+            try {
         		Smartcard sc = (Smartcard)this.cardStorage.getSmartcard(scUri);
-        		pseudonymUid = this.escapeUri(pseudonymUid);
-        		pseudonymUid = URI.create(PSEUDONYM_PREFIX+pseudonymUid.toString());
-        		return sc.getPseudonym(this.cardStorage.getPin(scUri), pseudonymUid, pseudonymSerializer);
-        	}
-        } catch (PseudonymIsNoInStorageException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new CredentialManagerException(ex);
+        		int pin = this.cardStorage.getPin(scUri);
+        		URI cardPseudonymUid = this.escapeUri(pseudonymUid);
+        		cardPseudonymUid = URI.create(PSEUDONYM_PREFIX+cardPseudonymUid.toString());
+        		return sc.getPseudonym(pin, cardPseudonymUid, pseudonymSerializer);
+            } catch (RuntimeException ex) {
+                // TODO : Fixup needed 
+                // Exception from Smartcard/PseudonymSerializer could have been more specific - eg : PseudonymIsNoInStorageException
+                // -1 from inputstream means empty - returns exception like :
+                //      Cannot unserialize this pseudonym: header was -1 expected header 68
+                if(ex.getMessage().toString().indexOf("header was -1") != -1) {
+                    
+                    String key = scUri + "::" + pseudonymUid;
+                    PseudonymWithMetadata saved = soderhamnTmpPseudonymMap.get(key);
+                    if(saved!=null) {
+                        System.out.println("For Soderhamn Pilot. Found Pseudonym in Memory Map : " + key + " - Pwd : " + saved + " : " + saved.getPseudonym().getScope()) ;
+                        return saved;
+                    } else {
+                        System.out.println("For Soderhamn Pilot. Pseudonym NOT found in Memory Map : " + key );
+                    }
+                    throw new PseudonymIsNoInStorageException("Pseudonym is not stored on card!" + scUri);
+                } else {
+                    throw new CredentialManagerException(ex);
+                }
+            } catch (Exception ex) {
+                throw new CredentialManagerException(ex);
+            }
         }
     }
 

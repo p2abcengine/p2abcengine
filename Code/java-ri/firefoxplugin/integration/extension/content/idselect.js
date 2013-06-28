@@ -895,6 +895,7 @@ function parseAndEmbedCredential(credential, ix) {
 	var attributeCount = 0;
 	var attributeLabel = new Array();
 	var attributeValue = new Array();
+	var credentialIsRevoked = false;
 	
 	//FriendlyCredentialName
 	if(credential.hasOwnProperty('FriendlyCredentialName'))
@@ -934,9 +935,16 @@ function parseAndEmbedCredential(credential, ix) {
 				var friendlyAttributeName = ''; 
 				var friendlyAttributeValue = '';
 				
+				
+				
 				if(attributeArray[j].hasOwnProperty('AttributeDescription'))
 				{
 					var attributeDesc = attributeArray[j].AttributeDescription;
+					if(attributeDesc["@Type"] =="urn:abc4trust:gui:isRevoked") {
+						credentialIsRevoked = attributeArray[j].AttributeValue.$;
+						attributeCount = attributeCount-1;
+						continue;
+					}
 					friendlyAttributeName = getAttributeFriendlyAttributeName(attributeDesc, j);
 				}
 				else
@@ -973,6 +981,13 @@ function parseAndEmbedCredential(credential, ix) {
 			{
 				var attributeDesc = attributeArray.AttributeDescription;
 //				var attributeDesc = attributeArray[j].AttributeDescription;
+				if(attributeDesc["@Type"] =="urn:abc4trust:gui:isRevoked") {
+					credentialIsRevoked = attributeArray.AttributeValue.$;
+					CredentialAttributeInfo = CredentialAttributeInfo + friendlyAttributeName + ' : ' + friendlyAttributeValue + '     ';
+					CredentialAttributeInfo = CredentialAttributeInfo + '\n';
+					embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialImageReference, CredentialAttributeInfo, attributeCount-1, attributeLabel, attributeValue, credentialIsRevoked);
+					return;
+				}
 				friendlyAttributeName = getAttributeFriendlyAttributeName(attributeDesc, 0);
 			}
 			else
@@ -1002,7 +1017,7 @@ function parseAndEmbedCredential(credential, ix) {
 	//print out parsed credential information 
 	// alert("embedCredentialInfo - uid : " + CredentialUID + '\n - Friendly Name : ' + CredentialFriendlyName + '\n - Image Reference : ' + CredentialImageReference + '\n -AttributeInfo : ' + CredentialAttributeInfo); 
 
-	embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialImageReference, CredentialAttributeInfo, attributeCount, attributeLabel, attributeValue);
+	embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialImageReference, CredentialAttributeInfo, attributeCount, attributeLabel, attributeValue, credentialIsRevoked);
 }//for - array of credentials
 
 
@@ -1027,7 +1042,7 @@ function getAttributeFriendlyAttributeName(attributeDesc, ix)
  * @name : embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialImageReference, CredentialAttributeInfo)
  * @description : embed credential information into HTML 
  * -------------------------------------------------------------------------------------------------------------------*/
-function embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialImageReference, CredentialAttributeInfo, attributeCount, attributeLabel, attributeValue)
+function embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialImageReference, CredentialAttributeInfo, attributeCount, attributeLabel, attributeValue, credentialIsRevoked)
 {
 	//alert("Inside embedCredentialInfo() ....");
 	
@@ -1037,6 +1052,7 @@ function embedCredentialInfo(CredentialUID, CredentialFriendlyName, CredentialIm
 	credentialPane.setAttribute('id', CredentialUID);
 	credentialPane.setAttribute('type', 'hidden');
 	credentialPane.setAttribute('name', CredentialFriendlyName);
+	credentialPane.setAttribute('isRevoked', credentialIsRevoked);
 	//TODO : image where to add??
 	credentialPane.setAttribute('src', CredentialImageReference);
 	credentialPane.setAttribute('value', CredentialAttributeInfo);

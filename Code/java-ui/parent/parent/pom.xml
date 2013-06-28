@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  
+  <groupId>eu.abc4trust.ui</groupId>
+  <artifactId>eu.abc4trust.ri.ui.user.parent.parent</artifactId>
+  <version>1.0.4-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  
+  <parent>
+    <groupId>eu.abc4trust.ui</groupId>
+    <artifactId>ui-project-pom</artifactId>
+    <version>1.0.4-SNAPSHOT</version>
+    <relativePath>../../</relativePath>
+  </parent>
+
+  <properties>
+    <tycho-version>0.16.0</tycho-version>
+    <tycho.showEclipseLog>true</tycho.showEclipseLog>
+    <assembly-version>2.2.1</assembly-version>
+    <replacer-version>1.3.8</replacer-version>
+    <war-filename>ui-user</war-filename>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  
+  <!-- Note: for resolving these dependencies: only repositories with layout p2 are used because this is a parent only for projects with tycho-packacking types (types: eclipse-plugin, eclipse-feature, and eclipse-repository). -->
+  <dependencies>
+    <dependency>
+      <groupId>eu.abc4trust.ri</groupId>
+      <artifactId>abc4trust-xml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>eu.abc4trust.ri</groupId>
+      <artifactId>abce-interfaces</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>eu.abc4trust.ri</groupId>
+      <artifactId>ui-osgi-dependencies</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <!--repository>
+      <id>rap-nightly</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/rt/rap/nightly/runtime</url>
+    </repository-->
+	<!--repository>
+      <id>rap-release-1.5</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/rt/rap/1.5/runtime</url>
+    </repository-->
+    <!--repository>
+      <id>p2.abc4trust.miracleas.dk</id>
+	  <layout>p2</layout>
+      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public/.meta/p2</url>
+    </repository-->
+    <repository>
+      <id>eclipse-juno</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/juno</url>
+	  <!--url>https://abc4trust.miracleas.dk/nexus/content/repositories/eclipse-juno</url-->
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+
+      <!-- Enable Tycho -->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <extensions>true</extensions>
+      </plugin>
+
+      <!-- Configure qualifier replacement -->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-packaging-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <format>yyyyMMdd-HHmm</format>
+        </configuration>
+      </plugin>
+	  
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <!--resolver>p2</resolver-->
+          <ignoreTychoRepositories>true</ignoreTychoRepositories>
+          <pomDependencies>consider</pomDependencies>
+          <!--environments>
+            <environment>
+            <os>win32</os>
+            <ws>win32</ws>
+            <arch>x86</arch>
+            </environment>
+            <environment>
+            <os>win32</os>
+            <ws>win32</ws>
+            <arch>x86_64</arch>
+            </environment>
+          </environments-->
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

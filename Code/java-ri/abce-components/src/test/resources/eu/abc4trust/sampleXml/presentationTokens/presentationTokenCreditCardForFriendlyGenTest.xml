@@ -28,12 +28,17 @@
         <abc:IssuerParametersUID>http://www.amex.com/abc/isskey</abc:IssuerParametersUID>
       <abc:DisclosedAttribute AttributeType="Status"
         DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
-        <abc:AttributeValue>Gold</abc:AttributeValue>
+        <abc:AttributeValue>123123</abc:AttributeValue>
       </abc:DisclosedAttribute>
     </abc:Credential>
-    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:dateTime-greater-than-or-equal">
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
       <abc:Attribute CredentialAlias="#creditcard" AttributeType="ExpirationDate" />
       <abc:ConstantValue>2012-01-06</abc:ConstantValue>
+    </abc:AttributePredicate>
+    <abc:AttributePredicate Function="urn:abc4trust:1.0:function:string-equal-oneof">
+      <abc:Attribute CredentialAlias="#creditcard" AttributeType="Status" />
+      <abc:ConstantValue>Gold</abc:ConstantValue>
+      <abc:ConstantValue>Silver</abc:ConstantValue>
     </abc:AttributePredicate>
   </abc:PresentationTokenDescription>
   <abc:CryptoEvidence>

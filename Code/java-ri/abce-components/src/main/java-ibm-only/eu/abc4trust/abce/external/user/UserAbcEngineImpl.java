@@ -24,8 +24,14 @@ import eu.abc4trust.exceptions.CannotSatisfyPolicyException;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
+import eu.abc4trust.returnTypes.IssuanceReturn;
+import eu.abc4trust.returnTypes.UiIssuanceReturn;
+import eu.abc4trust.returnTypes.UiPresentationArguments;
+import eu.abc4trust.returnTypes.UiPresentationReturn;
 import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
+import eu.abc4trust.util.DummyForNewABCEInterfaces;
+import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
@@ -74,7 +80,7 @@ public class UserAbcEngineImpl implements UserAbcEngine {
 
     @Override
     public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m)
-            throws CryptoEngineException, CannotSatisfyPolicyException, IdentitySelectionException {
+            throws CryptoEngineException, CannotSatisfyPolicyException, IdentitySelectionException, CredentialManagerException {
         try {
           return this.issuanceManager.issuanceProtocolStep(m, this.defaultIdentitySelection);
         } catch (KeyManagerException e) {
@@ -112,7 +118,7 @@ public class UserAbcEngineImpl implements UserAbcEngine {
     @Override
     public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m,
             IdentitySelection idSelectionCallback)
-            throws CannotSatisfyPolicyException, CryptoEngineException, IdentitySelectionException {
+            throws CannotSatisfyPolicyException, CryptoEngineException, IdentitySelectionException, CredentialManagerException {
         try {
           return this.issuanceManager.issuanceProtocolStep(m, idSelectionCallback);
         } catch (KeyManagerException e) {
@@ -134,12 +140,47 @@ public class UserAbcEngineImpl implements UserAbcEngine {
     @Override
     public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m,
         IdentitySelectionUi idSelectionCallback) throws CannotSatisfyPolicyException,
-        CryptoEngineException, IdentitySelectionException {
+        CryptoEngineException, IdentitySelectionException, CredentialManagerException {
       try {
         return this.issuanceManager.issuanceProtocolStep(m, idSelectionCallback);
       } catch (KeyManagerException e) {
         throw new RuntimeException(e);
       }
+    }
+    
+    @Override
+    public boolean isRevoked(URI credUid) throws CryptoEngineException {           
+    	try {               
+    		Credential cred = this.credentialManager.getCredential(credUid);               
+    		return this.issuanceManager.isRevoked(cred);          
+    	} catch (CredentialManagerException ex) {              
+    		throw new CryptoEngineException(ex);                   
+    	}       
+    }
+
+    @Override
+    public UiPresentationArguments createPresentationToken(
+        PresentationPolicyAlternatives p, DummyForNewABCEInterfaces d) throws CannotSatisfyPolicyException,
+        CredentialManagerException, KeyManagerException {
+      return this.issuanceManager.createPresentationToken(p, d);
+    }
+
+    @Override
+    public PresentationToken createPresentationToken(UiPresentationReturn upr)
+        throws CredentialManagerException, CryptoEngineException {
+      return this.issuanceManager.createPresentationToken(upr);
+    }
+
+    @Override
+    public IssuanceReturn issuanceProtocolStep(IssuanceMessage im, DummyForNewABCEInterfaces d)
+        throws CannotSatisfyPolicyException, CryptoEngineException, CredentialManagerException, KeyManagerException {
+      return this.issuanceManager.issuanceProtocolStep(im, d);
+    }
+
+    @Override
+    public IssuanceMessage issuanceProtocolStep(UiIssuanceReturn uir)
+        throws CryptoEngineException {
+      return this.issuanceManager.issuanceProtocolStep(uir);
     }
     
 }

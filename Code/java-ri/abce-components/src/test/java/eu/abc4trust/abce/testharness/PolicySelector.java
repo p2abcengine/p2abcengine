@@ -114,6 +114,7 @@ public class PolicySelector implements IdentitySelection {
 				if(this.selectedCredential.equals(credentialUids.get(i).get(0))) return new SptdReturn(i,
 		                metaDataToChange, chosenPseudonyms, this.chosenInspectors);
 			}
+			throw new RuntimeException("Cannot choose credential, URI does not exist!");
 		}
         SptdReturn r = new SptdReturn(this.chosenPresentationToken,
                 metaDataToChange, chosenPseudonyms, this.chosenInspectors);

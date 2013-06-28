@@ -258,18 +258,28 @@ public class CryptoEngineDelegatorVerifier implements CryptoEngineVerifier {
                     		Element cai = (Element)e.getElementsByTagName("CommittedAttributesIndices").item(0);
                     		NodeList nl = cai.getChildNodes();
                     		for(int j = 0; j<nl.getLength(); j++){
-                    			Element ind = (Element)nl.item(j);
+                    			Element ind = null;
+                    			try{
+                    				 ind = (Element)nl.item(j);
+                    			}catch(ClassCastException ex){
+                    				//If we end up here, it is most likely because we got a TextElement which is empty due 
+                    				//to malformed xml (such as \r or \n)
+                    				continue;
+                    			}
                     			int committedIndex =Integer.parseInt(ind.getTextContent())-1; 
                     			Element root = null;
                     			//make addToRoot method, to allow for inspectable revocationinformation
                     			if (committedIndex == revocationindex){
                     				root = ind.getOwnerDocument().createElement("RevocationInformation");
                     			}
-                    			if(inspectableAttributes.contains(committedIndex)){
+                    			else if(inspectableAttributes.contains(committedIndex)){
                     				root = ind.getOwnerDocument().createElement("InspectableInformation");
                         			root.setAttribute("InspectorPublicKey", indexToInspectorKey.get(committedIndex).toString());
                         			root.setAttribute("AttributeType", indexToAttributeType.get(committedIndex).toString());
-                    			}	
+                    			}else{
+                    				//TODO: @Michael - explain this code a little :)
+                    				continue;
+                    			}
                     			root.setAttribute("CredentialAlias", c.getAlias().toString());
                     			root.setAttribute("CredentialSpecUID", credSpec.getSpecificationUID().toString());
                     			root.setAttribute("IssuerParamsUID", c.getIssuerParametersUID().toString());

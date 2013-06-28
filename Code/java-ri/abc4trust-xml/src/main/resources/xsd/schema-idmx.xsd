@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns="http://abc4trust.eu/wp2/abcschemav1.0"
+	xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://abc4trust.eu/wp2/abcschemav1.0"
+	attributeFormDefault="unqualified" elementFormDefault="qualified">
+
+	<xs:include schemaLocation="schema.xsd" />
+
+	<!-- Start: Crypto-specific elements -->
+
+	<xs:element name="VerifierParameters" type="VerifierParameters" />
+	<xs:complexType name="VerifierParameters">
+		<xs:sequence>
+			<xs:element ref="Parameter" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="Version" type="xs:string" use="required" />
+		<xs:attribute name="SystemParametersId" type="xs:string"
+			use="required" />
+	</xs:complexType>
+
+
+	<xs:element name="KeyPair" type="KeyPair" />
+	<xs:complexType name="KeyPair">
+		<xs:sequence>
+			<xs:element ref="PrivateKey" minOccurs="1" maxOccurs="1" />
+			<xs:element ref="PublicKey" minOccurs="1" maxOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:element name="PrivateKey" type="PrivateKey" />
+	<xs:complexType name="PrivateKey">
+		<xs:sequence>
+			<xs:element ref="Parameter" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="PublicKeyId" type="xs:anyURI" use="required" />
+	</xs:complexType>
+
+	<xs:element name="PublicKey" type="PublicKey" />
+	<xs:complexType name="PublicKey">
+		<xs:sequence>
+			<xs:element ref="Parameter" maxOccurs="unbounded" />
+			<xs:element ref="FriendlyDescription" minOccurs="0"
+				maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="Version" type="xs:string" use="required" />
+		<xs:attribute name="Technology" type="xs:anyURI" use="required" />
+		<xs:attribute name="SystemParametersId" type="xs:string"
+			use="required" />
+		<xs:attribute name="PublicKeyId" type="xs:anyURI" use="required" />
+	</xs:complexType>
+
+
+	<xs:element name="VerifierParametersTemplate" type="VerifierParametersTemplate" />
+	<xs:complexType name="VerifierParametersTemplate">
+		<xs:sequence>
+			<xs:element ref="Parameter" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="Version" type="xs:string" use="required" />
+		<xs:attribute name="SystemParametersId" type="xs:string"
+			use="required" />
+	</xs:complexType>
+
+
+	<xs:element name="IssuerPublicKeyTemplate" type="IssuerPublicKeyTemplate" />
+	<xs:complexType name="IssuerPublicKeyTemplate">
+		<xs:sequence>
+			<xs:element ref="Parameter" maxOccurs="unbounded" />
+			<!-- <xs:element name="MaximalNumberOfAttributes" type="xs:int" minOccurs="1" 
+				maxOccurs="1" /> -->
+			<!-- <xs:element name="RevocationAuthorityId" type="xs:anyURI" minOccurs="0" 
+				maxOccurs="1" /> -->
+			<xs:element ref="FriendlyDescription" minOccurs="0"
+				maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="Version" type="xs:string" use="required" />
+		<xs:attribute name="Technology" type="xs:anyURI" use="required" />
+		<xs:attribute name="SystemParametersId" type="xs:string"
+			use="required" />
+		<xs:attribute name="PublicKeyPrefix" type="xs:anyURI"
+			use="required" />
+	</xs:complexType>
+
+
+	<xs:element name="SystemParametersTemplate" type="SystemParametersTemplate" />
+	<xs:complexType name="SystemParametersTemplate">
+		<xs:sequence>
+			<xs:element ref="Parameter" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="Version" type="xs:string" use="required" />
+		<xs:attribute name="SystemParametersId" type="xs:string"
+			use="required" />
+	</xs:complexType>
+
+
+
+	<xs:element name="Parameter" type="Parameter" />
+	<xs:complexType name="Parameter">
+		<xs:sequence>
+			<xs:element ref="FriendlyDescription" minOccurs="0"
+				maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="Name" type="xs:string" use="required" />
+	</xs:complexType>
+
+	<xs:element name="StringParameter" type="StringParameter" />
+	<xs:complexType name="StringParameter">
+		<xs:complexContent>
+			<xs:extension base="Parameter">
+				<xs:attribute name="Value" type="xs:string" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:element name="IntegerParameter" type="IntegerParameter" />
+	<xs:complexType name="IntegerParameter">
+		<xs:complexContent>
+			<xs:extension base="Parameter">
+				<xs:attribute name="Value" type="xs:int" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:element name="BigIntegerParameter" type="BigIntegerParameter" />
+	<xs:complexType name="BigIntegerParameter">
+		<xs:complexContent>
+			<xs:extension base="Parameter">
+				<xs:attribute name="Value" type="xs:integer" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:element name="UriParameter" type="UriParameter" />
+	<xs:complexType name="UriParameter">
+		<xs:complexContent>
+			<xs:extension base="Parameter">
+				<xs:attribute name="Value" type="xs:anyURI" use="required" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- End: Crypto-specific elements -->
+
+</xs:schema>

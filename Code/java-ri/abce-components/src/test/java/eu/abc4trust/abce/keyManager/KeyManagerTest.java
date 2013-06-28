@@ -215,7 +215,7 @@ public class KeyManagerTest {
         RevocationAuthorityParameters params = this
                 .getRevocationAuthorityParameters();
         params.setRevocationInfoReference(new Reference());
-        params.getRevocationInfoReference().getAny()
+        params.getRevocationInfoReference().getReferences()
         .add(new URI("my2.revocationproxy.abc4trust.eu"));
         URI uri = new URI("sample-uri");
 
@@ -284,7 +284,7 @@ public class KeyManagerTest {
         RevocationAuthorityParameters params = this
                 .getRevocationAuthorityParameters();
         params.setRevocationInfoReference(new Reference());
-        params.getRevocationInfoReference().getAny()
+        params.getRevocationInfoReference().getReferences()
         .add(new URI("my2.revocationproxy.abc4trust.eu"));
         URI uri = new URI("sample-uri");
 

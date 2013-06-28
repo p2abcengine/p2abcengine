@@ -37,7 +37,7 @@ public class MockIdentitySelectionUi implements IdentitySelectionUi {
     for (InspectableAttribute is : arg.tokenCandidatesPerPolicy.get(chosenPolicy).tokenCandidates.get(chosenPresentationToken).inspectableAttributes) {
       chosenInspectors.add(is.inspectorAlternatives.get(0).uri);
     }
-    return new UiPresentationReturn(chosenPolicy, chosenPresentationToken, metadataToChange, chosenPseudonymList, chosenInspectors);
+    return new UiPresentationReturn(arg.uiContext, chosenPolicy, chosenPresentationToken, metadataToChange, chosenPseudonymList, chosenInspectors);
   }
 
   @Override
@@ -56,7 +56,7 @@ public class MockIdentitySelectionUi implements IdentitySelectionUi {
     for (Attribute a : arg.selfClaimedAttributes) {
       chosenAttributeValues.add(a.getAttributeValue());
     }*/
-    return new UiIssuanceReturn(chosenPresentationToken, metadataToChange, chosenPseudonymList,
+    return new UiIssuanceReturn(arg.uiContext, chosenPresentationToken, metadataToChange, chosenPseudonymList,
         chosenInspectors/*, chosenAttributeValues*/);
   }
   

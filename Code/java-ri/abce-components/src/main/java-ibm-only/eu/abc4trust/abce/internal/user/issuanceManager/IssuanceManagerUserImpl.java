@@ -12,8 +12,8 @@
 package eu.abc4trust.abce.internal.user.issuanceManager;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import com.google.inject.Inject;
 
@@ -24,8 +24,17 @@ import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
+import eu.abc4trust.returnTypes.IssuanceReturn;
+import eu.abc4trust.returnTypes.UiIssuanceArguments;
+import eu.abc4trust.returnTypes.UiIssuanceReturn;
+import eu.abc4trust.returnTypes.UiPresentationArguments;
+import eu.abc4trust.returnTypes.UiPresentationReturn;
 import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
+import eu.abc4trust.ui.idSelection.IdentitySelectionUiConverter;
+import eu.abc4trust.ui.idSelection.IdentitySelectionUiPrinter;
+import eu.abc4trust.util.DummyForNewABCEInterfaces;
+import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
@@ -34,13 +43,15 @@ public class IssuanceManagerUserImpl implements IssuanceManagerUser {
 
   private final PolicyCredentialMatcher policyCredMatcher;
   private final CryptoEngineUser cryptoEngine;
-  private final Set<URI> usedContexts;
+  private final LinkedHashSet<URI> usedContexts;
+  
+  private static final int MAX_CONTEXTS = 1000;
 
   @Inject
   IssuanceManagerUserImpl(PolicyCredentialMatcher policyCredMatcher, CryptoEngineUser cryptoEngine) {
     this.policyCredMatcher = policyCredMatcher;
     this.cryptoEngine = cryptoEngine;
-    this.usedContexts = new HashSet<URI>();
+    this.usedContexts = new LinkedHashSet<URI>();
   }
 
   @Override
@@ -51,57 +62,80 @@ public class IssuanceManagerUserImpl implements IssuanceManagerUser {
 
   @Override
   public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage im,
-      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException {
-    if (!this.usedContexts.contains(im.getContext())) {
-      try {
-        this.usedContexts.add(im.getContext());
-        IssuMsgOrCredDesc ret = new IssuMsgOrCredDesc();
-        ret.im = this.policyCredMatcher.createIssuanceToken(im, idSelectionCallback);
-        ret.cd = null;
-        return ret;
-      } catch (CredentialManagerException ex) {
-        throw new CryptoEngineException(ex);
-      }
-    } else {
-      return this.cryptoEngine.issuanceProtocolStep(im);
-    }
+      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException {
+    IdentitySelectionUi ui = new IdentitySelectionUiPrinter(new IdentitySelectionUiConverter(idSelectionCallback));
+    return issuanceProtocolStep(im, ui);
   }
 
   @Override
   public PresentationToken createPresentationToken(PresentationPolicyAlternatives p,
-      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException {
-    try {
-      return this.policyCredMatcher.createPresentationToken(p, idSelectionCallback);
-    } catch (CredentialManagerException ex) {
-      throw new CryptoEngineException(ex);
-    }
+      IdentitySelection idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException {
+    IdentitySelectionUi ui = new IdentitySelectionUiPrinter(new IdentitySelectionUiConverter(idSelectionCallback));
+    return createPresentationToken(p, ui);
   }
 
   @Override
   public PresentationToken createPresentationToken(PresentationPolicyAlternatives p,
-      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException {
-    try {
-      return this.policyCredMatcher.createPresentationToken(p, idSelectionCallback);
-    } catch (CredentialManagerException ex) {
-      throw new CryptoEngineException(ex);
+      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException {
+    UiPresentationArguments upa = createPresentationToken(p, new DummyForNewABCEInterfaces());
+    if(upa == null) {
+      return null;
     }
+    UiPresentationReturn upr = idSelectionCallback.selectPresentationTokenDescription(upa);
+    return createPresentationToken(upr);
   }
 
   @Override
   public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage im,
-      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException {
-    if (!this.usedContexts.contains(im.getContext())) {
-      try {
-        this.usedContexts.add(im.getContext());
-        IssuMsgOrCredDesc ret = new IssuMsgOrCredDesc();
-        ret.im = this.policyCredMatcher.createIssuanceToken(im, idSelectionCallback);
-        ret.cd = null;
-        return ret;
-      } catch (CredentialManagerException ex) {
-        throw new CryptoEngineException(ex);
-      }
+      IdentitySelectionUi idSelectionCallback) throws CryptoEngineException, KeyManagerException, IdentitySelectionException, CredentialManagerException {
+    IssuanceReturn ir = issuanceProtocolStep(im, new DummyForNewABCEInterfaces());
+    if(ir.uia != null) {
+      UiIssuanceReturn uir = idSelectionCallback.selectIssuanceTokenDescription(ir.uia);
+      return new IssuMsgOrCredDesc(issuanceProtocolStep(uir));
     } else {
-      return this.cryptoEngine.issuanceProtocolStep(im);
+      return new IssuMsgOrCredDesc(ir);
+    }
+  }
+  
+  @Override
+  public boolean isRevoked(Credential cred) throws CryptoEngineException {                       
+  		return this.cryptoEngine.isRevoked(cred);               
+  }
+
+  @Override
+  public UiPresentationArguments createPresentationToken(PresentationPolicyAlternatives p, DummyForNewABCEInterfaces d) throws CredentialManagerException, KeyManagerException {
+    return this.policyCredMatcher.createPresentationToken(p, d);
+  }
+
+  @Override
+  public PresentationToken createPresentationToken(UiPresentationReturn upr) throws CryptoEngineException {
+    return this.policyCredMatcher.createPresentationToken(upr);
+  }
+
+  @Override
+  public IssuanceReturn issuanceProtocolStep(IssuanceMessage im, DummyForNewABCEInterfaces d) throws CryptoEngineException, CredentialManagerException, KeyManagerException {
+    if (!this.usedContexts.contains(im.getContext())) {
+      addContext(im.getContext());
+      UiIssuanceArguments args = this.policyCredMatcher.createIssuanceToken(im, d);
+      return new IssuanceReturn(args);
+    } else {
+      IssuMsgOrCredDesc ret = this.cryptoEngine.issuanceProtocolStep(im);
+      return new IssuanceReturn(ret);
+    }
+  }
+
+  @Override
+  public IssuanceMessage issuanceProtocolStep(UiIssuanceReturn uir) {
+     return this.policyCredMatcher.createIssuanceToken(uir);
+  }
+  
+  private void addContext(URI context) {
+    this.usedContexts.add(context);
+    // Trim set to size
+    Iterator<URI> it = this.usedContexts.iterator();
+    while(usedContexts.size() > MAX_CONTEXTS) {
+      it.next();
+      it.remove();
     }
   }
 

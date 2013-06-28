@@ -164,7 +164,7 @@ public class IdentitySelectionUiConverter implements IdentitySelectionUi {
         ci.add(key.toString());
       }
       
-      return new UiPresentationReturn(policy, token, mtc, chosenPsNymList, ci);
+      return new UiPresentationReturn(args.uiContext, policy, token, mtc, chosenPsNymList, ci);
     }
   }
 
@@ -290,7 +290,7 @@ public class IdentitySelectionUiConverter implements IdentitySelectionUi {
         ci.add(key.toString());
       }
       
-      return new UiIssuanceReturn(token, mtc, chosenPsNymList, ci/*, ret.chosenAttributeValues*/);
+      return new UiIssuanceReturn(args.uiContext, token, mtc, chosenPsNymList, ci/*, ret.chosenAttributeValues*/);
     }
   }
 

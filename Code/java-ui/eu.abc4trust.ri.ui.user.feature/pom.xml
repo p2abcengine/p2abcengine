@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  
+  <artifactId>eu.abc4trust.ri.ui.user.feature</artifactId>
+  <version>1.0.4.qualifier</version>
+  <packaging>eclipse-feature</packaging>
+
+  <parent>
+    <groupId>eu.abc4trust.ui</groupId>
+    <artifactId>eu.abc4trust.ri.ui.user.parent.parent</artifactId>
+    <version>1.0.4-SNAPSHOT</version>
+    <relativePath>../parent/parent</relativePath>
+  </parent>
+  
+</project>

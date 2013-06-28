@@ -4,7 +4,7 @@
   <groupId>eu.abc4trust.ri</groupId>
   <artifactId>pom</artifactId>
   <name>pom</name>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>1.0.9-SNAPSHOT</version>
   <packaging>pom</packaging>
   <modules>
     <module>abc4trust-xml</module>
@@ -17,6 +17,9 @@
     <module>integration-test-inspector</module>
     <module>integration-test-revocation</module>
     <module>firefoxplugin</module>
+    <module>ui-osgi-dependencies</module>
+    <module>test-tools</module>
+    <module>abce-services</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,29 +30,34 @@
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>abc4trust-xml</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>abce-interfaces</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>abce-components</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>service-helper</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>abce-services</artifactId>
+        <version>1.0.9-SNAPSHOT</version>
       </dependency>
       <!-- to get sampleXml in test -->
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>abce-components</artifactId>
         <type>test-jar</type>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
       </dependency>
       <!-- REFERENCED LIBRARIES -->
       <dependency>
@@ -76,8 +84,15 @@
 	  <dependency>
   		<groupId>com.ibm.zurich</groupId>
  		<artifactId>idmx</artifactId>
- 		<version>2-3-40</version>
+ 		<version>2-3-43</version>
 	  </dependency>   
+      <!--
+      <dependency>
+        <groupId>xerces</groupId>
+        <artifactId>xercesImpl</artifactId>
+        <version>2.9.1</version>
+      </dependency>
+-->
 	  <dependency>
 		<groupId>com.fasterxml.uuid</groupId>
 		<artifactId>java-uuid-generator</artifactId>
@@ -123,7 +138,7 @@
           </exclusion>
         </exclusions>
       </dependency>
-      <!-- JSon marshalling in user service -->
+<!-- JSon marshalling in user service -->
       <dependency>
         <groupId>org.codehaus.jackson</groupId>
         <artifactId>jackson-mapper-asl</artifactId>
@@ -147,39 +162,42 @@
   <!-- Repository - Only use our own -->
   <repositories>
     <repository>
-      <id>maven2-repository.dev.java.net</id>
-      <name>Java.net Maven 2 Repository</name>
-      <url>http://download.java.net/maven/2</url>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public</url>
     </repository>
   </repositories>
   <!-- Plugin Repository - use default Maven for now -->
   <pluginRepositories>
     <pluginRepository>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public</url>
+      <!--
       <id>maven2-repository.dev.java.net</id>
       <name>Java.net Maven 2 Repository</name>
       <url>http://download.java.net/maven/2</url>
+-->
     </pluginRepository>
   </pluginRepositories>
   <!-- SCM -->
   <scm>
-    <connection>scm:git:git://github.com/p2abcengine/p2abcengine.git</connection>
-    <developerConnection>scm:git:git://github.com/p2abcengine/p2abcengine.git</developerConnection>
+    <connection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ri/trunk</connection>
+    <developerConnection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ri/trunk</developerConnection>
   </scm>
-  <!--
   <distributionManagement>
-    <downloadUrl>somehost/nexus/content/groups/public</downloadUrl>
+    <downloadUrl>https://abc4trust.miracleas.dk/nexus/content/groups/public</downloadUrl>
     <repository>
-      <id></id>
-      <name>nexus release</name>
-      <url>somehost/nexus/content/repositories/releases/</url>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.releases</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/releases/</url>
     </repository>
     <snapshotRepository>
-      <id></id>
-      <name>nexus snapshots</name>
-      <url>somehost/nexus/content/repositories/snapshots/</url>
+      <id>maven.abc4trust.miracleas.dk</id>
+      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.snapshots</name>
+      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
-  -->
 
   <!-- BUILD -->
   <build>
@@ -191,7 +209,7 @@
           <version>2.2</version>
           <configuration>
             <tagNameFormat>@{project.version}</tagNameFormat>
-            <tagBase>https://somehost/svn/WP4_Reference_Implementation/java/ri/tags</tagBase>
+            <tagBase>https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ri/tags</tagBase>
           </configuration>
         </plugin>
         <!-- -->
@@ -211,9 +229,9 @@
           <version>2.1.1</version>
         </plugin>
         <plugin>
-          <groupId>org.codehaus.mojo</groupId>
+          <groupId>org.jvnet.jax-ws-commons</groupId>
           <artifactId>jaxws-maven-plugin</artifactId>
-          <version>1.12</version>
+          <version>2.1</version>
         </plugin>
         <plugin>
           <groupId>org.jvnet.jaxb2.maven2</groupId>

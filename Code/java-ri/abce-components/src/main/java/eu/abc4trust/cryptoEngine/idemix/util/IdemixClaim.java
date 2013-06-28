@@ -101,7 +101,6 @@ public class IdemixClaim implements Claim, VerifiableClaim{
 
     private final Map<String, URI> commitmentToIssuer;
     private final KeyManager keyManager;
-    // private final Map<URI, RevocationInformation> revInfoUidToRevInfo;
     private final Collection<RevocationProofData> revocationProofData;
     private final ContextGenerator contextGen;
     private final VerifierRevocation verifierRevocation;
@@ -137,6 +136,8 @@ public class IdemixClaim implements Claim, VerifiableClaim{
         this.aliasCredsInToken = polTransl.getCredentialList(); //this one cares
 
         this.aliasCredSpecs = polTransl.getCredSpecList();
+        
+   //     this.credsInToken = polTransl.getCredentialsInToken();
 
         this.attrRefEqivClasses = polTransl.getAttrRefEqivClasses();
         this.revealedAttrRefEqivClasses = polTransl.getRevealedAttrRefEqivClasses();
@@ -310,7 +311,8 @@ public class IdemixClaim implements Claim, VerifiableClaim{
 
             Verifier verifier = new Verifier(proofSpec, this.proof, this.nonce,
                     verifierInput);
-
+            System.out.println("SPEC_VERIFIER\n" + proofSpec.toStringPretty());
+            
             if (! verifier.verify()) {
                 return false;
             }

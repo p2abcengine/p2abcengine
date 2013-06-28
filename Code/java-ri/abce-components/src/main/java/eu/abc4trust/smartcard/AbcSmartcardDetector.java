@@ -65,8 +65,10 @@ public class AbcSmartcardDetector implements Runnable {
             try {
                 List<Smartcard> availableSmartcards = this
                         .getAvailableSmartcards();
-                this.logger.log(Level.INFO, "Newly available smartcards: "
-                        + availableSmartcards);
+                if(availableSmartcards.size() != 0){
+                	this.logger.log(Level.INFO, "Newly available smartcards: "
+                			+ availableSmartcards);
+                }
                 this.cardStorage.addClosedSmartcards(availableSmartcards);
 
                 Thread.sleep(this.timeout);

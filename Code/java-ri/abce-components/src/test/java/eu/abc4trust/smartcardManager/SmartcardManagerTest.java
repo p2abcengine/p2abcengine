@@ -153,7 +153,7 @@ public class SmartcardManagerTest {
         CredentialBases cb = new CredentialBases(R0, S, n);
 
         theSmartcard.getNewNonceForSignature();
-        assertEquals(theSmartcard.addIssuerParameters(pin, rootKey, issuerUri, cb), SmartcardStatusCode.OK);
+        assertEquals(theSmartcard.addIssuerParameters(rootKey, issuerUri, cb), SmartcardStatusCode.OK);
         return theSmartcard;
     }
 

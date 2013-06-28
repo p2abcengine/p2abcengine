@@ -45,6 +45,7 @@ import com.ibm.zurich.idmx.utils.Parser;
 
 import edu.rice.cs.plt.tuple.Pair;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
+import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.abce.internal.issuer.tokenManagerIssuer.TokenStorageIssuer;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
@@ -59,6 +60,7 @@ import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
+import eu.abc4trust.revocationProxy.revauth.RevocationProxyAuthority;
 import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.smartcard.CredentialBases;
 import eu.abc4trust.smartcard.RSAKeyPair;
@@ -78,6 +80,9 @@ import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PseudonymWithMetadata;
+import eu.abc4trust.xml.Reference;
+import eu.abc4trust.xml.RevocationAuthorityParameters;
+import eu.abc4trust.xml.RevocationInformation;
 import eu.abc4trust.xml.Secret;
 import eu.abc4trust.xml.SmartcardSystemParameters;
 import eu.abc4trust.xml.SystemParameters;
@@ -115,12 +120,12 @@ public class SoderhamnPilotTest {
             "/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnRole.xml";
 
     private static final String CREDENTIAL_SPECIFICATION_SODERHAMN_SCHOOL =
-            "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchool.xml";
+            "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchoolWithRevocation.xml";
     private static final String ISSUANCE_POLICY_SODERHAMN_SCHOOL =
             "/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnSchool.xml";
 
     private static final String CREDENTIAL_SPECIFICATION_SODERHAMN_SUBJECT =
-            "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSubject.xml";
+            "/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSubjectWithRevocation.xml";
     private static final String ISSUANCE_POLICY_SODERHAMN_SUBJECT =
             "/eu/abc4trust/sampleXml/soderhamn/issuancePolicySoderhamnSubject.xml";
 
@@ -133,20 +138,32 @@ public class SoderhamnPilotTest {
     private static final String PRESENTATION_POLICY_RA_SUJECT_MUST_BE_ENGLISH =
             "/eu/abc4trust/sampleXml/soderhamn/presentationPolicyRASubjectMustBeEnglish.xml";
 
+    private static final String PRESENTATION_POLICY_RA_GENDER_MUST_BE_FEMALE_SUJECT_MUST_BE_FRENCH =
+            "/eu/abc4trust/sampleXml/soderhamn/presentationPolicyRAGenderMustBeFemaleSubjectMustBeFrench.xml";
+
+    private static final String PRESENTATION_POLICY_NUMBER_GENDER_FAIL =
+            "/eu/abc4trust/sampleXml/soderhamn/presentationPolicyNumberGenderFail.xml";
+
     @Test
     public void soderhamnPilotHappypathIdemixTest() throws Exception {
         CryptoEngine cryptoEngine = CryptoEngine.IDEMIX;
         int keyLength = 1024; // TODO: define the security level & revocation
         URI cryptoMechanism = new URI(URN_ABC4TRUST_1_0_ALGORITHM_IDEMIX);
         Random random = new Random(1231);
-        // Generate system parameters.
-        Injector issuerInjector = Guice.createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine));
+        Injector revocationInjector = Guice
+                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
+        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+                .getInstance(RevocationProxyAuthority.class);
+
+        Injector issuerInjector = Guice.createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         IssuerAbcEngine issuerEngine = issuerInjector.getInstance(IssuerAbcEngine.class);
+        // Generate system parameters.
         SystemParameters systemParameters =
                 issuerEngine.setupSystemParameters(keyLength, cryptoMechanism);
         SecretWrapper secretWrapper = new SecretWrapper(this.getIdemixSecret());
 
-        this.runIdemixTest(cryptoEngine, keyLength, cryptoMechanism, issuerInjector, issuerEngine,
+        this.runIdemixTest(cryptoEngine, keyLength, cryptoMechanism, issuerInjector, issuerEngine, revocationInjector,
                 systemParameters, secretWrapper);
     }
 
@@ -160,25 +177,32 @@ public class SoderhamnPilotTest {
         int keyLength = 1024; // TODO: define the security level & revocation
         URI cryptoMechanism = new URI(URN_ABC4TRUST_1_0_ALGORITHM_IDEMIX);
         Random random = new Random(1231);
-        // Generate system parameters.
-        Injector issuerInjector = Guice.createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine));
+        Injector revocationInjector = Guice
+                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
+        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+                .getInstance(RevocationProxyAuthority.class);
+        Injector issuerInjector = Guice.createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         IssuerAbcEngine issuerEngine = issuerInjector.getInstance(IssuerAbcEngine.class);
+        // Generate system parameters.
         SystemParameters systemParameters =
                 issuerEngine.setupSystemParameters(keyLength, cryptoMechanism);
         // smartcard secret - with IDEMIX engine
         SecretWrapper secretWrapper = new SecretWrapper(cryptoEngine, random, systemParameters);
 
-        this.runIdemixTest(cryptoEngine, keyLength, cryptoMechanism, issuerInjector, issuerEngine,
+        this.runIdemixTest(cryptoEngine, keyLength, cryptoMechanism, issuerInjector, issuerEngine, revocationInjector,
                 systemParameters, secretWrapper);
     }
 
     private void runIdemixTest(CryptoEngine cryptoEngine, int keyLength, URI cryptoMechanism,
-            Injector issuerInjector, IssuerAbcEngine issuerEngine, SystemParameters systemParameters,
+            Injector issuerInjector, IssuerAbcEngine issuerEngine, Injector revocationInjector, SystemParameters systemParameters,
             SecretWrapper secretWrapper) throws URISyntaxException, CredentialManagerException,
             KeyManagerException, JAXBException, UnsupportedEncodingException, SAXException, Exception {
+        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+                .getInstance(RevocationProxyAuthority.class);
         // Create URIs.
         Injector userInjector =
-                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), cryptoEngine));
+                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
 
         IdemixCryptoEngineUserImpl userEngine =
                 userInjector.getInstance(IdemixCryptoEngineUserImpl.class);
@@ -192,32 +216,39 @@ public class SoderhamnPilotTest {
         PseudonymWithMetadata pwm =
                 this.getIdemixPseudonym(secretWrapper.getSecretUID(), userEngine, systemParameters);
         Injector verifierInjector =
-                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), cryptoEngine));
+                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
         this.runTest(verifierInjector, keyLength, cryptoMechanism, pwm, secretWrapper,
-                systemParameters, issuerInjector, userInjector);
+                systemParameters, issuerInjector, userInjector, revocationInjector);
     }
 
     @Test
-//    @Ignore
+    //@Ignore
     public void soderhamnPilotHappypathUProveTest() throws Exception {
         // Create URIs.
         int keyLength = 2048; // TODO: define the security level & revocation
         URI cryptoMechanism = URI.create(URN_ABC4TRUST_1_0_ALGORITHM_UPROVE);
         UProveUtils uproveUtils = new UProveUtils();
 
+        Injector revocationInjector = Guice
+                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+                        CryptoEngine.UPROVE, UProveUtils.UPROVE_COMMON_PORT));
+        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+                .getInstance(RevocationProxyAuthority.class);
+
         SecretWrapper secretWrapper = new SecretWrapper(this.getUProveSecret());
         Injector userInjector =
-                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), uproveUtils.getUserServicePort()));
+                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), uproveUtils.getUserServicePort(), revocationProxyAuthority));
 
         PseudonymWithMetadata pwm = this.getUProvePseudonym(secretWrapper.getSecretUID(), userInjector);
 
         Injector issuerInjector =
-                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), uproveUtils.getIssuerServicePort()));
+                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), uproveUtils.getIssuerServicePort(), revocationProxyAuthority));
         SystemParameters systemParameters = this.getUProveSystemParameters(issuerInjector);
         Injector verifierInjector =
-                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), uproveUtils.getVerifierServicePort()));
+                Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), uproveUtils.getVerifierServicePort(), revocationProxyAuthority));
+
         this.runTest(verifierInjector, keyLength, cryptoMechanism, pwm, secretWrapper,
-                systemParameters, issuerInjector, userInjector);
+                systemParameters, issuerInjector, userInjector, revocationInjector);
         // System.out.println("Test done");
         int exitCode = userInjector.getInstance(UProveBindingManager.class).stop();
         assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
@@ -229,7 +260,7 @@ public class SoderhamnPilotTest {
 
     private void runTest(Injector verifierInjector, int keyLength, URI cryptoMechanism,
             PseudonymWithMetadata pwm, SecretWrapper secretWrapper, SystemParameters systemParameters,
-            Injector issuerInjector, Injector userInjector) throws KeyManagerException, JAXBException,
+            Injector issuerInjector, Injector userInjector, Injector revocationInjector) throws KeyManagerException, JAXBException,
             UnsupportedEncodingException, SAXException, URISyntaxException, Exception,
             CredentialManagerException {
 
@@ -240,11 +271,31 @@ public class SoderhamnPilotTest {
         KeyManager issuerKeyManager = issuerInjector.getInstance(KeyManager.class);
         KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
         KeyManager verifierKeyManager = verifierInjector.getInstance(KeyManager.class);
+        KeyManager revocationKeyManager = revocationInjector.getInstance(KeyManager.class);
 
 
         issuerKeyManager.storeSystemParameters(systemParameters);
         userKeyManager.storeSystemParameters(systemParameters);
         verifierKeyManager.storeSystemParameters(systemParameters);
+        revocationKeyManager.storeSystemParameters(systemParameters);
+
+        // Generate revocation parameters.
+        RevocationAbcEngine revocationEngine = revocationInjector.getInstance(RevocationAbcEngine.class);
+        URI revParamsUid = IntegrationTestUtil.REVOCATION_PARAMETERS_UID;
+        Reference revocationInfoReference = new Reference();
+        revocationInfoReference.setReferenceType(URI.create("https"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
+        Reference nonRevocationEvidenceReference = new Reference();
+        nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
+        Reference nonRrevocationUpdateReference = new Reference();
+        nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
+        nonRrevocationUpdateReference.getReferences().add(
+                URI.create("example.org"));
+        RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
+                .setupRevocationAuthorityParameters(keyLength,
+                        cryptoMechanism, revParamsUid, revocationInfoReference,
+                        nonRevocationEvidenceReference, nonRrevocationUpdateReference);
 
         // Setup issuance policies.
         IssuancePolicy childIssuancePolicy =
@@ -339,32 +390,40 @@ public class SoderhamnPilotTest {
         IssuerParameters childIssuerParameters =
                 issuerEngine.setupIssuerParameters(childCredSpec, systemParameters, childIssuancePolicyUid,
                         hash, URI.create("uprove"),
-                        URI.create(childSpecificationUID.toString() + "/revocationId"));
+                        revParamsUid, null);
 
         IssuerParameters classIssuerParameters =
                 issuerEngine.setupIssuerParameters(classCredSpec, systemParameters, classIssuancePolicyUid,
                         hash, URI.create("uprove"),
-                        URI.create(classSpecificationUID.toString() + "/revocationId"));
+                        revParamsUid, null);
 
         IssuerParameters guardianIssuerParameters =
                 issuerEngine.setupIssuerParameters(guardianCredSpec, systemParameters,
                         guardianIssuancePolicyUid, hash, URI.create("uprove"),
-                        URI.create(guardianSpecificationUID.toString() + "/revocationId"));
+                        revParamsUid, null);
 
         IssuerParameters roleIssuerParameters =
                 issuerEngine.setupIssuerParameters(roleCredSpec, systemParameters, roleIssuancePolicyUid,
                         hash, URI.create("uprove"),
-                        URI.create(roleSpecificationUID.toString() + "/revocationId"));
+                        revParamsUid, null);
 
         IssuerParameters schoolIssuerParameters =
                 issuerEngine.setupIssuerParameters(schoolCredSpec, systemParameters,
                         schoolIssuancePolicyUid, hash, URI.create("uprove"),
-                        URI.create(schoolSpecificationUID.toString() + "/revocationId"));
+                        revParamsUid, null);
 
         IssuerParameters subjectIssuerParameters =
                 issuerEngine.setupIssuerParameters(subjectCredSpec, systemParameters,
                         subjectIssuancePolicyUid, hash, URI.create("uprove"),
-                        URI.create(subjectSpecificationUID.toString() + "/revocationId"));
+                        revParamsUid, null);
+
+        //
+        issuerKeyManager.storeRevocationAuthorityParameters(revParamsUid,
+                revocationAuthorityParameters);
+        userKeyManager.storeRevocationAuthorityParameters(revParamsUid,
+                revocationAuthorityParameters);
+        verifierKeyManager.storeRevocationAuthorityParameters(revParamsUid,
+                revocationAuthorityParameters);
 
         //
         issuerKeyManager.storeIssuerParameters(childIssuancePolicyUid, childIssuerParameters);
@@ -473,22 +532,38 @@ public class SoderhamnPilotTest {
                 System.out.println("-- attribute :  "  + a.getAttributeUID() + " : " + a.getAttributeValue());
             }
         }
+        // The verifier needs to retrive the latest revocation information
+        // in order to put in the UID in the presentation policy.
+        RevocationInformation revocationInformation = revocationEngine
+                .updateRevocationInformation(revParamsUid);
+
+
         // Step 3. Run presenations...
         System.out.println(">> Present 'subject' credential.");
 
         System.out.println(">> - we have 'French'.");
-        this.runPresentation(issuanceHelper, verifierInjector, userInjector, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_FRENCH, true, 0, 0);
+        this.runPresentation(issuanceHelper, verifierInjector, userInjector, revocationInformation, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_FRENCH, true, 0, 0);
 
         System.out.println(">> - we have 'French' - login by credential.");
-        this.runPresentation(issuanceHelper, verifierInjector, userInjector, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_FRENCH, true, 0, 0);
+        this.runPresentation(issuanceHelper, verifierInjector, userInjector, revocationInformation, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_FRENCH, true, 0, 0);
 
         // pseudonym established...
         System.out.println(">> - we have 'French' - log in by pseudonym.");
-        this.runPresentation(issuanceHelper, verifierInjector, userInjector, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_FRENCH, true, 0, 0);
+        this.runPresentation(issuanceHelper, verifierInjector, userInjector, revocationInformation, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_FRENCH, true, 0, 0);
 
         // policy cannot be satisfied...
         System.out.println(">> - we do NOT have 'English'.");
-        this.runPresentation(issuanceHelper, verifierInjector, userInjector, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_ENGLISH, false, 0, 0);
+        this.runPresentation(issuanceHelper, verifierInjector, userInjector, revocationInformation, PRESENTATION_POLICY_RA_SUJECT_MUST_BE_ENGLISH, false, 0, 0);
+
+        // policy satisfied...
+        System.out.println(">> - we have 'female' and 'French'.");
+        this.runPresentation(issuanceHelper, verifierInjector, userInjector, revocationInformation, PRESENTATION_POLICY_RA_GENDER_MUST_BE_FEMALE_SUJECT_MUST_BE_FRENCH, true, 0, 0);
+
+        // policy satisfied...
+        System.out.println(">> - we have female.");
+        this.runPresentation(issuanceHelper, verifierInjector, userInjector, revocationInformation, PRESENTATION_POLICY_NUMBER_GENDER_FAIL, true, 0, 0);
+
+
     }
 
     private void loginWithPseudonym(Injector universityInjector, Injector userInjector,
@@ -515,7 +590,7 @@ public class SoderhamnPilotTest {
     }
 
     private void runPresentation(
-            IssuanceHelper issuanceHelper, Injector verifierInjector, Injector userInjector,
+            IssuanceHelper issuanceHelper, Injector verifierInjector, Injector userInjector, RevocationInformation revocationInformation,
             String policyResource, boolean exprctSatisfied, int presentationTokenChoice, int pseudonymChoice) throws Exception {
         List<URI> chosenInspectors = new LinkedList<URI>();
         //     chosenInspectors.add(URI
@@ -525,15 +600,15 @@ public class SoderhamnPilotTest {
 
         if(exprctSatisfied) {
             Pair<PresentationToken, PresentationPolicyAlternatives> p =
-                    issuanceHelper.createPresentationToken(verifierInjector, userInjector, policyResource,
+                    issuanceHelper.createPresentationToken(verifierInjector, userInjector, policyResource, revocationInformation,
                             policySelection);
             System.out.println("Policy expected to be satisfied : " + p);
             assertNotNull("Policy expected to be satisfied", p);
             issuanceHelper.verify(verifierInjector, p.second(), p.first());
         } else {
             Pair<PresentationToken, PresentationPolicyAlternatives> p =
-                    issuanceHelper.createPresentationToken_NotSatisfied(verifierInjector, userInjector, policyResource,
-                            policySelection);
+                    issuanceHelper.createPresentationToken_NotSatisfied(verifierInjector, userInjector, revocationInformation,
+                            policyResource, policySelection);
             System.out.println("Policy NOT expected to be satisfied : " + p);
             assertNull("Policy NOT expected to be satisfied", p);
         }
@@ -578,7 +653,7 @@ public class SoderhamnPilotTest {
             IdemixCryptoEngineUserImpl idemixUser, SystemParameters systemParameters) {
         String scope = "urn:soderhamn:registration";
         try {
-            idemixUser.loadIdemixSystemParameters(systemParameters);
+            IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(systemParameters);
         } catch (CryptoEngineException ex) {
             ex.printStackTrace();
             fail(ex.getLocalizedMessage());
@@ -590,22 +665,22 @@ public class SoderhamnPilotTest {
 
     private Map<String, Object> populateChildAttributes() {
         Map<String, Object> att = new HashMap<String, Object>();
-        att.put("urn:soderhamn:credspec:credChild:child", "child");
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:soderhamn:revocation:handle:child:1"));
+        att.put("urn:soderhamn:credspec:credChild:child", "000501-2345");
+        //        att.put(REVOCATION_HANDLE_STR,
+        //                URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         return att;
     }
 
     private Map<String, Object> populateClassAttributes() {
         Map<String, Object> att = new HashMap<String, Object>();
-//        att.put("urn:soderhamn:credspec:credClass:class", "class");
+        //        att.put("urn:soderhamn:credspec:credClass:class", "class");
 
         att.put("urn:soderhamn:credspec:credClass:classNumber", 7);
         att.put("urn:soderhamn:credspec:credClass:classGroup","classGroup");
         att.put("urn:soderhamn:credspec:credClass:classYear", 2012);
-        
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:soderhamn:revocation:handle:class:1"));
+
+        //        att.put(REVOCATION_HANDLE_STR,
+        //                URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         return att;
     }
 
@@ -613,13 +688,13 @@ public class SoderhamnPilotTest {
         Map<String, Object> att = new HashMap<String, Object>();
         att.put("urn:soderhamn:credspec:credGuardian:guardian", "guardian");
         att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:soderhamn:revocation:handle:guardian:1"));
+                URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         return att;
     }
 
     private Map<String, Object> populateRoleAttributes() {
         Map<String, Object> att = new HashMap<String, Object>();
-//        att.put("urn:soderhamn:credspec:credRole:role", "role");
+        //        att.put("urn:soderhamn:credspec:credRole:role", "role");
         att.put("urn:soderhamn:credspec:credRole:pupil", true);
         att.put("urn:soderhamn:credspec:credRole:nurse", false);
         att.put("urn:soderhamn:credspec:credRole:teacher", false);
@@ -629,34 +704,34 @@ public class SoderhamnPilotTest {
         att.put("urn:soderhamn:credspec:credRole:role3", false);
         att.put("urn:soderhamn:credspec:credRole:role4", false);
         att.put("urn:soderhamn:credspec:credRole:role5", false);
-        
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:soderhamn:revocation:handle:role:1"));
+
+        //        att.put(REVOCATION_HANDLE_STR,
+        //                URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         return att;
     }
 
     private Map<String, Object> populateSchoolAttributes() {
         Map<String, Object> att = new HashMap<String, Object>();
-        att.put("urn:soderhamn:credspec:credSchool:firstname", "Emil");
+        att.put("urn:soderhamn:credspec:credSchool:firstname", "Emily");
         att.put("urn:soderhamn:credspec:credSchool:lastname", "von Katthult Svensson");
-        att.put("urn:soderhamn:credspec:credSchool:civicRegistrationNumber", "42");
-        att.put("urn:soderhamn:credspec:credSchool:gender", "M");
+        att.put("urn:soderhamn:credspec:credSchool:civicRegistrationNumber", "000501-2345");
+        att.put("urn:soderhamn:credspec:credSchool:gender", "female");
         att.put("urn:soderhamn:credspec:credSchool:schoolname", "L\u00f6nneberga");
-        
+
         Calendar cal = Calendar.getInstance();
-        cal.set(2000, 01, 10);
+        cal.set(2000, 1, 10);
         SimpleDateFormat xmlDateFormat = new SimpleDateFormat("yyyy-MM-dd'Z'");
         String dateValue = xmlDateFormat.format(cal.getTime());
         att.put("urn:soderhamn:credspec:credSchool:birthdate", dateValue);
 
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:soderhamn:revocation:handle:school:1"));
+        //        att.put(REVOCATION_HANDLE_STR,
+        //                URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         return att;
     }
 
     private Map<String, Object> populateSubjectAttributes(String subject) {
         Map<String, Object> att = new HashMap<String, Object>();
-//        att.put("urn:soderhamn:credspec:credSubject:subject", subject);
+        //        att.put("urn:soderhamn:credspec:credSubject:subject", subject);
 
         att.put("urn:soderhamn:credspec:credSubject:maths" , "maths".equals(subject));
         att.put("urn:soderhamn:credspec:credSubject:physics" , "physics".equals(subject));
@@ -667,10 +742,10 @@ public class SoderhamnPilotTest {
         att.put("urn:soderhamn:credspec:credSubject:subject3" , "subject3".equals(subject));
         att.put("urn:soderhamn:credspec:credSubject:subject4" , "subject4".equals(subject));
         att.put("urn:soderhamn:credspec:credSubject:subject5" , "subject5".equals(subject));
-        
+
         //        att.put("urn:soderhamn:credspec:credSubject:subjectprime", 1);
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:soderhamn:revocation:handle:subject:1"));
+        //        att.put(REVOCATION_HANDLE_STR,
+        //                URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         return att;
     }
 
@@ -734,10 +809,10 @@ public class SoderhamnPilotTest {
             this.puk = this.softwareSmartcard.init(this.pin, sc_sysParams, this.sk_root, deviceID);
             SmartcardBlob blob = new SmartcardBlob();
             try {
-				blob.blob = deviceUri.toASCIIString().getBytes("US-ASCII");
-			} catch (UnsupportedEncodingException e) {
-			}
-            this.softwareSmartcard.storeBlob(pin, Smartcard.device_name, blob);
+                blob.blob = deviceUri.toASCIIString().getBytes("US-ASCII");
+            } catch (UnsupportedEncodingException e) {
+            }
+            this.softwareSmartcard.storeBlob(this.pin, Smartcard.device_name, blob);
             System.out.println("SoftwareSmartcard is now init'ed " + this.softwareSmartcard);
 
         }
@@ -770,7 +845,7 @@ public class SoderhamnPilotTest {
                 URI parametersUri = issuerParameters.getParametersUID();
 
                 SmartcardStatusCode universityResult =
-                        this.softwareSmartcard.addIssuerParameters(this.pin, this.sk_root, parametersUri, credBases);
+                        this.softwareSmartcard.addIssuerParameters(this.sk_root, parametersUri, credBases);
                 if (universityResult != SmartcardStatusCode.OK) {
                     throw new RuntimeException("Could not add IssuerParams to smartcard... "
                             + universityResult);

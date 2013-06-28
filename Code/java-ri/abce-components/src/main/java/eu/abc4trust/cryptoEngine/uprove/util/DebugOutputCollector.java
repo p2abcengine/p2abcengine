@@ -23,8 +23,8 @@ public class DebugOutputCollector implements Runnable {
     private final Process uproveProcess;
     private final List<String> currentDebugOutput;
     private final String name;
-    private boolean stopped = false;
-    
+    private volatile boolean stopped = false;
+
     public DebugOutputCollector(Process uproveProcess, String name) {
         this.uproveProcess = uproveProcess;
         this.currentDebugOutput = new LinkedList<String>();
@@ -37,13 +37,28 @@ public class DebugOutputCollector implements Runnable {
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
         String line;
+
+        InputStream errors = this.uproveProcess.getErrorStream();
+        InputStreamReader errorsReader = new InputStreamReader(errors);
+        BufferedReader bufferedErrorReader = new BufferedReader(errorsReader);
+        String errorLine;
         try {
-            while ((line = br.readLine()) != null  && ! stopped) {
-                if (stopped || Thread.currentThread().isInterrupted()) {
-                    break;
+            while (!this.stopped) {
+                if ((line = br.readLine()) != null) {
+                    if (this.stopped || Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+                    this.addDebug(line);
+                    System.out.println("!>>" + this.name + ">" + line);
                 }
-                this.addDebug(line);
-                System.out.println("!>>" + this.name + ">" + line);
+
+                if ((errorLine = bufferedErrorReader.readLine()) != null) {
+                    if (this.stopped || Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+                    this.addDebug(errorLine);
+                    System.out.println("!>>" + this.name + ">" + errorLine);
+                }
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -59,7 +74,7 @@ public class DebugOutputCollector implements Runnable {
     }
 
     public void stop() {
-      this.stopped = true;
-//        Thread.currentThread().interrupt();
+        this.stopped = true;
+        //        Thread.currentThread().interrupt();
     }
 }

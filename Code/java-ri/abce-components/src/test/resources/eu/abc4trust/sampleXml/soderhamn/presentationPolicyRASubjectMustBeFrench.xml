@@ -44,8 +44,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       </abc:IssuerAlternatives>
     </abc:Credential>
     <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:boolean-equal">
-      <abc:Attribute CredentialAlias="#subjectcred" AttributeType="urn:soderhamn:credspec:credSubject:French"/>
       <abc:ConstantValue>true</abc:ConstantValue>
+      <abc:Attribute CredentialAlias="#subjectcred" AttributeType="urn:soderhamn:credspec:credSubject:French"/>
     </abc:AttributePredicate>
   </abc:PresentationPolicy>
 </abc:PresentationPolicyAlternatives>

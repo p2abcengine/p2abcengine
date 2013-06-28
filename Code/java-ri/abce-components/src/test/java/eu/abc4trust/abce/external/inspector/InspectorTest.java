@@ -36,6 +36,7 @@ import eu.abc4trust.cryptoEngine.idemix.util.IdemixConstants;
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspector;
 import eu.abc4trust.cryptoEngine.inspector.InspectorSystemParameterException;
 import eu.abc4trust.cryptoEngine.inspector.UnknownInspectorPrivateKey;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -56,7 +57,7 @@ public class InspectorTest {
     private static final URI sampleURI = URI.create("sample-key");
     private static final Injector injector =
             Guice.createInjector(IntegrationModuleFactory.newModule(InspectorTest.random,
-                    InspectorTest.cryptoEngine));
+                    InspectorTest.cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
     private InputSource getResource(String filename) {
         return new InputSource(this.getClass().getResourceAsStream("/eu/abc4trust/sampleXml/" + filename));
     }

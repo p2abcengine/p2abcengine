@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- 
+  This is the ABC4Trust presentation policy for the University Registration System 
+-->
+
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  Version="1.0">
+    <abc:PresentationPolicy PolicyUID="urn:patras:policies:loginPseudonym">
+        <abc:Message>
+            <abc:FriendlyPolicyName lang="en">Policy: Authorized Students only</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyName lang="da">Policy: Kun Authoriserede Studenter</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyDescription lang="en">This policy will request the student to present the established scope-exclusive Pseudonym with the scope "urn:patras:registration".No Privacy ABCs are required for this step.</abc:FriendlyPolicyDescription>
+	        <abc:FriendlyPolicyDescription lang="da">Denne policy kræver at den studrende præsentere et etableret scope-exclusive Pseudonym med scope "urn:patras:registration".Privacy ABCs vil ikke blive afsløret.</abc:FriendlyPolicyDescription>
+        </abc:Message>
+        <abc:Pseudonym Exclusive="true" Scope="urn:patras:registration"/>
+    </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

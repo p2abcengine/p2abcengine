@@ -55,9 +55,9 @@ import eu.abc4trust.cryptoEngine.idemix.util.IdemixProofSpecGenerator;
 import eu.abc4trust.cryptoEngine.idemix.util.IdemixSystemParameters;
 import eu.abc4trust.cryptoEngine.idemix.util.IdemixUtils;
 import eu.abc4trust.cryptoEngine.issuer.CryptoEngineIssuer;
+import eu.abc4trust.cryptoEngine.util.IssuerParametersUtil;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.returnTypes.IssuerParametersAndSecretKey;
 import eu.abc4trust.revocationProxy.RevocationProxy;
 import eu.abc4trust.smartcardManager.AbcSmartcardHelper;
@@ -74,8 +74,10 @@ import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CredentialTemplate;
 import eu.abc4trust.xml.CryptoParams;
+import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuanceToken;
 import eu.abc4trust.xml.IssuanceTokenDescription;
@@ -150,12 +152,12 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
         // generate system parameters
 
         com.ibm.zurich.idmx.utils.SystemParameters.SET_L_PHI_80 = true;
-        com.ibm.zurich.idmx.utils.SystemParameters sp = com.ibm.zurich.idmx.utils.SystemParameters.generateSystemParametersFromRsaModulusSize(keyLength);      		
-       // com.ibm.zurich.idmx.utils.SystemParameters sp =
-       //         (com.ibm.zurich.idmx.utils.SystemParameters) Parser.getInstance().parse(
-       //                 this.getResource("sp.xml"));
-        
-               
+        com.ibm.zurich.idmx.utils.SystemParameters sp = com.ibm.zurich.idmx.utils.SystemParameters.generateSystemParametersFromRsaModulusSize(keyLength);
+        // com.ibm.zurich.idmx.utils.SystemParameters sp =
+        //         (com.ibm.zurich.idmx.utils.SystemParameters) Parser.getInstance().parse(
+        //                 this.getResource("sp.xml"));
+
+
         // load system parameters into idemix
         StructureStore.getInstance().add(IdemixConstants.systemParameterId, sp);
         // load group parameters from file for now
@@ -164,7 +166,7 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
 
         if (gp == null) {
             //gp = GroupParameters.generateGroupParams(URI.create(IdemixConstants.groupParameterId));
-        	gp = StaticGroupParameters.getGroupParameters();
+            gp = StaticGroupParameters.getGroupParameters();
             Locations.init(IdemixConstants.groupParameterId, gp);
         }
         if (gp.getSystemParams() == null) {
@@ -178,7 +180,7 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
 
     @Override
     public IssuerParametersAndSecretKey setupIssuerParameters(CredentialSpecification credspec,
-            SystemParameters syspars, URI uid, URI hash, URI revParsUid) {
+            SystemParameters syspars, URI uid, URI hash, URI revParsUid, List<FriendlyDescription> friendlyDescriptions) {
 
         ObjectFactory of = new ObjectFactory();
 
@@ -202,12 +204,17 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
         cp.getAny().add(XMLSerializer.getInstance().serializeAsElement(issuerKey.getPublicKey()));
 
         IssuerParameters ip = of.createIssuerParameters();
+        if(friendlyDescriptions != null){
+            for(FriendlyDescription fd : friendlyDescriptions){
+                ip.getFriendlyIssuerDescription().add(fd);
+            }
+        }
         ip.setAlgorithmID(CryptoUriUtil.getIdemixMechanism());
         ip.setCredentialSpecUID(credspec.getSpecificationUID());
         ip.setKeyBindingInfo(null);
         ip.setParametersUID(uid);
         ip.setRevocationParametersUID(revParsUid);
-        ip.setVersion("1.0");
+        ip.setVersion("IDEMIX:" + IssuerParametersUtil.generateVersionNumber()); // "1.0");
         ip.setHashAlgorithm(hash);
         ip.setSystemParameters(syspars);
         ip.setCryptoParams(cp);
@@ -238,9 +245,15 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
         CredentialSpecification cd;
         try {
             cd = this.keyManager.getCredentialSpecification(credentialSpecUID);
+            if (cd == null) {
+                throw new CryptoEngineException(
+                        "Could not find credential description with UID: \""
+                                + credentialSpecUID + "\"");
+            }
         } catch (KeyManagerException ex) {
             throw new CryptoEngineException(ex);
         }
+
 
         if (cd.isRevocable()) {
             NonRevocationEvidence nre = this.issuerRevocation
@@ -249,7 +262,7 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
             this.nonrevocationEvidence.put(ctxt, nre);
         }
 
-        fillInAttributeCache(ctxt, atts);
+        this.fillInAttributeCache(ctxt, atts);
         this.issuancePolicyCache.put(ctxt, ip);
 
         ObjectFactory of = new ObjectFactory();
@@ -320,18 +333,18 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
 
         // create a return value
         IssuanceMessageAndBoolean imab = new IssuanceMessageAndBoolean();
-        imab.lastMessage = false;
-        imab.im = ret;
+        imab.setLastMessage(false);
+        imab.setIssuanceMessage(ret);
         return imab;
     }
-    
+
     private void fillInAttributeCache(URI ctxt, List<Attribute> atts) {
-      List<MyAttribute> list = new ArrayList<MyAttribute>();
-      for(Attribute at: atts) {
-        MyAttribute myAtt = new MyAttribute(at);
-        list.add(myAtt);
-      }
-      this.attributeCache.put(ctxt, list);
+        List<MyAttribute> list = new ArrayList<MyAttribute>();
+        for(Attribute at: atts) {
+            MyAttribute myAtt = new MyAttribute(at);
+            list.add(myAtt);
+        }
+        this.attributeCache.put(ctxt, list);
     }
 
     @Override
@@ -368,7 +381,7 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
             // Check that token satifies policy
             MyPresentationPolicy mypp = new MyPresentationPolicy(ip.getPresentationPolicy());
             if (!mypp.isSatisfiedBy(isToken.getIssuanceTokenDescription()
-                    .getPresentationTokenDescription(), this.tokenManager)) {
+                    .getPresentationTokenDescription(), this.tokenManager, this.keyManager)) {
                 throw new RuntimeException("Issuance Token not satisfied");
             }
             this.tokenManager.storeToken(isToken);
@@ -439,6 +452,7 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
                         IdemixProofSpecGenerator.generateProofSpecForIssuance(idmxClaim,
                                 IdemixConstants.groupParameterId, credStruct,
                                 this.keyManager, this.contextGen);
+                System.out.println("------------------\n Proof spec for Issuer: "+proofSpec.toStringPretty()+"\n------------------");
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
@@ -463,7 +477,7 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
                 }
                 msgToRecipient = this.issuerCache.get(context).round2(
                         parsedIdmxMsg, issuanceSpec, idmxValues, input);
-                imab.lastMessage = true;
+                imab.setLastMessage(true);
 
             }
             if (msgToRecipient == null) {
@@ -474,16 +488,16 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
 
             issLogEntryURI = this.tokenManager.storeToken(isToken);
             IssuanceLogEntry issLogEntry = new IssuanceLogEntry();
-            issLogEntry.setIssuanceLogEntryUID(issLogEntryURI);           
+            issLogEntry.setIssuanceLogEntryUID(issLogEntryURI);
             issLogEntry.setIssuerParametersUID(credTempl.getIssuerParametersUID());
             issLogEntry.setIssuanceToken(isToken);
-                      
-            for (MyAttribute isAtr: attributeCache.get(context)){
-            	 AttributeInLogEntry isAttr = new AttributeInLogEntry();
-                 isAttr.setAttributeType(isAtr.getType());
-                 isAttr.setAttributeValue(isAtr.getAttributeValue());
-                 
-                 issLogEntry.setIssuerAttributes(isAttr);
+
+            for (MyAttribute isAtr: this.attributeCache.get(context)){
+                AttributeInLogEntry isAttr = new AttributeInLogEntry();
+                isAttr.setAttributeType(isAtr.getType());
+                isAttr.setAttributeValue(isAtr.getAttributeValue());
+
+                issLogEntry.getIssuerAttributes().add(isAttr);
             }
             this.tokenManager.storeIssuanceLogEntry(issLogEntry);
         }
@@ -498,8 +512,8 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
             ret.getAny().add(of.createNonRevocationEvidence(nre));
         }
 
-        imab.im = ret;
-        imab.issuanceLogEntryURI = issLogEntryURI;
+        imab.setIssuanceMessage(ret);
+        imab.setIssuanceLogEntryURI(issLogEntryURI);
 
         return imab;
     }
@@ -621,6 +635,11 @@ public class IdemixCryptoEngineIssuerImpl implements CryptoEngineIssuer {
         return new InputSource(this.getClass().getResourceAsStream(resource));
     }
 
+    @Override
+    public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid)
+            throws Exception {
 
+        return this.tokenManager.getIssuanceLogEntry(issuanceEntryUid);
+    }
 
 }

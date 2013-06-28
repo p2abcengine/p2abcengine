@@ -12,11 +12,13 @@
 package eu.abc4trust.ri.servicehelper.user;
 
 import java.net.URISyntaxException;
+import java.util.logging.Logger;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 
+import eu.abc4trust.abce.external.user.SynchronizedUserAbcEngineImpl;
 import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.cryptoEngine.uprove.user.ReloadTokensCommunicationStrategy;
@@ -28,50 +30,52 @@ import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.ri.servicehelper.AbstractHelper;
+import eu.abc4trust.ri.servicehelper.SystemParametersHelper;
 import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.smartcardManager.AbcSmartcardManager;
 import eu.abc4trust.xml.SystemParameters;
-import eu.abc4trust.xml.util.XmlUtils;
 
 public class UserHelper extends AbstractHelper {
 
+    private static final Logger logger = Logger.getLogger(UserHelper.class
+            .toString());
 
-	public ReloadTokensCommunicationStrategy reloadTokens = null;
+    public ReloadTokensCommunicationStrategy reloadTokens = null;
     static UserHelper instance;
 
     public static boolean WIPE_STOARAGE_FILES = false;
-    
+
     // orig
     public static synchronized UserHelper initInstance(ProductionModule.CryptoEngine cryptoEngine,
             /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
             String[] credSpecResourceList) throws URISyntaxException {
-      return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, new String[0], new String[0]);
+        return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, new String[0], new String[0]);
     }
-    
+
     public static synchronized UserHelper initInstance(CryptoEngine cryptoEngine,
             /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
             String[] credSpecResourceList) throws URISyntaxException {
         return initInstance(cryptoEngine, issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, new String[0], new String[0]);
     }
-    
+
     // with inspector
     public static synchronized UserHelper initInstance(ProductionModule.CryptoEngine cryptoEngine,
-           /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
-           String[] credSpecResourceList, String[] inspectorPublicKeyResourceList) throws URISyntaxException {
-      return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, new String[0]);
-    } 
+            /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
+            String[] credSpecResourceList, String[] inspectorPublicKeyResourceList) throws URISyntaxException {
+        return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, new String[0]);
+    }
     public static synchronized UserHelper initInstance(CryptoEngine cryptoEngine,
             /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
             String[] credSpecResourceList, String[] inspectorPublicKeyResourceList) throws URISyntaxException {
-      return initInstance(cryptoEngine, issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, new String[0]);
+        return initInstance(cryptoEngine, issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, new String[0]);
     }
-    
+
     // with inspector and revocation
     public static synchronized UserHelper initInstance(ProductionModule.CryptoEngine cryptoEngine,
             /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
             String[] credSpecResourceList, String[] inspectorPublicKeyResourceList, String[] revocationAuthorityParametersResourceList) throws URISyntaxException {
-      return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList);
-    } 
+        return initInstance(oldCryptoEngineToNewCryptoEngine(cryptoEngine), issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, revocationAuthorityParametersResourceList);
+    }
     public static synchronized UserHelper initInstance(CryptoEngine cryptoEngine,
             /* String systemParamsResource, */String[] issuerParamsResourceList, String fileStoragePrefix,
             String[] credSpecResourceList, String[] inspectorPublicKeyResourceList, String[] revocationAuthorityParametersResourceList) throws URISyntaxException {
@@ -84,28 +88,39 @@ public class UserHelper extends AbstractHelper {
         // instance.setSystemParams(systemParamsResource);
         instance.addCredentialSpecifications(credSpecResourceList);
         instance.addIssuerParameters(issuerParamsResourceList);
-        if(issuerParamsResourceList==null||issuerParamsResourceList.length==0) {
-          try {
-              SystemParameters systemParameters = (SystemParameters) XmlUtils.getObjectFromXML(UserHelper.class.getResourceAsStream("/eu/abc4trust/systemparameters/bridged-systemParameters.xml"), true);
-              instance.keyManager.storeSystemParameters(systemParameters);
-          } catch(Exception ignore) {
-          }
+        if((issuerParamsResourceList==null)||(issuerParamsResourceList.length==0)) {
+
+            try {
+                String systemParametersResource = fileStoragePrefix
+                        + SYSTEM_PARAMS_NAME_BRIDGED;
+                @SuppressWarnings("unused")
+                SystemParameters systemParameters = SystemParametersHelper
+                .checkAndLoadSystemParametersIfAbsent(
+                        instance.keyManager, systemParametersResource);
+                // SystemParameters systemParameters = (SystemParameters)
+                // XmlUtils.getObjectFromXML(UserHelper.class.getResourceAsStream("/eu/abc4trust/systemparameters/bridged-systemParameters.xml"),
+                // true);
+                // instance.keyManager.storeSystemParameters(systemParameters);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.info(ex.getMessage());
+            }
         }
+
         instance.setupIdemixEngine();
         instance.addInspectorPublicKeys(inspectorPublicKeyResourceList);
         instance.addRevocationAuthorities(instance.keyManager, revocationAuthorityParametersResourceList);
-        
+
         System.out.println("UserHelper.initInstance : DONE");
 
         return instance;
     }
 
-
     public static synchronized boolean isInit() {
         return instance != null;
     }
 
-    public static synchronized UserHelper getInstance() throws URISyntaxException {
+    public static synchronized UserHelper getInstance() {
         // System.out.println("UserHelper.getInstance : " + instance);
         if (instance == null) {
             System.out.println("initInstance not called before using UserHelper!");
@@ -162,7 +177,8 @@ public class UserHelper extends AbstractHelper {
             this.cardStorage = injector.getInstance(CardStorage.class);
             this.reloadTokens = injector.getInstance(ReloadTokensCommunicationStrategy.class);
             //
-            this.engine = injector.getInstance(UserAbcEngine.class);
+            UserAbcEngine e = injector.getInstance(UserAbcEngine.class);
+            this.engine = new SynchronizedUserAbcEngineImpl(e);
 
             if((cryptoEngine == CryptoEngine.UPROVE) || (cryptoEngine == CryptoEngine.BRIDGED)) {
                 this.uproveBindingManager = injector.getInstance(UProveBindingManager.class);

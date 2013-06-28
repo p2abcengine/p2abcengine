@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:UiIssuanceArguments xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <data>
+        <credentialSpecifications/>
+        <issuers/>
+        <revocationAuthorities/>
+        <credentials/>
+        <pseudonyms/>
+        <inspectors/>
+    </data>
+    <tokenCandidates>
+        <tokenCandidate candidateId="0">
+            <tokenDescription PolicyUID="http://admin.ch/passport/issuance/policy" TokenUID="abc4t://token/2mvr13o94fpwu1df">
+                <abc:Message>
+                    <abc:Nonce>PHn92kBlAeJhDw==</abc:Nonce>
+                </abc:Message>
+            </tokenDescription>
+            <credentials/>
+            <pseudonymCandidates>
+                <pseudonymCandidate candidateId="0">
+                    <pseudonyms/>
+                </pseudonymCandidate>
+            </pseudonymCandidates>
+            <revealedFacts/>
+            <revealedAttributeValues/>
+            <inspectableAttributes/>
+        </tokenCandidate>
+    </tokenCandidates>
+    <policy Version="1.0">
+        <abc:PresentationPolicy PolicyUID="http://admin.ch/passport/issuance/policy">
+            <abc:Message>
+                <abc:Nonce>PHn92kBlAeJhDw==</abc:Nonce>
+            </abc:Message>
+        </abc:PresentationPolicy>
+        <abc:CredentialTemplate>
+            <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+            <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+            <abc:UnknownAttributes/>
+        </abc:CredentialTemplate>
+    </policy>
+</abc:UiIssuanceArguments>

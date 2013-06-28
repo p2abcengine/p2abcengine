@@ -67,7 +67,7 @@ public class SmartcardDetectorTest {
                 .createMock(CardTerminals.class);
         EasyMock.expect(cardTerminalsMock.list()).andReturn(terminalsMock)
         .atLeastOnce();
-        ;
+
         EasyMock.replay(cardTerminalsMock);
 
         AbcTerminalFactory terminalFactory = EasyMock
@@ -133,7 +133,8 @@ public class SmartcardDetectorTest {
         EasyMock.expect(cardTerminalMock.isCardPresent()).andReturn(true);
         EasyMock.expect(cardTerminalMock.connect("*")).andReturn(cardMock);
 
-        EasyMock.expect(cardTerminalMock.getName()).andReturn("TestTerminal").atLeastOnce();;
+        EasyMock.expect(cardTerminalMock.getName()).andReturn("TestTerminal")
+                .atLeastOnce();
         EasyMock.expect(cardTerminalMock.waitForCardAbsent(TIMEOUT)).andAnswer(
                 new IAnswer<Boolean>() {
 

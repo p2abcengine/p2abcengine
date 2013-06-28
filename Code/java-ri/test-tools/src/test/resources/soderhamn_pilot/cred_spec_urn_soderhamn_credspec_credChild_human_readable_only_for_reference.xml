@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<abc:CredentialSpecification KeyBinding="true" Revocable="true" Version="Version 1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+<abc:SpecificationUID>urn:soderhamn:credspec:credChild</abc:SpecificationUID>
+<abc:FriendlyCredentialName lang="en">Child Credential owned by Guardian</abc:FriendlyCredentialName>
+<abc:FriendlyCredentialName lang="sv">Certifikat - Barn</abc:FriendlyCredentialName>
+<abc:DefaultImageReference>https://idm.abc4trust.se:8443/idmPortal/resources/css/IDM/images/IDM_logo_transparent.png</abc:DefaultImageReference>
+<abc:AttributeDescriptions MaxLength="256">
+<abc:AttributeDescription DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned" Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"/>
+<abc:AttributeDescription DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:utf-8" Type="urn:soderhamn:credspec:credChild:child">
+<abc:FriendlyAttributeName lang="en">Pilot User Number of one Child</abc:FriendlyAttributeName>
+<abc:FriendlyAttributeName lang="sv">Elevens Användarnummer</abc:FriendlyAttributeName>
+</abc:AttributeDescription>
+</abc:AttributeDescriptions>
+</abc:CredentialSpecification>

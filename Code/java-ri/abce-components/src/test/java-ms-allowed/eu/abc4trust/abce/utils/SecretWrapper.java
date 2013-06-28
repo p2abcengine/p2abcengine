@@ -139,7 +139,7 @@ public class SecretWrapper {
             URI parametersUri = issuerParameters.getParametersUID();
 
             SmartcardStatusCode universityResult = this.softwareSmartcard
-                    .addIssuerParameters(this.pin, this.sk_root, parametersUri,
+                    .addIssuerParameters(this.sk_root, parametersUri,
                             credBases);
             if (universityResult != SmartcardStatusCode.OK) {
                 throw new RuntimeException(

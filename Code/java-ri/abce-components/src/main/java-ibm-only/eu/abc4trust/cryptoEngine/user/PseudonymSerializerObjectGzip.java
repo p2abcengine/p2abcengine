@@ -11,9 +11,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.URI;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import eu.abc4trust.smartcard.CardStorage;
+import eu.abc4trust.smartcard.Smartcard;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 
 /**
@@ -21,17 +24,32 @@ import eu.abc4trust.xml.PseudonymWithMetadata;
  * 
  * @author enr
  */
-public class PseudonymSerializerObjectGzip implements PseudonymSerializer {
+public class PseudonymSerializerObjectGzip extends AbstractPseudonymSerializer {
 
+	private final CardStorage cardStorage;
+	
+	public PseudonymSerializerObjectGzip(CardStorage cardStorage){
+		this.cardStorage = cardStorage;
+	}
+	
+	@Override
+	public CardStorage getCardStorage(){
+		return this.cardStorage;
+	}
+	
   @Override
-  public byte[] serializePseudonym(PseudonymWithMetadata cred) {
+  public byte[] serializePseudonym(PseudonymWithMetadata pwm) {
+	  if(pwm.getPseudonym().isExclusive()){
+		  return this.serializeExclusivePseudonym(pwm);
+	  }
+	  
     try {
       ByteArrayOutputStream ser = new ByteArrayOutputStream();
       ser.write(magicHeader());
 
       GZIPOutputStream gs = new GZIPOutputStream(ser);
       ObjectOutputStream objectOutput = new ObjectOutputStream(gs);
-      objectOutput.writeObject(cred);
+      objectOutput.writeObject(pwm);
       gs.close();
 
       return ser.toByteArray();
@@ -41,12 +59,22 @@ public class PseudonymSerializerObjectGzip implements PseudonymSerializer {
   }
 
   @Override
-  public PseudonymWithMetadata unserializePseudonym(byte[] data) {
+  public PseudonymWithMetadata unserializePseudonym(byte[] data, URI pseudonymUID) {
+	  PseudonymWithMetadata pwm;
+	  try{
+		  pwm = this.unserializeExclusivePseudonym(data, pseudonymUID);
+		  if(pwm != null){
+			  return pwm;
+		  }
+	  }catch(Exception e){
+		  //Not scope-exclusive. Trying normal pseudonym
+	  }
+	  
     try {
       ByteArrayInputStream bais = new ByteArrayInputStream(data);
       int header = bais.read();
       if (header != magicHeader()) {
-        throw new RuntimeException("Cannot unserialize this credential: header was " + header
+        throw new RuntimeException("Cannot unserialize this pseudonym: header was " + header
             + " expected header " + magicHeader());
       }
       GZIPInputStream gs = new GZIPInputStream(bais);

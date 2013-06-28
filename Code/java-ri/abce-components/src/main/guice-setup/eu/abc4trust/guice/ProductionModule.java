@@ -12,6 +12,7 @@
 package eu.abc4trust.guice;
 
 // retain backward compatibility with 'service-helpers' version 1.0.0
+@Deprecated
 public class ProductionModule {
   public enum CryptoEngine {
     IDEMIX,

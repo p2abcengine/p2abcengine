@@ -37,7 +37,7 @@ import eu.abc4trust.xml.CredentialDescription;
  */
 public class ReloadStorageManager {
 	static private final String ENCODED_EMPTY_STRING = "EMPTY"; 
-	static private final String URI_POSTFIX = ":S:UPROVERELOAD"; 
+	static public final String URI_POSTFIX = ":S:UPROVERELOAD"; 
 	static final private String ENCODING = "UTF-8";
 	
 	private final CardStorage cardStorage;
@@ -199,7 +199,7 @@ public class ReloadStorageManager {
 	
 	private URI getURI(String uriString) {
 		try {
-			return new URI(uriString);
+			return new URI(decode(uriString));
 		} catch (URISyntaxException e) {
 			throw new ReloadTokensCommunicationStrategy.ReloadException("ReloadTokens: Malformed data received from storage (smartcard). Cannot reload tokens.");
 		}

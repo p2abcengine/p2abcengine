@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:SelectPresentationTokenDescription xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <abc:PolicyDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">urn:patras:policies:loginPseudonym</abc:key>
+            <abc:value>
+                <abc:PolicyUID>urn:patras:policies:loginPseudonym</abc:PolicyUID>
+                <abc:Message>
+                    <abc:Nonce>5laem07shPg+lg==</abc:Nonce>
+                    <abc:FriendlyPolicyName lang="en">Policy: Authorized Students only</abc:FriendlyPolicyName>
+                    <abc:FriendlyPolicyName lang="da">Policy: Kun Authoriserede Studenter</abc:FriendlyPolicyName>
+                    <abc:FriendlyPolicyDescription lang="en">This policy will request the student to present the established scope-exclusive Pseudonym with the scope &quot;urn:patras:registration&quot;.No Privacy ABCs are required for this step.</abc:FriendlyPolicyDescription>
+                    <abc:FriendlyPolicyDescription lang="da">Denne policy kr+ªver at den studrende pr+ªsentere et etableret scope-exclusive Pseudonym med scope &quot;urn:patras:registration&quot;.Privacy ABCs vil ikke blive afsl++ret.</abc:FriendlyPolicyDescription>
+                </abc:Message>
+            </abc:value>
+        </abc:entry>
+    </abc:PolicyDescriptions>
+    <abc:CredentialDescriptions/>
+    <abc:PseudonymDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">foo-bar-pseudonym-uid-42</abc:key>
+            <abc:value>
+                <abc:PseudonymDescription Exclusive="true" Scope="urn:patras:registration" PseudonymUID="foo-bar-pseudonym-uid-42">
+                    <abc:PseudonymMetadata>
+                        <abc:HumanReadableData>Pregenerated pseudonym</abc:HumanReadableData>
+                        <abc:Metadata/>
+                    </abc:PseudonymMetadata>
+                </abc:PseudonymDescription>
+            </abc:value>
+        </abc:entry>
+    </abc:PseudonymDescriptions>
+    <abc:InspectorDescriptions/>
+    <abc:CandidatePresentationTokenList>
+        <abc:CandidatePresentationToken>
+            <abc:Token PolicyUID="urn:patras:policies:loginPseudonym" TokenUID="abc4t://token/1lxgzkox668dzwxh"/>
+            <abc:FriendlyTokenDescription lang="en">Mock FriendlyDescription</abc:FriendlyTokenDescription>
+            <abc:FriendlyTokenDescription lang="da">Mock Venlig Beskrivelse</abc:FriendlyTokenDescription>
+            <abc:CredentialUidList/>
+            <abc:PseudonymChoiceList>
+                <abc:URISet>
+                    <abc:URI>foo-bar-pseudonym-uid-42</abc:URI>
+                </abc:URISet>
+            </abc:PseudonymChoiceList>
+            <abc:InspectorChoiceList/>
+        </abc:CandidatePresentationToken>
+    </abc:CandidatePresentationTokenList>
+</abc:SelectPresentationTokenDescription>

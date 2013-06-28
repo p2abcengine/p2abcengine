@@ -4,7 +4,7 @@
   <parent>
     <artifactId>pom</artifactId>
     <groupId>eu.abc4trust.ri</groupId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.9-SNAPSHOT</version>
   </parent>
   <artifactId>abce-components</artifactId>
   <name>abce-components</name>
@@ -140,7 +140,7 @@
 				<packageName>com.example.myschema</packageName> -->
           <!-- The name of your generated source package -->
         </configuration>
-      </plugin>
+      </plugin> 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -161,5 +161,10 @@
         </executions>
       </plugin>
     </plugins>
+    <pluginManagement>
+    	<plugins>
+    		
+    	</plugins>
+    </pluginManagement>
   </build>
 </project>

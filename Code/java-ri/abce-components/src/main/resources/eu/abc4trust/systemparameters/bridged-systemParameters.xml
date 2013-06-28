@@ -9,18 +9,18 @@
 		xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../../../../../test/resources/eu/abc4trust/idemix/SystemParameters.xsd">
 	<Elements>
 		<l_e>597</l_e>
-		<l_ePrime>120</l_ePrime>
-		<l_Gamma>768</l_Gamma>
+		<l_ePrime>257</l_ePrime>
+		<l_Gamma>2048</l_Gamma>
 		<l_H>256</l_H>
-		<l_k>160</l_k>
+		<l_k>208</l_k>
 		<l_m>256</l_m>
-		<l_n>1024</l_n>
+		<l_n>2048</l_n>
 		<l_Phi>80</l_Phi>
-		<l_pt>80</l_pt>
-		<l_r>80</l_r>
+		<l_pt>104</l_pt>
+		<l_r>104</l_r>
 		<l_res>1</l_res>
 		<l_rho>256</l_rho>
-		<l_v>2048</l_v>
+		<l_v>2467</l_v>
 		<l_enc>256</l_enc>
 	</Elements>
   </SystemParameters>

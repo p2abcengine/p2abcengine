@@ -51,10 +51,24 @@
       <xs:element name="FriendlyIssuerDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
       <xs:element name="AlgorithmID" type="ABCAlgorithmId" />
       <xs:element ref="SystemParameters" />
+      <xs:element name="SystemParametersURI" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
       <xs:element name="CredentialSpecUID" type="xs:anyURI" />
       <xs:element name="HashAlgorithm" type="HashAlgorithmId" />
       <xs:element ref="CryptoParams" />
       <xs:element ref="KeyBindingInfo" minOccurs="0" />
+      <xs:element name="RevocationParametersUID" type="xs:anyURI" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+  
+  <xs:element name="IssuerParametersInput" type="IssuerParametersInput" />
+  <xs:complexType name="IssuerParametersInput">
+    <xs:sequence>
+      <xs:element name="ParametersUID" type="xs:anyURI" />
+      <xs:element name="FriendlyIssuerDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element name="AlgorithmID" type="ABCAlgorithmId" />
+      <xs:element name="CredentialSpec" type="CredentialSpecification" />
+      <xs:element name="HashAlgorithm" type="HashAlgorithmId" />
       <xs:element name="RevocationParametersUID" type="xs:anyURI" minOccurs="0" />
     </xs:sequence>
     <xs:attribute name="Version" type="xs:string" use="required" />
@@ -66,6 +80,7 @@
       <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
     </xs:sequence>
     <xs:attribute name="Version" type="xs:string" use="required" />
+    <xs:attribute name="SystemParametersURI" type="xs:anyURI" use="optional" />
   </xs:complexType>
 
   <xs:element name="CryptoParams" type="CryptoParams" />
@@ -108,7 +123,8 @@
 
   <xs:complexType name="Reference">
     <xs:sequence>
-      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      <xs:element name="References" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" />
+      <!--<xs:any type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" processContents="lax" />-->
     </xs:sequence>
     <xs:attribute name="ReferenceType" type="xs:anyURI" />
   </xs:complexType>
@@ -243,7 +259,15 @@
       <xs:element name="Nonce" type="xs:base64Binary" minOccurs="0" />
       <xs:element name="FriendlyPolicyName" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
       <xs:element name="FriendlyPolicyDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element name="VerifierIdentity" type="VerifierIdentity" minOccurs="0" maxOccurs="1"  />
       <xs:element ref="ApplicationData" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="VerifierIdentity" type="VerifierIdentity" />
+  <xs:complexType name="VerifierIdentity" mixed="true">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
     </xs:sequence>
   </xs:complexType>
   
@@ -256,6 +280,9 @@
   
   <xs:element name="PseudonymInPolicy" type="PseudonymInPolicy" />
   <xs:complexType name="PseudonymInPolicy">
+    <xs:sequence>
+      <xs:element name="PseudonymValue" type="xs:base64Binary" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
     <xs:attribute name="Exclusive" type="xs:boolean" default="false" use="optional" />
     <xs:attribute name="Scope" type="xs:string" use="required" />
     <xs:attribute name="Alias" type="xs:anyURI" use="optional" />
@@ -580,6 +607,7 @@
       <xs:element name="SecretReference" type="xs:anyURI" minOccurs="0" />
       <xs:element ref="Attribute" minOccurs="0" maxOccurs="unbounded" />
     </xs:sequence>
+    <xs:attribute name="RevokedByIssuer" type="xs:boolean" default="false" />
   </xs:complexType>
 
   <xs:element name="NonRevocationEvidence" type="NonRevocationEvidence" />
@@ -705,7 +733,7 @@
       <xs:element name="IssuanceLogEntryUID" type="xs:anyURI" />
       <xs:element name="IssuerParametersUID" type="xs:anyURI" />
       <xs:element ref="IssuanceToken" minOccurs="0"/>
-      <xs:element name="IssuerAttributes" type="AttributeInLogEntry" minOccurs="0"/>
+      <xs:element name="IssuerAttributes" type="AttributeInLogEntry" minOccurs="0" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
   
@@ -737,5 +765,74 @@
     <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
   </xs:complexType>
   
+  <xs:element name="CredentialSpecificationAndSystemParameters" type="CredentialSpecificationAndSystemParameters" />
+  <xs:complexType name="CredentialSpecificationAndSystemParameters">
+    <xs:sequence>
+      <xs:element name="CredentialSpecification" type="CredentialSpecification"/>
+      <xs:element name="SystemParameters" type="SystemParameters"/>
+    </xs:sequence>
+  </xs:complexType>
 
+  <xs:element name="IssuancePolicyAndAttributes" type="IssuancePolicyAndAttributes" />
+  <xs:complexType name="IssuancePolicyAndAttributes">
+    <xs:sequence>
+      <xs:element name="IssuancePolicy" type="IssuancePolicy"/>
+      <xs:element ref="Attribute" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="IssuanceMessageAndBoolean" type="IssuanceMessageAndBoolean" />
+  <xs:complexType name="IssuanceMessageAndBoolean">
+    <xs:sequence>
+      <xs:element name="IssuanceMessage" type="IssuanceMessage"/>
+      <xs:element name="LastMessage" type="xs:boolean"/>
+      <xs:element name="IssuanceLogEntryURI" type="xs:anyURI"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="RevocationReferences" type="RevocationReferences" />
+  <xs:complexType name="RevocationReferences">
+    <xs:sequence>
+      <xs:element name="RevocationInfoReference" 	type="Reference" minOccurs="0" />
+      <xs:element name="NonRevocationEvidenceReference" type="Reference" minOccurs="0" />
+      <xs:element name="NonRevocationEvidenceUpdateReference" type="Reference" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="PresentationPolicyAlternativesAndPresentationToken" type="PresentationPolicyAlternativesAndPresentationToken" />
+  <xs:complexType name="PresentationPolicyAlternativesAndPresentationToken">
+  	<xs:sequence>
+  		<xs:element name="PresentationPolicyAlternatives" type="PresentationPolicyAlternatives" />
+  		<xs:element name="PresentationToken" type="PresentationToken" />
+  	</xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="AttributeList" type="AttributeList"/>
+  <xs:complexType name="AttributeList">
+  <xs:sequence>
+	<xs:element name="Attributes" type="Attribute" minOccurs="0" maxOccurs="unbounded"/>
+	</xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="ABCEBoolean" type="ABCEBoolean"/>
+  <xs:complexType name="ABCEBoolean">
+    <xs:attribute name="value" type="xs:boolean" default="false" />
+  </xs:complexType>
+  
+  <xs:element name="URISet" type="URISet"/>
+  <xs:complexType name="URISet">
+    <xs:sequence> 
+      <xs:element name="URI" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  
+  <xs:element name="Error" type="Error"/>
+  <xs:complexType name="Error">
+    <xs:sequence> 
+      <xs:element name="ErrorUID" type="xs:anyURI"/>
+      <xs:element name="ErrorParams" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+    
 </xs:schema>

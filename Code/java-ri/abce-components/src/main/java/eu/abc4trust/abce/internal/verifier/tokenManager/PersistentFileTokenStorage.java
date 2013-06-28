@@ -107,7 +107,7 @@ public class PersistentFileTokenStorage implements TokenStorage {
 		// first remove stored pseudonyms for this token
 		
 		byte[] result = getToken(tokenuid);
-		
+		if (result == null) return false;
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(result);
 		ObjectInput objectInput = new ObjectInputStream(byteArrayInputStream);
 		PresentationToken tokenResult = (PresentationToken)objectInput.readObject();

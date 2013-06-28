@@ -4,7 +4,7 @@
   <parent>
     <artifactId>pom</artifactId>
     <groupId>eu.abc4trust.ri</groupId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.9-SNAPSHOT</version>
   </parent>
   <artifactId>abce-interfaces</artifactId>
   <name>abce-interfaces</name>

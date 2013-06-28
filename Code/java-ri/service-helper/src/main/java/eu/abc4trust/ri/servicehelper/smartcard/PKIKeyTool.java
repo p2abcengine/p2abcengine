@@ -120,12 +120,12 @@ public class PKIKeyTool {
 		return ssc;
 	}
 
-	public static URI signIssuerParametersWithAttendance(ProductionModule.CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, int pin, RSAKeyPair sk_root, 
+	public static URI signIssuerParametersWithAttendance(ProductionModule.CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, RSAKeyPair sk_root, 
 	                                                        int keyIDForCounter, RSAVerificationKey coursePk, int minimumAttendance, BigInteger q, BigInteger p) {
-	  return signIssuerParametersWithAttendance(AbstractHelper.oldCryptoEngineToNewCryptoEngine(engine), issuerParameters, ssc, pin, sk_root, keyIDForCounter, coursePk, minimumAttendance, q, p);
+	  return signIssuerParametersWithAttendance(AbstractHelper.oldCryptoEngineToNewCryptoEngine(engine), issuerParameters, ssc, sk_root, keyIDForCounter, coursePk, minimumAttendance, q, p);
 	}
 	
-	public static URI signIssuerParametersWithAttendance(CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, int pin, RSAKeyPair sk_root, 
+	public static URI signIssuerParametersWithAttendance(CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, RSAKeyPair sk_root, 
 			int keyIDForCounter, RSAVerificationKey coursePk, int minimumAttendance, BigInteger q, BigInteger p) {
 		System.out.println("signIssuerParameters");
 		switch(engine){
@@ -145,7 +145,7 @@ public class PKIKeyTool {
 			URI parametersUri = issuerParameters.getParametersUID();
 
 			SmartcardStatusCode result = 
-					ssc.addIssuerParametersWithAttendanceCheck(pin, sk_root, parametersUri, keyIDForCounter, credBases, coursePk, minimumAttendance);
+					ssc.addIssuerParametersWithAttendanceCheck(sk_root, parametersUri, keyIDForCounter, credBases, coursePk, minimumAttendance);
 			System.out.println("RESULT OF ADDING!" + result);
 			if(! (result == SmartcardStatusCode.OK)) {
 				throw new IllegalStateException("Could not add issuer params..." + result);
@@ -175,7 +175,7 @@ public class PKIKeyTool {
 			//TODO: Figure out what params we need..
 			UProveParams uProveParams = new UProveParams(g, p, q);
 			ssc.getNewNonceForSignature();
-			result = ssc.addUProveIssuerParametersWithAttendanceCheck(pin, sk_root, uProveIssuerUid, keyIDForCounter, uProveParams, coursePk, minimumAttendance);
+			result = ssc.addUProveIssuerParametersWithAttendanceCheck(sk_root, uProveIssuerUid, keyIDForCounter, uProveParams, coursePk, minimumAttendance);
 			if(result != SmartcardStatusCode.OK){
 				throw new IllegalStateException("Could not add UProve issuer params... " + result);
 			}
@@ -184,11 +184,11 @@ public class PKIKeyTool {
 			throw new RuntimeException("Cannot issue for other engines than IDEMIX and UPROVE");
 		}
 	}
-    public static URI signIssuerParameters(ProductionModule.CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, int pin, RSAKeyPair sk_root,
+    public static URI signIssuerParameters(ProductionModule.CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, RSAKeyPair sk_root,
                                            BigInteger q, BigInteger p) {
-      return signIssuerParameters(AbstractHelper.oldCryptoEngineToNewCryptoEngine(engine), issuerParameters, ssc, pin, sk_root, q, p);
+      return signIssuerParameters(AbstractHelper.oldCryptoEngineToNewCryptoEngine(engine), issuerParameters, ssc, sk_root, q, p);
     }
-	public static URI signIssuerParameters(CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, int pin, RSAKeyPair sk_root,
+	public static URI signIssuerParameters(CryptoEngine engine, IssuerParameters issuerParameters, Smartcard ssc, RSAKeyPair sk_root,
 			BigInteger q, BigInteger p) {
 		System.out.println("signIssuerParameters");
 		switch(engine){
@@ -207,7 +207,7 @@ public class PKIKeyTool {
 			System.out.println("params URI : " + issuerParameters.getParametersUID());
 			URI parametersUri = issuerParameters.getParametersUID();
 
-			SmartcardStatusCode result = ssc.addIssuerParameters(pin, sk_root, parametersUri, credBases);
+			SmartcardStatusCode result = ssc.addIssuerParameters(sk_root, parametersUri, credBases);
 			System.out.println("RESULT OF ADDING! " + result);
 			if(! (result == SmartcardStatusCode.OK)) {
 				throw new IllegalStateException("Could not add issuer params... " + result);
@@ -240,7 +240,7 @@ public class PKIKeyTool {
 			BigInteger g = new BigInteger(1, Gd);
 			UProveParams uProveParams = new UProveParams(g, p, q);
 			ssc.getNewNonceForSignature();
-			result = ssc.addUProveIssuerParameters(pin, sk_root, uProveIssuerUid, uProveParams);
+			result = ssc.addUProveIssuerParameters(sk_root, uProveIssuerUid, uProveParams);
 			if(result != SmartcardStatusCode.OK){
 				throw new IllegalStateException("Could not add UProve issuer params... " + result);
 			}

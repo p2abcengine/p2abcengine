@@ -15,13 +15,15 @@ import java.util.Map;
 import com.google.inject.Inject;
 
 import eu.abc4trust.keyManager.KeyManager;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.returnTypes.IssuerParametersAndSecretKey;
 import eu.abc4trust.revocationProxy.RevocationProxy;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CryptoParams;
+import eu.abc4trust.xml.FriendlyDescription;
+import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
@@ -57,8 +59,8 @@ public class MockCryptoEngineIssuer implements CryptoEngineIssuer {
     ret.setContext(ctxt);
     
     IssuanceMessageAndBoolean imab = new IssuanceMessageAndBoolean();
-    imab.lastMessage = false;
-    imab.im = ret;
+    imab.setLastMessage(false);
+    imab.setIssuanceMessage(ret);
     return imab;
   }
 
@@ -82,14 +84,14 @@ public class MockCryptoEngineIssuer implements CryptoEngineIssuer {
     ret.setContext(m.getContext());
     
     IssuanceMessageAndBoolean imab = new IssuanceMessageAndBoolean();
-    imab.lastMessage = true;
-    imab.im = ret;
+    imab.setLastMessage(true);
+    imab.setIssuanceMessage(ret);
     return imab;   
   }
   
   @Override
   public IssuerParametersAndSecretKey setupIssuerParameters(CredentialSpecification credspec,
-      SystemParameters syspars, URI uid, URI hash, URI revParsUid) {
+      SystemParameters syspars, URI uid, URI hash, URI revParsUid, List<FriendlyDescription> friendlyIssuerDescription) {
     ObjectFactory of = new ObjectFactory();
     IssuerParameters ip = of.createIssuerParameters();
     
@@ -124,6 +126,12 @@ public class MockCryptoEngineIssuer implements CryptoEngineIssuer {
     cryptoParams.getData().add("I am MockCryptoEngineUser, and I approve of this message.");
     cryptoEvidence.getAny().add(of.createTestCryptoParams(cryptoParams));
     return cryptoEvidence;
+  }
+
+  @Override
+  public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid) throws Exception {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 }

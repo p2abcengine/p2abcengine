@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import eu.abc4trust.cryptoEngine.uprove.user.ReloadStorageManager;
+import eu.abc4trust.cryptoEngine.uprove.user.UProveCryptoEngineUserImpl;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.PseudonymSerializer;
 import eu.abc4trust.xml.Credential;
@@ -37,13 +39,13 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final int MAX_CREDENTIALS = 20;
-	private static final int MAX_ISSUERS = 10;
-	private static final int MAX_BLOBS = 50;
-	private static final int MAX_URI_LEN_BYTES = 255;
-	private static final int MAX_BLOB_LEN_BYTES = 2046;
+	private static final int MAX_CREDENTIALS = 8;
+	private static final int MAX_ISSUERS = 6;
+	private static final int MAX_BLOBS = 38;
+	private static final int MAX_URI_LEN_BYTES = 64;
+	private static final int MAX_BLOB_LEN_BYTES = 512;
 	private static final int MAX_PIN_TRIALS = 3;
-	private static final int MAX_PUK_TRIALS = 3;
+	private static final int MAX_PUK_TRIALS = 10;
 	private static final String URI_ENCODING = "UTF-8";
 	@SuppressWarnings("unused")
     private static final String MAC_ALGORITHM = "HmacSHA256";
@@ -219,6 +221,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 		if (pinstatus != SmartcardStatusCode.OK) {
 			return pinstatus;
 		}
+		System.out.println("======= Delete credential "+ credentialUri);
 
 		if (! this.credentials.containsKey(credentialUri)) {
 			return SmartcardStatusCode.NOT_FOUND;
@@ -230,13 +233,21 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 	
 	@Override
 	public void removeCredentialUri(int pin, URI uri){
+		if(uri.toString().startsWith(UProveCryptoEngineUserImpl.UProveCredential)){
+    		URI reloadURI = URI.create(uri.toString()+ReloadStorageManager.URI_POSTFIX);
+    		if(reloadURI.toString().contains(":") && !reloadURI.toString().contains("_")){
+    			reloadURI = URI.create(reloadURI.toString().replaceAll(":", "_")); //change all ':' to '_'
+            }
+    		this.deleteBlob(pin, reloadURI);
+    		System.out.println("deleted the reload blob of the credential: " + reloadURI);
+    	}
     	int i = 1;
     	while(true){
-    		uri = URI.create(uri.toString()+"_"+i++);
-    		if(this.deleteBlob(pin, uri) != SmartcardStatusCode.OK){
+    		URI tmpUri = URI.create(uri.toString()+"_"+i++);
+    		if(this.deleteBlob(pin, tmpUri) != SmartcardStatusCode.OK){
     			if(i == 1){
     				//Actual error - we should be able to remove at least 1 blob
-    				throw new RuntimeException("Could not delete blob: " + uri);
+    				throw new RuntimeException("Could not delete blob: " + tmpUri);
     			}
     			return;
     		}
@@ -315,7 +326,8 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 		}
 		// Note: we don't return immediately if course == NULL, else the card would leak
 		// which courses the owner attends.		
-
+		
+		this.getNewNonceForSignature();
 		ByteArrayOutputStream toSign = new ByteArrayOutputStream();
 		Utils.addToStream(toSign, Utils.INC_COURSE_TOKEN);
 		Utils.addToStream(toSign, issuerUri);
@@ -1042,13 +1054,13 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
     	System.out.println("getting this uri: " + nextPseuBlobUri.toASCIIString());
     	SmartcardBlob scBlob = this.getBlob(pin, nextPseuBlobUri);
     	if(scBlob == null){
-    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray());
+    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymId);
     	}
     	byte[] blob = scBlob.blob;
     	accumulatedPseuBytes.write(blob, 0, blob.length);    	
     	System.out.println("Accumulated this many bytes: "  + accumulatedPseuBytes.size());
     	if(blob.length < MAX_BLOB_LEN_BYTES){
-    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray());
+    		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymId);
     	}else{
     		//next round
     		return getPseudonym(pin, pseudonymId, nextPseuBlobUriId+1, accumulatedPseuBytes, serializer);
@@ -1122,13 +1134,9 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 	}
 
 	@Override
-	public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(int pin,
-			RSAKeyPair rootKey, URI parametersUri, int keyIDForCounter, CredentialBases credBases,
+	public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
+			URI parametersUri, int keyIDForCounter, CredentialBases credBases,
 			RSAVerificationKey courseKey, int minimumAttendance) {
-		SmartcardStatusCode pinstatus = this.authenticateWithPin(pin);
-		if (pinstatus != SmartcardStatusCode.OK) {
-			return pinstatus;
-		}
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Utils.addToStream(baos, Utils.NEW_ISSUER_WITH_ATTENDANCE);
 		Utils.addToStream(baos, parametersUri);
@@ -1158,14 +1166,9 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 	}	
 	
 	@Override
-	public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(
-			int pin, RSAKeyPair rootKey, URI parametersUri,
-			int keyIDForCounter, UProveParams uProveParams,
+	public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey,
+			URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
 			RSAVerificationKey courseKey, int minimumAttendance) {
-		SmartcardStatusCode pinstatus = this.authenticateWithPin(pin);
-		if (pinstatus != SmartcardStatusCode.OK) {
-			return pinstatus;
-		}
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Utils.addToStream(baos, Utils.NEW_ISSUER_WITH_ATTENDANCE);
 		Utils.addToStream(baos, parametersUri);
@@ -1195,12 +1198,8 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 	}
 
 	@Override
-	public SmartcardStatusCode addIssuerParameters(int pin, RSAKeyPair rootKey,
+	public SmartcardStatusCode addIssuerParameters(RSAKeyPair rootKey,
 			URI parametersUri, CredentialBases credBases) {
-		SmartcardStatusCode pinstatus = this.authenticateWithPin(pin);
-		if (pinstatus != SmartcardStatusCode.OK) {
-			return pinstatus;
-		}
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Utils.addToStream(baos, Utils.NEW_ISSUER_SIMPLE);
 		Utils.addToStream(baos, parametersUri);
@@ -1225,12 +1224,8 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 	}
 
 	@Override
-	public SmartcardStatusCode addUProveIssuerParameters(int pin,
-			RSAKeyPair rootKey, URI parametersUri, UProveParams uProveParams) {
-		SmartcardStatusCode pinstatus = this.authenticateWithPin(pin);
-		if (pinstatus != SmartcardStatusCode.OK) {
-			return pinstatus;
-		}
+	public SmartcardStatusCode addUProveIssuerParameters(RSAKeyPair rootKey, 
+			URI parametersUri, UProveParams uProveParams) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Utils.addToStream(baos, Utils.NEW_ISSUER_SIMPLE);
 		Utils.addToStream(baos, parametersUri);

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:SelectPresentationTokenDescription xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <abc:PolicyDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">urn:soederhamn:policies:restrictedarea:french:anon</abc:key>
+            <abc:value>
+                <abc:PolicyUID>urn:soederhamn:policies:restrictedarea:french:anon</abc:PolicyUID>
+                <abc:Message>
+                    <abc:Nonce>Ffcc6FvD6STRhA==</abc:Nonce>
+                </abc:Message>
+            </abc:value>
+        </abc:entry>
+    </abc:PolicyDescriptions>
+    <abc:CredentialDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">IdmxCredential/3xvrl4eaonpbpu4</abc:key>
+            <abc:value>
+                <abc:CredentialUID>IdmxCredential/3xvrl4eaonpbpu4</abc:CredentialUID>
+                <abc:ImageReference>file:////C:/Users/frp/Documents/ibm/projects/ABC4Trust/WP4_Reference_Impl/java/demo/tags/demo-plugin-user-service-0.6/soederhamn_user_storage/images/502f75fd-d2e9-4773-af75-fdd2e98773fd.jpg</abc:ImageReference>
+                <abc:CredentialSpecificationUID>urn:soederhamn:credspec:credSubject</abc:CredentialSpecificationUID>
+                <abc:IssuerParametersUID>urn:soederhamn:issuer:credSubject</abc:IssuerParametersUID>
+                <abc:SecretReference>secret://sample-1234</abc:SecretReference>
+                <abc:Attribute>
+                    <abc:AttributeUID>1505056804767314777</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soederhamn:credspec:credSubject:subject" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">French</abc:AttributeValue>
+                </abc:Attribute>
+            </abc:value>
+        </abc:entry>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">IdmxCredential/rl3f2hn9ifl38w1</abc:key>
+            <abc:value>
+                <abc:CredentialUID>IdmxCredential/rl3f2hn9ifl38w1</abc:CredentialUID>
+                <abc:ImageReference>file:////C:/Users/frp/Documents/ibm/projects/ABC4Trust/WP4_Reference_Impl/java/demo/tags/demo-plugin-user-service-0.6/soederhamn_user_storage/images/b233bec9-4945-42d0-b3be-c94945d2d01f.jpg</abc:ImageReference>
+                <abc:CredentialSpecificationUID>urn:soederhamn:credspec:credSchool</abc:CredentialSpecificationUID>
+                <abc:IssuerParametersUID>urn:soederhamn:issuer:credSchool</abc:IssuerParametersUID>
+                <abc:SecretReference>secret://sample-1234</abc:SecretReference>
+                <abc:Attribute>
+                    <abc:AttributeUID>-2512740930683684617</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soederhamn:credspec:credSchool:schoolname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">L+¦nneberga</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>248326876032692613</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soederhamn:credspec:credSchool:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">von Katthult Svensson</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>-2101224023516202118</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soederhamn:credspec:credSchool:civicRegistrationNumber" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">42</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>1428509302788015726</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soederhamn:credspec:credSchool:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Emil</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>5342906427148609762</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soederhamn:credspec:credSchool:gender" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">M</abc:AttributeValue>
+                </abc:Attribute>
+            </abc:value>
+        </abc:entry>
+    </abc:CredentialDescriptions>
+    <abc:PseudonymDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">abc4t://nym/1s2245km9biun4zj</abc:key>
+            <abc:value>
+                <abc:PseudonymDescription Exclusive="false" Scope="urn:soederhamn:restrictedarea:french" PseudonymUID="abc4t://nym/1s2245km9biun4zj">
+                    <abc:PseudonymMetadata>
+                        <abc:FriendlyPseudonymDescription lang="el">+?+¡++ -ê+¦-à+¦-Ä++-à++++ +++¦ -ä++++ -ä+++++¡+¦ urn:soederhamn:restrictedarea:french +¦+¦+¦ ++-à-â-ä+¦+¦+« secret://sample-1234.</abc:FriendlyPseudonymDescription>
+                        <abc:FriendlyPseudonymDescription lang="sv">Ny pseudonym med dom+ñn urn:soederhamn:restrictedarea:french och hemliga secret://sample-1234.</abc:FriendlyPseudonymDescription>
+                        <abc:FriendlyPseudonymDescription lang="en">New pseudonym with scope urn:soederhamn:restrictedarea:french and secret secret://sample-1234.</abc:FriendlyPseudonymDescription>
+                    </abc:PseudonymMetadata>
+                </abc:PseudonymDescription>
+            </abc:value>
+        </abc:entry>
+    </abc:PseudonymDescriptions>
+    <abc:InspectorDescriptions/>
+    <abc:CandidatePresentationTokenList>
+        <abc:CandidatePresentationToken>
+            <abc:Token PolicyUID="urn:soederhamn:policies:restrictedarea:french:anon" TokenUID="abc4t://token/5b71anndzwavv2yp"/>
+            <abc:FriendlyTokenDescription lang="en">Mock FriendlyDescription</abc:FriendlyTokenDescription>
+            <abc:FriendlyTokenDescription lang="da">Mock Venlig Beskrivelse</abc:FriendlyTokenDescription>
+            <abc:CredentialUidList>
+                <abc:CredentialUid>IdmxCredential/rl3f2hn9ifl38w1</abc:CredentialUid>
+                <abc:CredentialUid>IdmxCredential/3xvrl4eaonpbpu4</abc:CredentialUid>
+            </abc:CredentialUidList>
+            <abc:PseudonymChoiceList>
+                <abc:URISet>
+                    <abc:URI>abc4t://nym/1s2245km9biun4zj</abc:URI>
+                </abc:URISet>
+            </abc:PseudonymChoiceList>
+            <abc:InspectorChoiceList/>
+        </abc:CandidatePresentationToken>
+    </abc:CandidatePresentationTokenList>
+</abc:SelectPresentationTokenDescription>

@@ -28,6 +28,7 @@ import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.revauth.AccumCryptoEngineRevAuthImpl;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.xml.Reference;
 import eu.abc4trust.xml.RevocationAuthorityParameters;
@@ -48,18 +49,18 @@ public class AccumCryptoEngineRevAuthImplTest {
             throws CryptoEngineException {
         Injector injector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1984),
-                        CryptoEngine.IDEMIX));
+                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
         RevocationAbcEngine revAuth = injector
                 .getInstance(RevocationAbcEngine.class);
         Reference infoRef = new Reference();
         infoRef.setReferenceType(URI.create("https"));
-        infoRef.getAny().add(URI.create("example.org"));
+        infoRef.getReferences().add(URI.create("example.org"));
         Reference evidenceRef = new Reference();
         evidenceRef.setReferenceType(URI.create("https"));
-        evidenceRef.getAny().add(URI.create("example.org"));
+        evidenceRef.getReferences().add(URI.create("example.org"));
         Reference updateRef = new Reference();
         updateRef.setReferenceType(URI.create("https"));
-        updateRef.getAny().add(URI.create("example.org"));
+        updateRef.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revAuthParams = revAuth
                 .setupRevocationAuthorityParameters(
                         keyLength, REV_MECH, uid, infoRef, evidenceRef,
@@ -86,18 +87,18 @@ public class AccumCryptoEngineRevAuthImplTest {
     public void testGenerateRevocationInformation()
             throws CryptoEngineException {
         Injector injector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1984), CryptoEngine.IDEMIX));
+                new Random(1984), CryptoEngine.IDEMIX, null));
         AccumCryptoEngineRevAuthImpl revAuth = injector
                 .getInstance(AccumCryptoEngineRevAuthImpl.class);
         Reference infoRef = new Reference();
         infoRef.setReferenceType(URI.create("https"));
-        infoRef.getAny().add(URI.create("example.org"));
+        infoRef.getReferences().add(URI.create("example.org"));
         Reference evidenceRef = new Reference();
         evidenceRef.setReferenceType(URI.create("https"));
-        evidenceRef.getAny().add(URI.create("example.org"));
+        evidenceRef.getReferences().add(URI.create("example.org"));
         Reference updateRef = new Reference();
         updateRef.setReferenceType(URI.create("https"));
-        updateRef.getAny().add(URI.create("example.org"));
+        updateRef.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revAuthParams = revAuth
                 .setupRevocationAuthorityParameters(keyLength, REV_MECH, uid,
                         infoRef, evidenceRef, updateRef);

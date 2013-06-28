@@ -20,7 +20,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -32,16 +35,15 @@ import org.w3c.dom.Element;
 
 import com.ibm.zurich.idmx.key.VEPublicKey;
 import com.ibm.zurich.idmx.showproof.accumulator.AccumulatorPublicKey;
-import com.ibm.zurich.idmx.utils.GroupParameters;
 import com.ibm.zurich.idmx.utils.Parser;
 import com.ibm.zurich.idmx.utils.StructureStore;
 
-import eu.abc4trust.cryptoEngine.idemix.util.IdemixConstants;
-import eu.abc4trust.cryptoEngine.idemix.util.IdemixSystemParameters;
+import eu.abc4trust.cryptoEngine.idemix.user.IdemixCryptoEngineUserImpl;
 import eu.abc4trust.guice.ProductionModule;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
 import eu.abc4trust.keyManager.KeyManager;
+import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CryptoParams;
 import eu.abc4trust.xml.InspectorPublicKey;
@@ -69,42 +71,51 @@ public abstract class AbstractHelper {
 
     public static final int INSPECTOR_KEY_LENGTH = 1024;
     public static final int REVOCATION_KEY_LENGTH = 1024;
-    
-    
+
+
     public static int UPROVE_SERVICE_TIMEOUT = 5;
 
     // TODO : Find out how to solve UProve Token renewal and FIX!
-    public static int UPROVE_ISSUER_NUMBER_OF_CREDENTIAL_TOKENS_TO_GENERATE = 5;
-    
+    public static int UPROVE_ISSUER_NUMBER_OF_CREDENTIAL_TOKENS_TO_GENERATE = 50;
+
     public static CryptoEngine oldCryptoEngineToNewCryptoEngine(ProductionModule.CryptoEngine old) {
-      if(old == ProductionModule.CryptoEngine.IDEMIX) {
-        return CryptoEngine.IDEMIX;
-      }
-      if(old == ProductionModule.CryptoEngine.UPROVE) {
-        return CryptoEngine.UPROVE;
-      }
-      if(old == ProductionModule.CryptoEngine.BRIDGED) {
-        return CryptoEngine.BRIDGED;
-      }
-      throw new IllegalStateException("Only IDEMIX, UPROVE and BRIDGED 'CryptoEngine' supported!");
-  }
-    
+        if(old == ProductionModule.CryptoEngine.IDEMIX) {
+            return CryptoEngine.IDEMIX;
+        }
+        if(old == ProductionModule.CryptoEngine.UPROVE) {
+            return CryptoEngine.UPROVE;
+        }
+        if(old == ProductionModule.CryptoEngine.BRIDGED) {
+            return CryptoEngine.BRIDGED;
+        }
+        throw new IllegalStateException("Only IDEMIX, UPROVE and BRIDGED 'CryptoEngine' supported!");
+    }
+
     public static class TEST_CONSTANTS {
         //    String patrasPseudonymValue_Idemix_BigIntegerString = "13113619309688455399943141047039588255012224402685936272493453785722607281295670863960311415709688624896181140637153337931764122797063639228028292556539597983270104663481061345843768312132112143065003200113982068496676609329599900685254308588931392680059865648913882240137003267016796606864192446927431006063143596502930331212298127485942432631258503855952748174323704253071654542663409996358469311691467823181733982163671649264944640161635575269481101875411220966819942294763879176180443963538681672879852525484918494941678429730605927666250736885168466826481197438440303225695399549810605219740737926981960982885828";
-        public static final String patrasPseudonymValue_Idemix_BigIntegerString = "25857229784541950268499875786182194003912581012187598417993596190791281748949698234605396926046696671077573914597275416061331818118473783282384728255916745921462280014008445649682087461734700964789607228639009302452404285248645023843129815124210857632896341028924739292645923533780366309070264375800185394454295440256643140500550702706871928773704753337490927304959243736580922629491750647692563045587048364058572536032645378627198886767474620842333393078215239246465543681612873371633027985434701148270761075020461821745946654087910218203819101989773183522591341673956631480219443014917104022744117905645428210110942";
+        public static final String patrasPseudonymValue_Idemix_BigIntegerString =
+                "6381025054343982380006039854620626512459813827774012914359688731362968589996053981311810529454822371414003360623058690024275750718183210049319525338237449411302444140328410955328599627601525395090316080862654219376117931470118482073122727238448752111091493208550489005042812966099062688809894354100982108946370260347316599831443086944583633527548564970415402633915587897447082341803547719504533864513780713861175819214449236168085158905035077441898845758541373309908156480065077575118253134544551577165230361432459640271850921581375402781176094019176713222214821647965953701965871118361987128595658015575038581902725";
+        // public static final String patrasPseudonymValue_Idemix_BigIntegerString = "25857229784541950268499875786182194003912581012187598417993596190791281748949698234605396926046696671077573914597275416061331818118473783282384728255916745921462280014008445649682087461734700964789607228639009302452404285248645023843129815124210857632896341028924739292645923533780366309070264375800185394454295440256643140500550702706871928773704753337490927304959243736580922629491750647692563045587048364058572536032645378627198886767474620842333393078215239246465543681612873371633027985434701148270761075020461821745946654087910218203819101989773183522591341673956631480219443014917104022744117905645428210110942";
         public static final BigInteger patrasPseudonymValue_Idemix = new BigInteger(patrasPseudonymValue_Idemix_BigIntegerString);
-    
+
         public static final String patrasPseudonymValue_UProve_BigIntegerString = "-6319502014825409402233010261015910260358045955898128433811342357573627989456098568587671344205053518132308526251667147670729054054863211133458126502740897278585454093958008698289532399317470297691503724004310715492241647016057779934099594778202128388930003157117400458103382257005747196628054630592602292965298474756631847386724249598666210487135999116562368377720243256008500687276514870861404768306021894069994421554646587203956216354007245517374608087545271384583096746900007950035051326689568584243739660706609722826047133974977000138986939047050588408879623514174459206962913661129873467956950877256583696143514";
+        // public static final String
+        // patrasPseudonymValue_UProve_BigIntegerString =
+        // "-9704426833928833461492293050295565912611214552784712697832048645016161248152907884658641978251390713403985867210058855868978258845539891259755013313607297775766352225459707299836020015968666864535460648384322065547246190197194022295386530573507166431396140250009168104658202684233087500516954921926879162621391029258024455503574186450560643628525620547806776471687873486549156794598078429563257327261649757842378283132111125040660909150696648641096936982329538319394860209425889303984068694886599530033222584666340379625768038676777274668627925226351269148642943136402339032280903136447876200054834467400877192515944";
         public static final BigInteger patrasPseudonymValue_UProve = new BigInteger(patrasPseudonymValue_UProve_BigIntegerString);
 
-        public static final String soderhamnPseudonymValue_Idemix_BigIntegerString = "12256011167884393088598129359662547555057906527194134048743348489386566170151491878893237414768652365112577364138171733183911233904787212958565625155568195930885212743313664997507756225197911466477723828942912450789921055787318029337227826872391541051109730434776550172248076814071773144661715730448269747061887684456376661650406959418211135710743139196024991445078077847823483560028099699808350281155977084430411410242128375707851627711785899536718398708828409948410676156079543397666084906488185865819172665333001020502883400294824481310959414307757622256660538500986240522637416406218034379698119818519136495924833";
+        // public static final String
+        // soderhamnPseudonymValue_Idemix_BigIntegerString =
+        // "12256011167884393088598129359662547555057906527194134048743348489386566170151491878893237414768652365112577364138171733183911233904787212958565625155568195930885212743313664997507756225197911466477723828942912450789921055787318029337227826872391541051109730434776550172248076814071773144661715730448269747061887684456376661650406959418211135710743139196024991445078077847823483560028099699808350281155977084430411410242128375707851627711785899536718398708828409948410676156079543397666084906488185865819172665333001020502883400294824481310959414307757622256660538500986240522637416406218034379698119818519136495924833";
+        public static final String soderhamnPseudonymValue_Idemix_BigIntegerString = "15052930768095544420912753282014173967562190439096365145220609854434282746481367103522037155668959025258890426277441361869821147817131284344214348428784628011760812671165804719522963727739295177656051409543898320815006534490451320338270175871239466515207574585144938412093257746820207812373029985777776607777137971572258188487189876917995589843531526296238805498774951844787807409840124445886529590959688244030130979441653656890537818451020166655052570755419684481845259486091633958436174268221811692589932341070901191646820782193824053308718077702373094941618621714158884202239937382377135672179979253975926493300591";
+
         public static final BigInteger soderhamnPseudonymValue_Idemix = new BigInteger(soderhamnPseudonymValue_Idemix_BigIntegerString);
 
         public static final String soderhamnPseudonymValue_UProve_BigIntegerString = "-6319502014825409402233010261015910260358045955898128433811342357573627989456098568587671344205053518132308526251667147670729054054863211133458126502740897278585454093958008698289532399317470297691503724004310715492241647016057779934099594778202128388930003157117400458103382257005747196628054630592602292965298474756631847386724249598666210487135999116562368377720243256008500687276514870861404768306021894069994421554646587203956216354007245517374608087545271384583096746900007950035051326689568584243739660706609722826047133974977000138986939047050588408879623514174459206962913661129873467956950877256583696143514";
         public static final BigInteger soderhamnPseudonymValue_UProve = new BigInteger(soderhamnPseudonymValue_UProve_BigIntegerString);
     }
     protected AbceConfigurationImpl setupStorageFilesForConfiguration(String fileStoragePrefix, CryptoEngine cryptoEngine) throws Exception {
-        return setupStorageFilesForConfiguration(fileStoragePrefix, cryptoEngine, false);
+        return this.setupStorageFilesForConfiguration(fileStoragePrefix, cryptoEngine, false);
     }
     protected AbceConfigurationImpl setupStorageFilesForConfiguration(String fileStoragePrefix, CryptoEngine cryptoEngine, boolean wipe_existing_storage) throws Exception {
         AbceConfigurationImpl configuration = new AbceConfigurationImpl();
@@ -121,18 +132,15 @@ public abstract class AbstractHelper {
         configuration.setRevocationAuthoritySecretStorageFile(getFile(fileStoragePrefix + "revocationAuthoritySecrets", wipe_existing_storage));
         configuration.setRevocationAuthorityStorageFile(getFile(fileStoragePrefix + "revocationAuthorityStorage", wipe_existing_storage));
 
-        File fileStoragePrefix_file = new File(fileStoragePrefix);
+        File keyStorageFile = configuration.getKeyStorageFile();
         File fileStorageFolder;
         String filePrefix = "";
-        if(fileStoragePrefix_file.isDirectory()) {
-            fileStorageFolder = fileStoragePrefix_file;
-        } else {
-            // folder + file prefix eg 'patras_user_storage/testcase_' : get folder name
-            fileStorageFolder = fileStoragePrefix_file.getParentFile();
-            filePrefix = fileStoragePrefix_file.getName();
-        }
+
+
+        fileStorageFolder = keyStorageFile.getParentFile();
 
         // check images
+
         File imagesFolder = new File(fileStorageFolder, "images");
         if(imagesFolder.exists()) {
             if(! imagesFolder.isDirectory()) {
@@ -175,46 +183,6 @@ public abstract class AbstractHelper {
     public KeyManager keyManager;
     protected final Set<URI> credSpecSet = new HashSet<URI>();
 
-    protected static File getFile(String filename, boolean wipe_existing_file) throws IOException {
-//        System.out.println("getFile : " + filename + " - wipe : " + wipe_existing_file);
-        File f = new File(filename);
-        if (f.exists() && ! wipe_existing_file) {
-//            System.out.println("getFile : " + filename + " - exists!");
-            return f;
-        } else {
-            if (f.exists() && wipe_existing_file) {
-               System.out.println("file exits - wipe it! " + filename);
-               f.delete();
-            }
-            
-            File folder = f.getParentFile();
-            if(! folder.exists()) {
-                System.out.println("create folders : " + folder);
-                folder.mkdirs();
-            }
-            System.out.println("create new file : " + filename);
-            // System.out.println("Folder : " + folder.getAbsolutePath() + " : " + folder.exists());
-            boolean created = f.createNewFile();
-            if (!created) {
-                throw new IOException("Could not create new file : " + filename);
-            }
-            return f;
-        }
-    }
-
-    public static InputStream getInputStream(String resource) throws IOException {
-        InputStream is = AbstractHelper.class.getResourceAsStream(resource);
-        if (is == null) {
-            File f = new File(resource);
-            if (!f.exists()) {
-                throw new IllegalStateException("Resource not found :  " + resource);
-            }
-
-            is = new FileInputStream(f);
-        }
-        return is;
-    }
-
 
     protected void XsetSystemParams(String systemParamsResource) {
         System.out.println("AbstractHelper setSystemParams from resoucres : " + systemParamsResource);
@@ -242,54 +210,70 @@ public abstract class AbstractHelper {
     }
 
     @SuppressWarnings("unused")
-	protected void setupIdemixEngine() {
-      if((true || this.cryptoEngine == CryptoEngine.IDEMIX) || (this.cryptoEngine == CryptoEngine.BRIDGED)) {
-        try {
-          if(this.keyManager.hasSystemParameters()) {
-            SystemParameters systemParameters = this.keyManager.getSystemParameters();
-            
-            IdemixSystemParameters idemixSystemParameters = new IdemixSystemParameters(systemParameters);
-            com.ibm.zurich.idmx.utils.SystemParameters sysPar = idemixSystemParameters.getSystemParameters();
-            GroupParameters grPar = idemixSystemParameters.getGroupParameters();
+    protected void setupIdemixEngine() {
+        if((true || (this.cryptoEngine == CryptoEngine.IDEMIX)) || (this.cryptoEngine == CryptoEngine.BRIDGED)) {
+            try {
+                if(this.keyManager.hasSystemParameters()) {
 
-            // Load system, group and issuer parameters to Idemix StructureStore
-            StructureStore.getInstance().add(IdemixConstants.systemParameterId, sysPar);
-            StructureStore.getInstance().add(IdemixConstants.groupParameterId, grPar);
-          } else {
-            // warning...
-          }
-        } catch(Exception ignore) {
-          ignore.printStackTrace();
+                    SystemParameters systemParameters = this.keyManager.getSystemParameters();
+
+                    IdemixCryptoEngineUserImpl
+                            .loadIdemixSystemParameters(systemParameters);
+
+                    // IdemixSystemParameters idemixSystemParameters = new
+                    // IdemixSystemParameters(systemParameters);
+                    // com.ibm.zurich.idmx.utils.SystemParameters sysPar =
+                    // idemixSystemParameters.getSystemParameters();
+                    // GroupParameters grPar =
+                    // idemixSystemParameters.getGroupParameters();
+                    //
+                    // // Load system, group and issuer parameters to Idemix
+                    // StructureStore
+                    // StructureStore.getInstance().add(IdemixConstants.systemParameterId,
+                    // sysPar);
+                    // StructureStore.getInstance().add(IdemixConstants.groupParameterId,
+                    // grPar);
+                } else {
+                    // warning...
+                }
+            } catch(Exception ignore) {
+                ignore.printStackTrace();
+            }
         }
-      }
-      
+
     }
 
     protected void addIssuerParameters(String[] issuerParamsResourceList) {
         System.out.println("AbstractHelper addIssuerParameters from resoucres : "
-                + issuerParamsResourceList);
+                + Arrays.toString(issuerParamsResourceList));
         try {
             for (String resource : issuerParamsResourceList) {
-//                System.out.println(" - read issuer parameters " + resource);
+                //                System.out.println(" - read issuer parameters " + resource);
                 IssuerParameters issuerParameters = loadObjectFromResource(resource);
 
-//                System.out.println(" - store issuer parameters ? " + issuerParameters.getParametersUID());
+                //                System.out.println(" - store issuer parameters ? " + issuerParameters.getParametersUID());
 
                 IssuerParameters exists =
                         this.keyManager.getIssuerParameters(issuerParameters.getParametersUID());
                 if (exists != null) {
-//                    System.out.println(" - - exists!!");
+                    if(issuerParameters.getVersion().equals(exists.getVersion())) {
+                        //
+                        System.out
+                        .println(" - issuer parameters present in storager with version number : "
+                                + issuerParameters.getVersion());
+                    } else {
+                        System.err
+                        .println("WARNING ! : issuerparameter mismatch! "
+                                + issuerParameters.getParametersUID()
+                                + " - in storage : "
+                                + exists.getVersion()
+                                + " - version in resource : "
+                                + issuerParameters.getVersion());
+                    }
+                    //                    System.out.println(" - - exists!!");
                 } else {
-//                    System.out.println(" - - add!! " + issuerParameters.getParametersUID());
-                    this.keyManager.storeIssuerParameters(issuerParameters.getParametersUID(), issuerParameters);
-                    CredentialSpecification credSpecExists = this.keyManager.getCredentialSpecification(issuerParameters.getCredentialSpecUID());
-                    if(credSpecExists==null) {
-                        throw new IllegalStateException("Credspec needed by Issuer Parameters - not supplied! : " + issuerParameters.getCredentialSpecUID());
-                    }
-                    if(! this.keyManager.hasSystemParameters()) {
-                      System.out.println("Store SystemParameters");
-                      this.keyManager.storeSystemParameters(issuerParameters.getSystemParameters());
-                    }
+                    //                    System.out.println(" - - add!! " + issuerParameters.getParametersUID());
+                    this.addIssuerParameters(issuerParameters);
                 }
 
             }
@@ -301,8 +285,22 @@ public abstract class AbstractHelper {
 
     }
 
+    private void addIssuerParameters(IssuerParameters issuerParameters)
+            throws KeyManagerException {
+        this.keyManager.storeIssuerParameters(issuerParameters.getParametersUID(), issuerParameters);
+        CredentialSpecification credSpecExists = this.keyManager.getCredentialSpecification(issuerParameters.getCredentialSpecUID());
+        if(credSpecExists==null) {
+            throw new IllegalStateException("Credspec needed by Issuer Parameters - not supplied! : " + issuerParameters.getCredentialSpecUID());
+        }
+        if(! this.keyManager.hasSystemParameters()) {
+            System.out.println("Store SystemParameters " + issuerParameters.getParametersUID() + " - version number : " + issuerParameters.getVersion());
+            this.keyManager.storeSystemParameters(issuerParameters.getSystemParameters());
+        }
+    }
+
     protected void addCredentialSpecifications(String[] credSpecResourceList) {
-        System.out.println("AbstractHelper addCredentialSpecification from resoucres : "
+        System.out
+        .println("AbstractHelper addCredentialSpecification from resources : "
                 + credSpecResourceList);
         try {
 
@@ -335,27 +333,27 @@ public abstract class AbstractHelper {
 
     protected void addInspectorPublicKeys(String[] inspectorPublicKeyResourceList) {
         System.out.println("AbstractHelper addInspectorPublicKeys from resouces : "
-            + inspectorPublicKeyResourceList);
+                + inspectorPublicKeyResourceList);
         try {
             for (String resource : inspectorPublicKeyResourceList) {
                 System.out.println(" - read inspector public key" + resource);
-                
+
                 InspectorPublicKey pk = loadObjectFromResource(resource);
                 System.out.println("- loaded Inspector Public Key - with UID : " + pk.getPublicKeyUID());
-                
-                InspectorPublicKey verifyPk = keyManager.getInspectorPublicKey(pk.getPublicKeyUID());
+
+                InspectorPublicKey verifyPk = this.keyManager.getInspectorPublicKey(pk.getPublicKeyUID());
                 if (verifyPk != null) {
-                  System.out.println("- key already in keyManager " + verifyPk);
+                    System.out.println("- key already in keyManager " + verifyPk);
                 } else {
-                  System.out.println("- add key to keyManager");
-                  keyManager.storeInspectorPublicKey(pk.getPublicKeyUID(), pk);
+                    System.out.println("- add key to keyManager");
+                    this.keyManager.storeInspectorPublicKey(pk.getPublicKeyUID(), pk);
                 }
                 // register for Idemix!
                 VEPublicKey vePubKey =
-                    (VEPublicKey) Parser.getInstance().parse(
-                        (org.w3c.dom.Element) pk.getCryptoParams().getAny().get(0));
+                        (VEPublicKey) Parser.getInstance().parse(
+                                (org.w3c.dom.Element) pk.getCryptoParams().getAny().get(0));
                 StructureStore.getInstance().add(pk.getPublicKeyUID().toString(), vePubKey);
-            }          
+            }
         } catch (Exception e) {
             System.err.println("Init Failed");
             e.printStackTrace();
@@ -367,24 +365,26 @@ public abstract class AbstractHelper {
 
     protected void addRevocationAuthorities(KeyManager engineKeyManager, String[] revocationAuthorityParametersResourcesList) {
         System.out.println("AbstractHelper addRevocationAuthorities from resouces : "
-            + revocationAuthorityParametersResourcesList);
-  
+                + revocationAuthorityParametersResourcesList);
+
+        System.out.println("list length: " + revocationAuthorityParametersResourcesList.length);
+
         try {
             for (String resource : revocationAuthorityParametersResourcesList) {
                 System.out.println(" - read revocationAuthorityParameters" + resource);
-                
+
                 RevocationAuthorityParameters rap = loadObjectFromResource(resource);
                 URI revAuthParamsUid = rap.getParametersUID();
                 System.out.println("- loaded revocationAuthorityParameters - with UID : " + revAuthParamsUid);
-                
+
                 RevocationAuthorityParameters verifyRap = engineKeyManager.getRevocationAuthorityParameters(revAuthParamsUid);
                 if (verifyRap != null) {
-                  System.out.println("- revocationAuthorityParameters in keyManager " + verifyRap);
+                    System.out.println("- revocationAuthorityParameters in keyManager " + verifyRap);
                 } else {
-                  System.out.println("- add key to keyManager");
-                  engineKeyManager.storeRevocationAuthorityParameters(revAuthParamsUid, rap);
+                    System.out.println("- add key to keyManager");
+                    engineKeyManager.storeRevocationAuthorityParameters(revAuthParamsUid, rap);
                 }
-                
+
                 // register key for IDEMIX!
                 List<Object> any = rap.getCryptoParams().getAny();
                 Element publicKeyStr = (Element) any.get(0);
@@ -395,7 +395,7 @@ public abstract class AbstractHelper {
                 StructureStore.getInstance().add(publicKey.getUri().toString(),
                         publicKey);
                 System.out.println("- registered in IDEMIX StructureStore");
-            }          
+            }
         } catch (Exception e) {
             System.err.println("Init Failed");
             e.printStackTrace();
@@ -404,8 +404,56 @@ public abstract class AbstractHelper {
 
     }
 
+    protected static File getFile(String filename, boolean wipe_existing_file) throws IOException {
+        //      System.out.println("getFile : " + filename + " - wipe : " + wipe_existing_file);
 
-    
+        URL file = AbstractHelper.class.getResource(filename);
+
+        File f = null;
+        if(file != null) {
+            f = new File(file.getFile());
+        } else {
+            f = new File(filename);
+        }
+        if (f.exists() && ! wipe_existing_file) {
+            //            System.out.println("getFile : " + filename + " - exists!");
+            return f;
+        } else {
+            if (f.exists() && wipe_existing_file) {
+                System.out.println("file exits - wipe it! " + filename);
+                f.delete();
+            }
+
+            File folder = f.getParentFile();
+            if((f.getParentFile() != null) && ! folder.exists()) {
+                System.out.println("create folders : " + folder);
+                folder.mkdirs();
+            }
+            System.out.println("create new file : " + filename);
+            // System.out.println("Folder : " + folder.getAbsolutePath() + " : " + folder.exists());
+            boolean created = f.createNewFile();
+            if (!created) {
+                throw new IOException("Could not create new file : " + filename);
+            }
+            return f;
+        }
+    }
+
+    public static InputStream getInputStream(String resource) throws IOException {
+        InputStream is = AbstractHelper.class.getResourceAsStream(resource);
+        if (is == null) {
+            File f = new File(resource);
+            if (!f.exists()) {
+                throw new IllegalStateException("Resource not found :  " + resource);
+            }
+
+            is = new FileInputStream(f);
+        }
+        return is;
+    }
+
+
+
     @SuppressWarnings("unchecked")
     public static <T> T loadObjectFromResource(String name)
             throws IOException, ClassNotFoundException {
@@ -433,18 +481,33 @@ public abstract class AbstractHelper {
     }
 
     public static void storeObjectInFile(Object object, String resourceName)
-        throws IOException {
-        File file = new File(resourceName);
-        System.out.println("storeObject " + object + " - in file " + file.getAbsolutePath());
-  
+            throws IOException {
+        File file = getFile(resourceName, false);
+        System.out.println("store Object " + object + " - in file "
+                + file.getAbsolutePath());
+
         FileOutputStream fos = new FileOutputStream(file);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
-    
+
         oos.writeObject(object);
         fos.close();
     }
 
-    
+    public static void storeObjectAsXMLInFile(JAXBElement<?> element,
+            String prefix,
+            String resourceName) throws Exception {
+
+        File file = new File(prefix + resourceName
+                + "_human_readable_only_for_reference.xml");
+        System.out.println("store Object: " + element + " - as XML in file "
+                + file.getAbsolutePath());
+        String normalizedXml = XmlUtils.toNormalizedXML(element);
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(normalizedXml.getBytes(Charset.forName("UTF-8")));
+        fos.flush();
+        fos.close();
+    }
+
     public static BigInteger getPseudonymValue(PresentationToken presentationToken, URI scope) {
         return getPseudonymValue(presentationToken, scope.toString());
     }
@@ -459,7 +522,7 @@ public abstract class AbstractHelper {
         }
     }
 
-    
+
     /**
      * Note! Uses OLD CryptoEngine - to provide BackWard Compatibility!
      * @param presentationToken
@@ -488,7 +551,7 @@ public abstract class AbstractHelper {
                     }
                     if("UProvePseudonym".equals(elementName)) {
                         return ProductionModule.CryptoEngine.UPROVE;
-                    }                    
+                    }
                 }
             }
             // ?? illegal state ???
@@ -515,7 +578,7 @@ public abstract class AbstractHelper {
         if(issuanceMessage!=null) {
             for(Object o : issuanceMessage.getAny()) {
                 System.out.println("Testing : " + o);
-                if(o instanceof JAXBElement<?> && ((JAXBElement<?>)o).getValue() instanceof IssuanceToken) {
+                if((o instanceof JAXBElement<?>) && (((JAXBElement<?>)o).getValue() instanceof IssuanceToken)) {
                     IssuanceToken it = (IssuanceToken) ((JAXBElement<?>)o).getValue();
                     System.out.println("Testing IT : " + it);
                     PseudonymInToken pse = findPseudonym(it.getIssuanceTokenDescription().getPresentationTokenDescription(), scope);

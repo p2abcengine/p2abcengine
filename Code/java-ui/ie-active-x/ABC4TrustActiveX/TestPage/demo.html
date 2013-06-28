@@ -1,0 +1,176 @@
+<!DOCTYPE>
+<!-- saved from url=http://localhost -->
+<html>
+   <head>
+          <title>ABC4TrustActiveX webpage</title>
+   </head>
+   <body>
+       <OBJECT id="ABC4Trust" classid="clsid:BC9BB501-2EF6-4293-84DF-58884DB385DC" codebase="ABC4TrustActiveX.cab"></OBJECT>  
+
+        <script type="text/javascript">
+
+	        var abceServer = "http://localhost:9500";
+	        // var abceServer = "http://hanss-macbook-pro.local:9500/";
+		
+	function lockUI() {
+		var blurDiv = document.createElement("div");
+		blurDiv.id = "blurDiv";
+		blurDiv.style.cssText = "position:absolute; top:0; right:0; width:" + screen.width + "px; height:" + screen.height + "px; background-color: #000000; opacity:0.5;";
+
+		document.getElementsByTagName("body")[0].appendChild(blurDiv);
+	}
+	function unlockUI() {
+		var blurDiv = document.getElementById("blurDiv");
+		if(blurDiv) {
+		    blurDiv.parentNode.removeChild(blurDiv);
+		}
+	}
+			
+        function Click() {
+		    try {
+                var abc4trust = document.ABC4Trust;
+				if (abc4trust == undefined) {
+					alert("Not loaded!");
+					return;
+				}
+
+				var result = abc4trust.Test("something");
+				alert("Returned from Extension - Test : " + result.status + " : " + result.message);
+			} catch(Err) { 
+				alert("ERROR Test : " + Err + " : " + Err.description);
+			}
+        }
+
+        
+        function SiteClick() {
+		    try {
+                var abc4trust = document.ABC4Trust;
+				if (abc4trust == undefined) {
+					alert("Not loaded!");
+					return;
+				}
+				var result = abc4trust.ShowSite("http://www.abc4trust.eu");
+				alert("Returned from Extension - ShowSite : " + result.status + " : " + result.message);
+			} catch(Err) { 
+				alert("ERROR ShowSite: " + Err + " : " + Err.description);
+			}
+        }
+
+        function Issue() {
+			lockUI();
+		    try {
+                var abc4trust = document.ABC4Trust;
+				if (abc4trust == undefined) {
+					alert("Not loaded!");
+					return;
+				}
+
+				var selectedCredential = "University";
+				var selectedEngine = "IDEMIX";
+
+				var baseURL = abceServer + "/pilot-patras/issue";
+				var issueURL = baseURL + "/start" + selectedCredential + "/issuanceKey";
+				issueURL = issueURL + "?matriculationnumber=1234&UserCryptoEngine="+selectedEngine;
+				var stepURL = baseURL + "/step?UserCryptoEngine="+selectedEngine;
+				var statusURL = null;
+
+				var result = abc4trust.Issue("da", issueURL, stepURL, statusURL);
+				document.getElementById("verifyStatus").innerHTML = "Result calling Issuance " + result.message + " " + result.status;
+
+			} catch(exception){
+				document.getElementById("verifyStatus").innerHTML = "Error calling Issuance " + result.message + " " + result.status;
+				alert("Exception running presentaiton : " + exception);
+			} 
+			unlockUI();
+        }
+
+        function Present() {
+			lockUI();
+		    try {
+                var abc4trust = document.ABC4Trust;
+				if (abc4trust == undefined) {
+					alert("Not loaded!");
+					return;
+				}
+
+				var selectedPolicy = "presentationPolicyPatrasUniversityLogin.xml";
+
+				var baseURL = abceServer + "/pilot-patras/verification";
+
+				var policyURL = baseURL + "/policy/" + selectedPolicy;
+				var verifyURL = baseURL + "/verify/" + selectedPolicy;
+
+				var result = abc4trust.Present("da", policyURL, verifyURL);
+                document.getElementById("verifyStatus").innerHTML = "Result calling presentation " + result.message + " " + result.status;
+
+			} catch(exception){
+				document.getElementById("verifyStatus").innerHTML = "Error calling presentation " + result.message + " " + result.status;
+				alert("Exception running presentaiton : " + exception);
+			} 
+			unlockUI();
+        }
+
+        function StoreData() {
+			lockUI();
+		    try {
+                var abc4trust = document.ABC4Trust;
+				if (abc4trust == undefined) {
+					alert("Not loaded!");
+					return;
+				}
+				var input = document.getElementById("StoreData");
+				alert("Data : " + input);
+				alert("Data : " + input.value);
+				var data = input.value;
+	
+				var result = abc4trust.StoreData(data);
+				document.getElementById("verifyStatus").innerHTML = "Result calling StoreData " + result.message + " " + result.status;
+
+			} catch(exception){
+				document.getElementById("verifyStatus").innerHTML = "Error calling StoreData " + result.message + " " + result.status;
+				alert("Exception running presentaiton : " + exception);
+			} 
+			unlockUI();
+        }
+
+        function LoadData() {
+			lockUI();
+		    try {
+                var abc4trust = document.ABC4Trust;
+				if (abc4trust == undefined) {
+					alert("Not loaded!");
+					return;
+				}
+
+				var result = abc4trust.LoadData();
+				document.getElementById("verifyStatus").innerHTML = "Result calling LoadData " + result.message + " " + result.status + " - data : " + result.data;
+
+			} catch(exception){
+				document.getElementById("verifyStatus").innerHTML = "Error calling LoadData " + result.message + " " + result.status;
+				alert("Exception running presentaiton : " + exception);
+			} 
+			unlockUI();
+        }
+
+        </script>
+		
+		        <h1>Select Test:</h1>
+    <form>
+        <input type="button" onclick="Click()" value="Test" />
+        <input type="button" onclick="SiteClick()" value="Site" />
+
+        <input type="button" onclick="Issue()" value="Issue" />
+        <input type="button" onclick="Present()" value="Present" />
+        <input type="button" onclick="StoreData()" value="StoreData" />
+        <input type="button" onclick="LoadData()" value="LoadData" />
+
+    </form>
+        <h1>Verification Status :</h1>
+        <h2 id="verifyStatus">......</h2>
+        <h1>Strore Data :</h1>
+        <h2> <input type="text" id="StoreData" name="StoreData"></h2>
+        <h1>Load Data :</h1>
+        <h2 id="LoadData">......</h2>
+
+   </body>
+</html>

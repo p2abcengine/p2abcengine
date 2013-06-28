@@ -141,7 +141,7 @@ public class BridgingTest {
 
             Injector idemixInjector = Guice
                     .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                            IssuerCryptoEngine.IDEMIX, 8893));
+                            IssuerCryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
             IssuerAbcEngine idemixIssuer = idemixInjector.getInstance(IssuerAbcEngine.class);
             SystemParameters idemixSystemParameters = idemixIssuer
                     .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
@@ -215,13 +215,13 @@ public class BridgingTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters governementPassportIssuerParameters = governmentEngine
                 .setupIssuerParameters(passportCredSpec, systemParameters,
-                        passportIssuancePolicyUid, hash, engineType, revocationId);
+                        passportIssuancePolicyUid, hash, engineType, revocationId, null);
 
         revocationId = new URI("revocationUID2");
         IssuerParameters universityStudentCardIssuerParameters = universityEngine
                 .setupIssuerParameters(
                         credentialSpecificationStudent, systemParameters,
-                        studentCardIssuancePolicyUid, hash, engineType, revocationId);
+                        studentCardIssuancePolicyUid, hash, engineType, revocationId, null);
 
         // store issuance parameters for government and user.
         governmentKeyManager.storeIssuerParameters(passportIssuancePolicyUid,
@@ -278,14 +278,16 @@ public class BridgingTest {
         //Construct verifier
         Injector hotelInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                  uproveUtils.getVerifierServicePort()));
+                        uproveUtils.getVerifierServicePort()));
 
         Injector inspectorInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231),
                 uproveUtils.getInspectorServicePort()));
 
         // Create URIs.
-        //        int keyLength = 1024; // TODO: define the security level & revocation
-        int keyLength = 2048;
+        // int idemixKeyLength = 1024; // TODO: define the security level &
+        // revocation
+        int idemixKeyLength = 2048;
+        int uproveKeylength = 2048;
 
 
         IssuanceHelper issuanceHelper = new IssuanceHelper();
@@ -317,18 +319,20 @@ public class BridgingTest {
 
         // Generate system parameters.
         SystemParametersUtil sysParamUtil = new SystemParametersUtil();
-        
-        SystemParameters sysParam = sysParamUtil.generatePilotSystemParameters_WithIdemixSpecificKeySize(keyLength);
+
+        SystemParameters sysParam = SystemParametersUtil
+                .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                        idemixKeyLength, uproveKeylength);
         /*
         SystemParameters idemixParameters = governmentEngine
                 .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
 
 		SystemParameters uproveParameters = universityEngine
                 .setupSystemParameters(2048, CryptoUriUtil.getUproveMechanism());
-                */
+         */
         governmentKeyManager.storeSystemParameters(sysParam);
 
-        
+
 
         universityKeyManager.storeSystemParameters(sysParam);
 
@@ -392,13 +396,13 @@ public class BridgingTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters governementPassportIssuerParameters = governmentEngine
                 .setupIssuerParameters(passportCredSpec, sysParam,
-                        passportIssuancePolicyUid, hash, URI.create("Idemix"), revocationId);
+                        passportIssuancePolicyUid, hash, URI.create("Idemix"), revocationId, null);
 
         revocationId = new URI("revocationUID2");
         IssuerParameters universityStudentCardIssuerParameters = universityEngine
                 .setupIssuerParameters(
                         credentialSpecificationStudent, sysParam,
-                        studentCardIssuancePolicyUid, hash, URI.create("uprove"), revocationId);
+                        studentCardIssuancePolicyUid, hash, URI.create("uprove"), revocationId, null);
 
         // store issuance parameters for government and user.
         governmentKeyManager.storeIssuerParameters(passportIssuancePolicyUid,
@@ -419,7 +423,7 @@ public class BridgingTest {
 
         if (inspectorInjector != null) {
             InspectorPublicKey inspectorPubKey =
-                    inspectorEngine.setupInspectorPublicKey(keyLength,
+                    inspectorEngine.setupInspectorPublicKey(idemixKeyLength,
                             CryptoUriUtil.getIdemixMechanism(),
                             BridgingTest.INSPECTOR_URI);
             inspectorKeyManager.storeInspectorPublicKey(BridgingTest.INSPECTOR_URI, inspectorPubKey);

@@ -15,10 +15,12 @@ import java.net.URI;
 import java.util.List;
 
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.FriendlyDescription;
+import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.SystemParameters;
@@ -56,7 +58,7 @@ public interface IssuerAbcEngine {
      * @return
      */
     public IssuerParameters setupIssuerParameters(CredentialSpecification credspec,
-            SystemParameters syspars, URI uid, URI hash, URI algorithmId, URI revParsUid);
+            SystemParameters syspars, URI uid, URI hash, URI algorithmId, URI revParsUid, List<FriendlyDescription> friendlyDescriptions);
 
     /**
      * 
@@ -107,5 +109,32 @@ public interface IssuerAbcEngine {
      */
     public IssuanceMessageAndBoolean issuanceProtocolStep(IssuanceMessage m)
             throws CryptoEngineException;
+
+    /**
+     * This method is invoked by the Issuer to initialize the re-issuance of
+     * U-Prove tokens. It uses only the issuance policy since this policy is
+     * supposed to reveal all attributes of the user. Then the reIssuer will
+     * extract the attributes from the presentation token and run issuance as
+     * normal.
+     * @param clonedIssuancePolicy
+     * @throws CryptoEngineException
+     */
+    public IssuanceMessageAndBoolean initReIssuanceProtocol(IssuancePolicy clonedIssuancePolicy)
+            throws CryptoEngineException;
+
+    public IssuanceMessageAndBoolean reIssuanceProtocolStep(IssuanceMessage m)
+            throws CryptoEngineException;
+
+    /**
+     * This method looks up an issuance log entry of previously issued
+     * credentials that contains a verified issuance token together with the
+     * attribute values provided by the issuer. The issuance log entry
+     * identifier issuanceEntryUid is the identifier that was included in the
+     * issuance token description that was returned when the token was verified.
+     * 
+     * @throws Exception
+     */
+    public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid)
+            throws Exception;
 
 }

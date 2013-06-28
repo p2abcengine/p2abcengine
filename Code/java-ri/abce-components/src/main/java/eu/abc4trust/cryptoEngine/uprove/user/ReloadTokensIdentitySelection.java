@@ -1,5 +1,5 @@
-//* Licensed Materials - Property of IBM, Miracle A/S,                *
-//* and Alexandra Instituttet A/S                                     *
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
 //* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
@@ -60,6 +60,7 @@ public class ReloadTokensIdentitySelection implements IdentitySelectionUi {
 		//TODO: we should verify cred-spec-uid (just for safe measure)
 		
 		boolean isTokenCandidateFound = false; //we stop when we have found the right one
+		System.out.println("");
 		for (TokenCandidate candidate : args.tokenCandidates) {
 			chosenIssuanceToken++; //update chosenIssuanceToken to point at current candidate  
 			isTokenCandidateFound = true; //assume this is the right one, then verify with tests below.
@@ -120,7 +121,7 @@ public class ReloadTokensIdentitySelection implements IdentitySelectionUi {
 		UiIssuanceReturn ret = null;
 		
 		if (isTokenCandidateFound)
-			ret = new UiIssuanceReturn(chosenIssuanceToken, 
+			ret = new UiIssuanceReturn(args.uiContext, chosenIssuanceToken, 
 				new HashMap<String, PseudonymMetadata>(), chosenPseudonymList, chosenInspectors);
 		
 		return ret;

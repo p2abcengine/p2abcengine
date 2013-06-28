@@ -32,11 +32,11 @@ import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.ObjectFactory;
@@ -142,7 +142,7 @@ public class IssueAndPresentIdemixCredentialTest {
 
         //step 2 - generate issuer parameters
 
-        IssuerParameters issuerParameters = issuerEngine.setupIssuerParameters(creditCardSpec, sysParams, uid, hash, cryptoMechanism, revocationId);
+        IssuerParameters issuerParameters = issuerEngine.setupIssuerParameters(creditCardSpec, sysParams, uid, hash, cryptoMechanism, revocationId, null);
 
         // store parameters for all parties:
         issuerKeyManager.storeIssuerParameters(uid, issuerParameters);
@@ -153,14 +153,16 @@ public class IssueAndPresentIdemixCredentialTest {
 
         // Issuer starts the issuance
         IssuanceMessageAndBoolean issuerIm = issuerEngine.initIssuanceProtocol(ip, issuerAtts);
-        assertFalse(issuerIm.lastMessage);
+        assertFalse(issuerIm.isLastMessage());
 
         if (DEBUG) {
-            System.out.println(XmlUtils.toXml((new ObjectFactory()).createIssuanceMessage(issuerIm.im)));
+            System.out.println(XmlUtils.toXml((new ObjectFactory())
+                    .createIssuanceMessage(issuerIm.getIssuanceMessage())));
         }
 
         // Reply from user
-        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm
+                .getIssuanceMessage());
         if (DEBUG) {
             System.out.println(XmlUtils.toXml(of.createIssuanceMessage(userIm.im)));
         }
@@ -169,15 +171,16 @@ public class IssueAndPresentIdemixCredentialTest {
         CredentialDescription cd = null;
 
         // Ping-pong until both user and issuer finish
-        while(!issuerIm.lastMessage) {
+        while (!issuerIm.isLastMessage()) {
 
             issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
 
-            userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+            userIm = userEngine.issuanceProtocolStep(issuerIm
+                    .getIssuanceMessage());
 
             boolean userLastMessage = (userIm.cd != null);
 
-            assertTrue(issuerIm.lastMessage == userLastMessage);
+            assertTrue(issuerIm.isLastMessage() == userLastMessage);
         }
         cd = userIm.cd;
 

@@ -44,15 +44,6 @@ public class StaticUriToIDMap {
         credSubjectUProveIssuer = 5,
         credRoleUProveIssuer = 6;
 	    
-	
-    public static void configurePilot(URI issuerUri){
-    	String s = issuerUri.toString();
-    	if(s.contains("patras")){
-    		Patras = true;
-    	}else{
-    		Patras = false;
-    	}    	
-    }
     
 	private StaticUriToIDMap(){
 	    // patras

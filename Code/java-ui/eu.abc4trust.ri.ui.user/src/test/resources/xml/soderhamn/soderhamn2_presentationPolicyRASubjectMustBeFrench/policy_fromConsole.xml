@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0">
+    <abc:PresentationPolicy PolicyUID="urn:soederhamn:policies:restrictedarea:french:pseudon">
+        <abc:Message>
+            <abc:Nonce>Ffcc6FvD6STRhA==</abc:Nonce>
+        </abc:Message>
+        <abc:Pseudonym Scope="urn:soederhamn:restrictedarea:french" Established="true"/>
+    </abc:PresentationPolicy>
+    <abc:PresentationPolicy PolicyUID="urn:soederhamn:policies:restrictedarea:french:anon">
+        <abc:Message>
+            <abc:Nonce>Ffcc6FvD6STRhA==</abc:Nonce>
+        </abc:Message>
+        <abc:Pseudonym Scope="urn:soederhamn:restrictedarea:french" Alias="#nym"/>
+        <abc:Credential Alias="#schoolcred" SameKeyBindingAs="#nym">
+            <abc:CredentialSpecAlternatives>
+                <abc:CredentialSpecUID>urn:soederhamn:credspec:credSchool</abc:CredentialSpecUID>
+            </abc:CredentialSpecAlternatives>
+            <abc:IssuerAlternatives>
+                <abc:IssuerParametersUID>urn:soederhamn:issuer:credSchool</abc:IssuerParametersUID>
+            </abc:IssuerAlternatives>
+        </abc:Credential>
+        <abc:Credential Alias="#subjectcred" SameKeyBindingAs="#nym">
+            <abc:CredentialSpecAlternatives>
+                <abc:CredentialSpecUID>urn:soederhamn:credspec:credSubject</abc:CredentialSpecUID>
+            </abc:CredentialSpecAlternatives>
+            <abc:IssuerAlternatives>
+                <abc:IssuerParametersUID>urn:soederhamn:issuer:credSubject</abc:IssuerParametersUID>
+            </abc:IssuerAlternatives>
+        </abc:Credential>
+        <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <abc:Attribute CredentialAlias="#subjectcred" AttributeType="urn:soederhamn:credspec:credSubject:subject"/>
+            <abc:ConstantValue xmlns="http://abc4trust.eu/wp2/abcschemav1.0">French</abc:ConstantValue>
+        </abc:AttributePredicate>
+    </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

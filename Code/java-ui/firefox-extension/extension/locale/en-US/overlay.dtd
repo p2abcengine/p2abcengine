@@ -1,0 +1,7 @@
+<!ENTITY abc4trust "overlay.dtd text">
+<!ENTITY menu.manage "ABC4Trust : Manage Credentials">
+<!ENTITY menu.revocation "ABC4Trust : Check revocation status">
+<!ENTITY menu.changepin "ABC4Trust : Change pin">
+<!ENTITY menu.unlock "ABC4Trust : Unlock card">
+<!ENTITY menu.debug "ABC4Trust : Debug INFO">
+

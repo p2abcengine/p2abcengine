@@ -39,6 +39,7 @@ import eu.abc4trust.abce.internal.user.credentialManager.PersistentImageCacheSto
 import eu.abc4trust.abce.internal.user.credentialManager.PersistentSecretStorage;
 import eu.abc4trust.abce.internal.user.credentialManager.SecretStorage;
 import eu.abc4trust.abce.testharness.ImagePathBuilder;
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializerSmartcard;
 import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
@@ -240,7 +241,7 @@ public class CredentialManagerImplTest {
                 mockEngine.updateNonRevocationEvidence(
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class)))
-                        .andThrow(new CryptoEngineException());
+                        .andThrow(new CredentialWasRevokedException());
         EasyMock.replay(mockEngine);
 
         CredentialStorage credStore = new PersistentCredentialStorage(
@@ -261,7 +262,7 @@ public class CredentialManagerImplTest {
 
         URI credUri = credMng.storeCredential(cred);
         assertNotNull(credUri);
-        assertFalse(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs));
+        assertTrue(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs));
 
         EasyMock.verify(mockEngine);
     }
@@ -309,7 +310,7 @@ public class CredentialManagerImplTest {
 
         URI credUri = credMng.storeCredential(cred);
         assertNotNull(credUri);
-        assertTrue(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs));
+        assertFalse(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs));
 
         EasyMock.verify(mockEngine);
     }
@@ -337,7 +338,7 @@ public class CredentialManagerImplTest {
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class),
                         EasyMock.eq(revinfouid))).andThrow(
-                                new CryptoEngineException());
+                                new CredentialWasRevokedException());
         EasyMock.replay(mockEngine);
 
         CredentialStorage credStore = new PersistentCredentialStorage(
@@ -359,7 +360,7 @@ public class CredentialManagerImplTest {
 
         URI credUri = credMng.storeCredential(cred);
         assertNotNull(credUri);
-        assertFalse(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs,
+        assertTrue(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs,
                 revinfouid));
 
         EasyMock.verify(mockEngine);
@@ -409,7 +410,7 @@ public class CredentialManagerImplTest {
 
         URI credUri = credMng.storeCredential(cred);
         assertNotNull(credUri);
-        assertTrue(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs,
+        assertFalse(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs,
                 revinfouid));
 
         EasyMock.verify(mockEngine);
@@ -562,8 +563,8 @@ public class CredentialManagerImplTest {
         credDesc = new CredentialDescription();
         credDesc.setImageReference(ImagePathBuilder.TEST_IMAGE_JPG);
         credDesc.setCredentialUID(credUid);
-        URI updatedCredUid = new URI("abc4trust:updated-credential");
-        credDesc.setCredentialUID(updatedCredUid);
+//        URI updatedCredUid = new URI("abc4trust:updated-credential");
+//        credDesc.setCredentialUID(updatedCredUid);
         updatedCred.setCredentialDescription(credDesc);
 
         CryptoEngineUser mockEngine = EasyMock
@@ -597,12 +598,13 @@ public class CredentialManagerImplTest {
 
         URI credUri = credMng.storeCredential(orginalCred);
         assertNotNull(credUri);
+        //This command updates the old credential. Does not create a new. 
         credMng.updateNonRevocationEvidence();
 
         Credential testCredential = credMng.getCredential(updatedCred
                 .getCredentialDescription().getCredentialUID());
         assertNotNull(testCredential);
-        assertEquals(updatedCred.getCredentialDescription().getCredentialUID(),
+        assertEquals(orginalCred.getCredentialDescription().getCredentialUID(),
                 testCredential.getCredentialDescription().getCredentialUID());
         EasyMock.verify(mockEngine);
     }

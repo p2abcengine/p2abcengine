@@ -30,8 +30,11 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import com.ibm.zurich.idmx.utils.StructureStore;
+
 import eu.abc4trust.abce.testharness.ImagePathBuilder;
 import eu.abc4trust.cryptoEngine.bridging.StaticGroupParameters;
+import eu.abc4trust.cryptoEngine.idemix.util.IdemixConstants;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializerGzipXml;
 import eu.abc4trust.cryptoEngine.user.PseudonymSerializer;
@@ -50,9 +53,11 @@ public class SoftwareSmartcardTest {
     private static final URI deviceURI = URI.create("ImbaDeviceNo42");
     private static final Random rand = new Random(42);
     private static final CredentialSerializer serializer = new CredentialSerializerGzipXml();
-    private static final PseudonymSerializer pseudonymSerializer = new PseudonymSerializerGzipXml();
 
     public static SoftwareSmartcard setupSmartcard() {
+    	//init the structure store
+    	StructureStore.getInstance().add(IdemixConstants.groupParameterId, StaticGroupParameters.getGroupParameters());
+    	
         short deviceID = 1;
         SystemParameters sp = getSystemParameters();
         // deviceSecret = 86127401088496880082801127003646828744375250417716244414750855766766755168176
@@ -103,8 +108,8 @@ public class SoftwareSmartcardTest {
         RSAVerificationKey rv = new RSAVerificationKey();
         rv.n = BigInteger.ZERO;
         CredentialBases cb = new CredentialBases(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);
-        assertEquals(s.addIssuerParameters(pin, rs, someUri, cb), SmartcardStatusCode.NOT_INITIALIZED);
-        assertEquals(s.addIssuerParametersWithAttendanceCheck(pin, rs, someUri, 0, cb, rv, 0), SmartcardStatusCode.NOT_INITIALIZED);
+        assertEquals(s.addIssuerParameters(rs, someUri, cb), SmartcardStatusCode.NOT_INITIALIZED);
+        assertEquals(s.addIssuerParametersWithAttendanceCheck(rs, someUri, 0, cb, rv, 0), SmartcardStatusCode.NOT_INITIALIZED);
         assertEquals(s.allocateCredential(0, someUri, someUri), SmartcardStatusCode.NOT_INITIALIZED);
         assertEquals(s.backupAttendanceData(0, password), null);
         assertEquals(s.changePin(0, 0), SmartcardStatusCode.NOT_INITIALIZED);
@@ -155,7 +160,7 @@ public class SoftwareSmartcardTest {
         URI credentialUri = URI.create("cred1");
         CredentialBases credBases = getCredentialBases();
         s.getNewNonceForSignature();
-        assertEquals(s.addIssuerParametersWithAttendanceCheck(pin, key, issuerURI, 1, credBases, RSASignatureSystem.getVerificationKey(key), 2), SmartcardStatusCode.OK);
+        assertEquals(s.addIssuerParametersWithAttendanceCheck(key, issuerURI, 1, credBases, RSASignatureSystem.getVerificationKey(key), 2), SmartcardStatusCode.OK);
         assertEquals(s.allocateCredential(pin, credentialUri, issuerURI), SmartcardStatusCode.OK);
 
         assertEquals(s.listCredentialsUris(pin).size(), 1);
@@ -179,7 +184,7 @@ public class SoftwareSmartcardTest {
         
         s = setupSmartcard();
         s.getNewNonceForSignature();
-        assertEquals(s.addIssuerParametersWithAttendanceCheck(pin, key, issuerURI, 1, credBases, RSASignatureSystem.getVerificationKey(key), 2), SmartcardStatusCode.OK);
+        assertEquals(s.addIssuerParametersWithAttendanceCheck(key, issuerURI, 1, credBases, RSASignatureSystem.getVerificationKey(key), 2), SmartcardStatusCode.OK);
         assertEquals(s.allocateCredential(pin, credentialUri, issuerURI), SmartcardStatusCode.OK);
 
         assertEquals(s.listCredentialsUris(pin).size(), 1);
@@ -211,7 +216,7 @@ public class SoftwareSmartcardTest {
         CredentialBases credBases = getCredentialBases();
         RSAKeyPair key = RSASignatureSystemTest.getSigningKeyForTest();
         s.getNewNonceForSignature();
-        assertEquals(s.addIssuerParametersWithAttendanceCheck(pin, key, issuerURI, 1, credBases, RSASignatureSystem.getVerificationKey(key), 2), SmartcardStatusCode.OK);
+        assertEquals(s.addIssuerParametersWithAttendanceCheck(key, issuerURI, 1, credBases, RSASignatureSystem.getVerificationKey(key), 2), SmartcardStatusCode.OK);
         assertEquals(s.allocateCredential(pin, credentialUri, issuerURI), SmartcardStatusCode.OK);
 
         assertEquals(s.listCredentialsUris(pin).size(), 1);
@@ -277,21 +282,23 @@ public class SoftwareSmartcardTest {
     	PseudonymWithMetadata pseudonym = new PseudonymWithMetadata();
     	Pseudonym pseu = new Pseudonym();
     	pseu.setExclusive(true);
-    	pseu.setPseudonymUID(longURI);
+    	URI pseudonymUID = URI.create("pseudonymUri");
+    	pseu.setPseudonymUID(pseudonymUID);
     	pseu.setPseudonymValue(loongByteArr);
     	pseu.setScope("testScope");
-    	pseu.setSecretReference(URI.create("http://secret-1234"));
+    	pseu.setSecretReference(deviceURI);
     	pseudonym.setPseudonym(pseu);    	
     	pseudonym.setCryptoParams(cryptoParam);
+    	    	
+    	CardStorage cardStorage = new CardStorage();
+    	cardStorage.addSmartcard(s, pin);
+    	PseudonymSerializer pseudonymSerializer = new PseudonymSerializerGzipXml(cardStorage);
+    	s.storePseudonym(pin, pseudonymUID, pseudonym, pseudonymSerializer);
     	
-    	URI pseudonymId = URI.create("pseudonymUri");
-    	s.storePseudonym(pin, pseudonymId, pseudonym, pseudonymSerializer);
-    	
-    	PseudonymWithMetadata pseudonymPrime = s.getPseudonym(pin, pseudonymId, pseudonymSerializer);
-    	
-    	PseudonymSerializer pseuSerializer = new PseudonymSerializerGzipXml();
-    	byte[] first = pseuSerializer.serializePseudonym(pseudonym);
-    	byte[] second = pseuSerializer.serializePseudonym(pseudonymPrime);
+    	PseudonymWithMetadata pseudonymPrime = s.getPseudonym(pin, pseu.getPseudonymUID(), pseudonymSerializer);
+
+    	byte[] first = pseudonymSerializer.serializePseudonym(pseudonym);
+    	byte[] second = pseudonymSerializer.serializePseudonym(pseudonymPrime);
     	assertTrue(Arrays.equals(first, second));
     }
     
@@ -319,14 +326,14 @@ public class SoftwareSmartcardTest {
         assertEquals(0, s.pinTrialsLeft());
         assertEquals(SmartcardStatusCode.OK, s.resetPinWithPuk(puk, pin));
         assertEquals(3, s.pinTrialsLeft());
-        assertEquals(3, s.pukTrialsLeft());
-        for(int i=2;i>=1;--i) {
+        assertEquals(10, s.pukTrialsLeft());
+        for(int i=9; i>=1; --i) {
             assertEquals(SmartcardStatusCode.UNAUTHORIZED, s.resetPinWithPuk(puk-1, pin));
             assertEquals(i, s.pukTrialsLeft());
         }
         assertEquals(SmartcardStatusCode.OK, s.resetPinWithPuk(puk, pin));
-        assertEquals(3, s.pukTrialsLeft());
-        for(int i=2;i>=1;--i) {
+        assertEquals(10, s.pukTrialsLeft());
+        for(int i=9;i>=1;--i) {
             assertEquals(SmartcardStatusCode.UNAUTHORIZED, s.resetPinWithPuk(puk-1, pin));
             assertEquals(i, s.pukTrialsLeft());
         }
@@ -403,7 +410,7 @@ public class SoftwareSmartcardTest {
         CredentialBases cb = getCredentialBases();
 
         s.getNewNonceForSignature();
-        assertEquals(s.addIssuerParameters(pin, key, issuerUri, cb), SmartcardStatusCode.OK);
+        assertEquals(s.addIssuerParameters(key, issuerUri, cb), SmartcardStatusCode.OK);
 
         assertEquals(s.allocateCredential(pin, credUri, issuerUri), SmartcardStatusCode.OK);
 
@@ -450,7 +457,7 @@ public class SoftwareSmartcardTest {
 
         {
             s.getNewNonceForSignature();
-            assertEquals(s.addIssuerParametersWithAttendanceCheck(pin, rootKey, issuerUri, 1, cb, cvk, minAttendance), SmartcardStatusCode.OK);
+            assertEquals(s.addIssuerParametersWithAttendanceCheck(rootKey, issuerUri, 1, cb, cvk, minAttendance), SmartcardStatusCode.OK);
         }
 
         assertEquals(s.allocateCredential(pin, credUri, issuerUri), SmartcardStatusCode.OK);
@@ -549,14 +556,14 @@ public class SoftwareSmartcardTest {
 
         {
             s.getNewNonceForSignature();
-            assertEquals(s.addIssuerParameters(pin, rootKey, issuerUriA, cb), SmartcardStatusCode.OK);
+            assertEquals(s.addIssuerParameters(rootKey, issuerUriA, cb), SmartcardStatusCode.OK);
         }
         {
             RSAKeyPair key = RSASignatureSystemTest.getAnotherSigningKeyForTest();
             RSAVerificationKey cvk = RSASignatureSystem.getVerificationKey(key);
             int minAttendance = 10;
             s.getNewNonceForSignature();
-            assertEquals(s.addIssuerParametersWithAttendanceCheck(pin, rootKey, issuerUriB, 1, cb, cvk, minAttendance), SmartcardStatusCode.OK);
+            assertEquals(s.addIssuerParametersWithAttendanceCheck(rootKey, issuerUriB, 1, cb, cvk, minAttendance), SmartcardStatusCode.OK);
         }
 
         assertEquals(s.allocateCredential(pin, credUriA1, issuerUriA), SmartcardStatusCode.OK);

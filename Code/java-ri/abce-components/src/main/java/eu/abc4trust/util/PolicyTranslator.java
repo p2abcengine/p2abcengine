@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +103,7 @@ public final class PolicyTranslator{
     private Map<String, CommittedKey> aliasCommittedKeys = null;
     private Map<String, URI> commitmentToIssuerMap = null;
     private final List<MyAttributeReference> committedAttrs;
+    private final List<CredentialInToken> credsInToken;
     private List<MyAttributeReference> oneOfAttrs = null;
     private List<CommittedValue> committedRevocationHandles = null;
     private List<CommittedValue> committedInspectableValues = null;
@@ -139,6 +141,8 @@ public final class PolicyTranslator{
         this.ptd = ptd;
 
         this.oneOfAttrs = new ArrayList<MyAttributeReference>();
+        
+        this.credsInToken = this.ptd.getCredential();
 
         this.myPredicates = new ArrayList<MyPredicate>();
         this.allDisclosedAttrs = new ArrayList<MyAttributeReference>();
@@ -147,7 +151,7 @@ public final class PolicyTranslator{
         this.allAttrsAndValues = new HashMap<MyAttributeReference, MyAttributeValue>();
         this.attrRefEqivClasses = new HashSet<Set<MyAttributeReference>>();
         this.revealedAttrRefEqivClasses = new HashSet<Set<MyAttributeReference>>();
-        this.predicateCredInToken = new HashMap<MyPredicate,List<CredentialInToken>>();
+        this.predicateCredInToken = new LinkedHashMap<MyPredicate,List<CredentialInToken>>();
         //        this.predicateCredInTokenWithCommitments = new HashMap<MyPredicate,List<CredentialInTokenWithCommitments>>();
         this.credentialAttrsList = new HashMap<String, List<MyAttributeReference>>();
         this.attrRefToInspectorKey = new HashMap<MyAttributeReference, URI>();
@@ -157,7 +161,7 @@ public final class PolicyTranslator{
         this.attrRefsCache = new HashMap<String,MyAttributeReference>();
 
         this.credentialSpecList = aliasCredSpecs;
-        this.aliasCredInTokenList = new HashMap<String, CredentialInToken>();
+        this.aliasCredInTokenList = new LinkedHashMap<String, CredentialInToken>();
         //       this.aliasCredInTokenWithCommitmentsList = new HashMap<String, CredentialInTokenWithCommitments>();
         this.inspectableAttrs = new ArrayList<MyAttributeReference>();
         this.allDisclosedAttrsAndValues = new HashMap<MyAttributeReference, MyAttributeValue>();
@@ -183,7 +187,6 @@ public final class PolicyTranslator{
         //parse attributes that are revealed explicitly and under inspector pk
         this.parseAllExplicitlyDisclosedAndInspectableAttributes();
 
-        //TODO:add parsing revocation-related stuff
 
         //parse all predicates to use them for creating idemix proof spec
         this.parseAllPredicates();
@@ -313,8 +316,9 @@ public final class PolicyTranslator{
                 this.aliasCommittedKeys.put(cit.getAlias().toString(), cit.getCommittedKey());
             }
         }
-
-        for(MyAttributeReference mar: this.allDisclosedAttrsAndValues.keySet()){
+        Set<MyAttributeReference> disclosedAttrAndValuesSetCopy = new HashSet<MyAttributeReference>();
+        disclosedAttrAndValuesSetCopy.addAll(this.allDisclosedAttrsAndValues.keySet());
+        for(MyAttributeReference mar: disclosedAttrAndValuesSetCopy){
             if(this.committedAttrs.contains(mar)) {
                 this.allDisclosedAttrsAndValues.remove(mar);
             }
@@ -519,7 +523,7 @@ public final class PolicyTranslator{
                 sb.append(xml);
             }
         }
-        // System.out.println(sb.toString());
+         System.out.println(sb.toString());
         if (!sb.toString().equals("null")){
             return sb.toString();
         } else {
@@ -755,8 +759,7 @@ public final class PolicyTranslator{
                         //////////////////////////////////////////////////////////////////////////////////////////////
                         // PS(constExp == constExp) => Nothing to prove for Idemix.
                         //////////////////////////////////////////////////////////////////////////////////////////////
-                        //TODO: verify the truth of that predicate
-
+                        
                     } else {
                         //////////////////////////////////////////////////////////////////////////////////////////////
                         // PS(constNonAttrExp == nonConstNonAttrExp) 		=> Not supported.
@@ -924,10 +927,6 @@ public final class PolicyTranslator{
         return this.allDisclosedAttrsAndValues;
     }
 
-    public List<CredentialInToken> getCredentialsInToken(){
-        return this.ptd.getCredential();
-    }
-
     public Map<String, CredentialInToken> getCredentialList() {
         return this.aliasCredInTokenList;
     }
@@ -974,6 +973,7 @@ public final class PolicyTranslator{
     public Map<String, CommittedKey> getAliasCommittedKeys(){
         return this.aliasCommittedKeys;
     }
+
 
     public Map<String, List<CommittedAttribute>> getAliasCommittedAttributes(){
         return this.aliasCommittedAttributes;

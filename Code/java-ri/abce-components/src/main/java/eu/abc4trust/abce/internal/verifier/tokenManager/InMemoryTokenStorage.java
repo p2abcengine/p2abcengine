@@ -33,71 +33,70 @@ import eu.abc4trust.xml.PseudonymInToken;
 
 public class InMemoryTokenStorage implements TokenStorage {
 
-	private final Map<URI, byte[]> tokens;
-	private final Map<String, String> pseudonyms;
+    private final Map<URI, byte[]> tokens;
+    private final Map<String, String> pseudonyms;
 
-	public InMemoryTokenStorage() {
-		super();
-		this.tokens = new HashMap<URI, byte[]>();
-		this.pseudonyms = new HashMap<String, String>();
-	}
+    public InMemoryTokenStorage() {
+        super();
+        this.tokens = new HashMap<URI, byte[]>();
+        this.pseudonyms = new HashMap<String, String>();
+    }
 
-	@Override
-	public byte[] getToken(URI tokenuid) {
-		return this.tokens.get(tokenuid);
-	}
+    @Override
+    public byte[] getToken(URI tokenuid) {
+        return this.tokens.get(tokenuid);
+    }
 
-	@Override
-	public void addToken(URI tokenuid, byte[] token) {
-		this.tokens.put(tokenuid, token);
-	}
+    @Override
+    public void addToken(URI tokenuid, byte[] token) {
+        this.tokens.put(tokenuid, token);
+    }
 
-	@Override
-	public boolean checkForPseudonym(String primaryKey) {
-		// Instead of iterating over all stored tokens, we use a seperate HashMap for storing pseudonyms from PresentationTokens
-		String result = this.pseudonyms.get(primaryKey);
-		if(result == null) {
-			return false;
-		}
-		else {
-			return true;
-		}
-	}
+    @Override
+    public boolean checkForPseudonym(String primaryKey) {
+        // Instead of iterating over all stored tokens, we use a seperate HashMap for storing pseudonyms from PresentationTokens
+        String result = this.pseudonyms.get(primaryKey);
+        if (result == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
-	@Override
-	public void addPseudonymPrimaryKey(String primaryKey) {
-		this.pseudonyms.put(primaryKey, "");
-	}
+    @Override
+    public void addPseudonymPrimaryKey(String primaryKey) {
+        this.pseudonyms.put(primaryKey, "");
+    }
 
-	@Override
-	public boolean deleteToken(URI tokenuid) throws Exception {
-		byte[] result = this.tokens.remove(tokenuid);
-		if(result != null) {
-			try {
-				
-				ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(result);
-				ObjectInput objectInput = new ObjectInputStream(byteArrayInputStream);
-				PresentationToken tokenResult = (PresentationToken)objectInput.readObject();
+    @Override
+    public boolean deleteToken(URI tokenuid) throws Exception {
+        byte[] result = this.tokens.remove(tokenuid);
+        if(result != null) {
+            try {
 
-				// Close the streams..
-				objectInput.close();
-				byteArrayInputStream.close();
-				List<PseudonymInToken> pseudonyms = tokenResult.getPresentationTokenDescription().getPseudonym();
-				
-				for(PseudonymInToken p: pseudonyms) {
-					String primaryKey = DatatypeConverter.printBase64Binary(p.getPseudonymValue());
-					this.pseudonyms.remove(primaryKey);
-				}
-				
+                ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(result);
+                ObjectInput objectInput = new ObjectInputStream(byteArrayInputStream);
+                PresentationToken tokenResult = (PresentationToken)objectInput.readObject();
 
-			} catch (Exception e) {
-				e.printStackTrace();
-				return false;
-			}
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
+                // Close the streams..
+                objectInput.close();
+                byteArrayInputStream.close();
+                List<PseudonymInToken> pseudonyms = tokenResult.getPresentationTokenDescription().getPseudonym();
+
+                for(PseudonymInToken p: pseudonyms) {
+                    String primaryKey = DatatypeConverter.printBase64Binary(p.getPseudonymValue());
+                    this.pseudonyms.remove(primaryKey);
+                }
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 }

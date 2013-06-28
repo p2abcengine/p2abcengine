@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+
+<html lang="en-gb" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Test page 1</title>
+    
+    <script type="text/javascript">
+        function Click() {
+            if (this.abc4trust == undefined) {
+                alert("Not loaded!");
+                return;
+            }
+
+            var result = this.abc4trust.Test("something");
+            alert(result.message);
+            alert(result.status);
+        }
+
+        
+        function SiteClick() {
+            
+            var result = this.abc4trust.ShowSite("http://www.abc4trust.eu");
+            alert(result.message);
+            alert(result.status);
+        }
+
+        function Issue() {
+            if (this.abc4trust == undefined) {
+                alert("Not loaded!");
+                return;
+            }
+            var selectedCredential = "University";
+            var selectedEngine = "IDEMIX";
+
+	    var baseURL = "http://hanss-macbook-pro.local:19500/pilot-patras/issue";
+            var issueURL = baseURL + "/start" + selectedCredential + "/issuanceKey";
+            issueURL = issueURL + "?matriculationnumber=1234&UserCryptoEngine="+selectedEngine;
+            var stepURL = baseURL + "/step?UserCryptoEngine="+selectedEngine;
+            var statusURL = null;
+
+            try {
+                var result = this.abc4trust.Issue("da", issueURL, stepURL, statusURL);
+                document.getElementById("verifyStatus").innerHTML = "Result calling Issuance " + result.message + " " + result.status;
+            } catch(exception){
+                document.getElementById("verifyStatus").innerHTML = "Error calling Issuance " + result.message + " " + result.status;
+                alert("Exception running presentaiton : " + exception);
+            } 
+
+        }
+
+        function Present() {
+              if (this.abc4trust == undefined) {
+                alert("Not loaded!");
+		return;
+              }
+
+              var selectedPolicy = "presentationPolicyPatrasUniversityLogin.xml";
+
+              var baseURL = "http://hanss-macbook-pro.local:9500/pilot-patras/verification";
+              var baseURL1 = "http://hanss-macbook-pro.local:19500/pilot-patras/verification";
+
+              var policyURL = baseURL + "/policy/" + selectedPolicy;
+              var verifyURL = baseURL + "/verify/" + selectedPolicy;
+
+              try {
+                  var result = this.abc4trust.Present("da", policyURL, verifyURL);
+                  document.getElementById("verifyStatus").innerHTML = "Result calling presentation " + result.message + " " + result.status;
+
+              } catch(exception){
+                  document.getElementById("verifyStatus").innerHTML = "Error calling presentation " + result.message + " " + result.status;
+                  alert("Exception running presentaiton : " + exception);
+              } 
+
+        }
+
+        function StoreData() {
+              alert("StoreData");
+              if (this.abc4trust == undefined) {
+                alert("Not loaded!");
+		return;
+              }
+              var input = document.getElementById("StoreData");
+              alert("Data : " + input);
+              alert("Data : " + input.value);
+              var data = input.value;
+	
+
+              try {
+                  var result = this.abc4trust.StoreData(data);
+                  document.getElementById("verifyStatus").innerHTML = "Result calling StoreData " + result.message + " " + result.status;
+
+              } catch(exception){
+                  document.getElementById("verifyStatus").innerHTML = "Error calling StoreData " + result.message + " " + result.status;
+                  alert("Exception running presentaiton : " + exception);
+              } 
+
+        }
+
+        function LoadData() {
+              if (this.abc4trust == undefined) {
+                alert("Not loaded!");
+		return;
+              }
+
+              try {
+                  var result = this.abc4trust.LoadData();
+                  document.getElementById("verifyStatus").innerHTML = "Result calling LoadData " + result.message + " " + result.status + " - data : " + result.data;
+
+              } catch(exception){
+                  document.getElementById("verifyStatus").innerHTML = "Error calling LoadData " + result.message + " " + result.status;
+                  alert("Exception running presentaiton : " + exception);
+              } 
+
+        }
+
+
+    </script>
+</head>
+<body>
+        <h1>Select Test:</h1>
+    <form>
+        <input type="button" onclick="Click()" value="Test" />
+        <input type="button" onclick="SiteClick()" value="Site" />
+
+        <input type="button" onclick="Issue()" value="Issue" />
+        <input type="button" onclick="Present()" value="Present" />
+        <input type="button" onclick="StoreData()" value="StoreData" />
+        <input type="button" onclick="LoadData()" value="LoadData" />
+
+    </form>
+        <h1>Verification Status :</h1>
+        <h2 id="verifyStatus">......</h2>
+        <h1>Strore Data :</h1>
+        <h2> <input type="text" id="StoreData" name="StoreData"></h2>
+        <h1>Load Data :</h1>
+        <h2 id="LoadData">......</h2>
+
+</body>
+</html>

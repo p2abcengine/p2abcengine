@@ -7,6 +7,7 @@
 
 package eu.abc4trust.returnTypes;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +22,11 @@ import eu.abc4trust.xml.IssuancePolicy;
 
 @XmlRootElement(name="UiPresentationArguments", namespace = "http://abc4trust.eu/wp2/abcschemav1.0") 
 public class UiIssuanceArguments implements AddTokenCandidate {
+  
+  /**
+   * A unique identifier for this object.
+   */
+  public URI uiContext;
   
   @XmlElement
   public UiCommonArguments data;
@@ -38,6 +44,7 @@ public class UiIssuanceArguments implements AddTokenCandidate {
   
   
   public UiIssuanceArguments() {
+    this.uiContext = null;
     this.data = new UiCommonArguments();
     this.tokenCandidates = new ArrayList<TokenCandidate>();
     this.policy = new IssuancePolicy();
@@ -52,7 +59,7 @@ public class UiIssuanceArguments implements AddTokenCandidate {
 
   @Override
   public String toString() {
-    return "UiIssuanceArguments [data=" + data + ", tokenCandidates=" + tokenCandidates
-        + ", policy=" + policy + "]";
+    return "UiIssuanceArguments [uiContext=" + uiContext + ", data=" + data + ", tokenCandidates="
+        + tokenCandidates + ", policy=" + policy + "]";
   }
 }

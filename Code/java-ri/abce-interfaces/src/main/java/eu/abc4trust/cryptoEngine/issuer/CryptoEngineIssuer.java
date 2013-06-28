@@ -15,11 +15,13 @@ import java.net.URI;
 import java.util.List;
 
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.returnTypes.IssuerParametersAndSecretKey;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.FriendlyDescription;
+import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.SystemParameters;
 
@@ -27,17 +29,17 @@ public interface CryptoEngineIssuer {
 
     /**
      * This method is invoked on an issuance policy (possibly containing only a
-     * credential specificationUIDin case of an issuance â€œfrom scratchâ€�),
-     * known attributes atts and a context string. It invokes the
-     * mechanism-specific cryptographic routines for the first step in an
-     * interactive issuance protocol and stores its cryptographic state in a
-     * temporary storage associated to the context. It finally returns an
-     * outgoing issuance message with the same context attribute ctxt, plus a
-     * boolean indicating whether this is the last flow of the issuance
-     * protocol. If the credential to be issued is subject to Issuer-driven
-     * revocation, then, depending on the revocation mechanism, the CryptoEngine
-     * may have to interact with the Revocation Authority. If so, then it
-     * prepares a mechanism-specific Revocation Message m and calling
+     * credential specificationUIDin case of an issuance from scratch), known
+     * attributes atts and a context string. It invokes the mechanism-specific
+     * cryptographic routines for the first step in an interactive issuance
+     * protocol and stores its cryptographic state in a temporary storage
+     * associated to the context. It finally returns an outgoing issuance
+     * message with the same context attribute ctxt, plus a boolean indicating
+     * whether this is the last flow of the issuance protocol. If the credential
+     * to be issued is subject to Issuer-driven revocation, then, depending on
+     * the revocation mechanism, the CryptoEngine may have to interact with the
+     * Revocation Authority. If so, then it prepares a mechanism-specific
+     * Revocation Message m and calling
      * RevocationProxy.processRevocationMessage(m, revpars).
      * 
      * @param ip
@@ -107,7 +109,15 @@ public interface CryptoEngineIssuer {
      * @return
      */
     public IssuerParametersAndSecretKey setupIssuerParameters(CredentialSpecification credspec,
-            SystemParameters syspars, URI uid, URI hash, URI revParsUid);
-  
-  
+            SystemParameters syspars, URI uid, URI hash, URI revParsUid, List<FriendlyDescription> friendlyIssuerDescription);
+
+    /**
+     * This method looks up an issuance log entry of previously issued
+     * credentials that contains a verified issuance token together with the
+     * attribute values provided by the issuer. The issuance log entry
+     * identifier issuanceEntryUid is the identifier that was included in the
+     * issuance token description that was returned when the token was verified.
+     */
+    IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid) throws Exception;
+
 }

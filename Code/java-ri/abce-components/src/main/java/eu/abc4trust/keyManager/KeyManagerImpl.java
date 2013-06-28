@@ -13,6 +13,7 @@ package eu.abc4trust.keyManager;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 
 import javax.xml.bind.JAXBElement;
 
@@ -33,6 +34,7 @@ import eu.abc4trust.xml.SystemParameters;
 
 public class KeyManagerImpl implements KeyManager {
 
+	private static final URI UPROVE_TOKENS_UID = URI.create("abc4trust:uprove_keys_and_tokens_uid");
     public static final String CURRENT_REVOCATION_UID_STR = "abc4trust:current_revocation_uid";
     private static final URI SYSTEM_PARAMETERS_UID = URI
             .create("abc4trust:system_parameters_uid");
@@ -343,4 +345,25 @@ public class KeyManagerImpl implements KeyManager {
             throw new KeyManagerException(ex);
         }
     }
+
+	@Override
+	public ArrayList<?> getCredentialTokens(URI uid){
+		try {
+			URI uri = URI.create(uid.toString()+UPROVE_TOKENS_UID);
+			return (ArrayList<?>)this.persistensStrategy.loadObject(uri);
+		} catch (PersistenceException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public void storeCredentialTokens(URI uid, ArrayList<?> tokens)
+			throws KeyManagerException {
+		try {
+			URI uri = URI.create(uid.toString()+UPROVE_TOKENS_UID);
+			this.persistensStrategy.writeObjectAndOverwrite(uri, tokens);
+		} catch (PersistenceException e) {
+			throw new KeyManagerException(e);
+		}
+	}
 }

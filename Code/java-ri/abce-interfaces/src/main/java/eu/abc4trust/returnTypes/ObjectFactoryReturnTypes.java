@@ -1,6 +1,10 @@
-//* Licensed Materials - Property of IBM                              *
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*/**/****************************************************************
@@ -48,4 +52,10 @@ public class ObjectFactoryReturnTypes {
   public static JAXBElement<UiIssuanceArguments> wrap(UiIssuanceArguments a) {
     return new JAXBElement<UiIssuanceArguments>(new QName("http://abc4trust.eu/wp2/abcschemav1.0", "UiIssuanceArguments"), UiIssuanceArguments.class, null, a);
   }
+  
+  @XmlElementDecl(namespace = "http://abc4trust.eu/wp2/abcschemav1.0", name = "UiManageCredentialData")
+  public static JAXBElement<UiManageCredentialData> wrap(UiManageCredentialData r) {
+    return new JAXBElement<UiManageCredentialData>(new QName("http://abc4trust.eu/wp2/abcschemav1.0", "UiManageCredentialData"), UiManageCredentialData.class, null, r);
+  }
+
 }

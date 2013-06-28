@@ -47,10 +47,10 @@ public class IntegrationModuleFactory {
     });
   }
 
-  public static Module newModule(Random random, CryptoEngine cryptoEngine) {
-    Integer uprovePortNumber = null;
-    return newModule(random, cryptoEngine, uprovePortNumber);
-  }
+//  public static Module newModule(Random random, CryptoEngine cryptoEngine) {
+//    Integer uprovePortNumber = null;
+//    return newModule(random, cryptoEngine, uprovePortNumber);
+//  }
   
   public static Module newModule(Random random, Integer uProvePortNumber) {
     return newModule(random, CryptoEngine.UPROVE, uProvePortNumber);
@@ -61,10 +61,11 @@ public class IntegrationModuleFactory {
     return newModule(random, CryptoEngine.UPROVE, uProvePortNumber, revocationProxyAuthority);
   }
 
-  public static Module newModule(Random random, CryptoEngine cryptoEngine,
-                                 final RevocationProxyAuthority revocationProxyAuthority) {
-    return newModule(random, cryptoEngine, null, revocationProxyAuthority);
-  }
+//  public static Module newModule(Random random, CryptoEngine cryptoEngine,
+//                                 final RevocationProxyAuthority revocationProxyAuthority) {
+//    return newModule(random, cryptoEngine, null, revocationProxyAuthority);
+//  }
+  
   public static Module newModule(Random random, CryptoEngine cryptoEngine, Integer uProvePortNumber,
       final RevocationProxyAuthority revocationProxyAuthority) {
 
@@ -94,10 +95,10 @@ public class IntegrationModuleFactory {
     config.setPrng(random);
     config.setDefaultImagePath("file://error");
     config.setUProveRetryTimeout(10);
-    config.setUProveNumberOfCredentialsToGenerate(2);
-    config.setUProveWorkingDirectory(null);
-    config.setUProvePathToExe(new UProveUtils().getPathToUProveExe().getAbsolutePath());
     config.setUProvePortNumber(uProvePortNumber);
+    config.setUProveNumberOfCredentialsToGenerate(3);
+    config.setUProveWorkingDirectory(null);
+    config.setUProvePathToExe(new UProveUtils().getPathToUProveExe().getAbsolutePath());    
     return config;
   }
 }

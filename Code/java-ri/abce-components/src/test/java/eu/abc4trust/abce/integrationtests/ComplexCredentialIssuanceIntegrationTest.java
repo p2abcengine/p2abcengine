@@ -29,6 +29,7 @@ import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
 import eu.abc4trust.cryptoEngine.issuer.MockCryptoEngineIssuer;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.xml.Attribute;
@@ -79,9 +80,9 @@ public class ComplexCredentialIssuanceIntegrationTest {
 
         Injector issuerInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1984),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1985), cryptoEngine));
+                new Random(1985), cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
         // Step 2. Load the credit card specification into the keystore.
         CredentialSpecification creditCard = (CredentialSpecification) XmlUtils

@@ -23,15 +23,15 @@ import org.junit.Test;
 
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper;
-import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper.SpecAndPolicy;
+import eu.abc4trust.ri.servicehelper.issuer.SpecAndPolicy;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
 import eu.abc4trust.smartcard.RSAKeyPair;
 import eu.abc4trust.smartcard.RSAVerificationKey;
 import eu.abc4trust.smartcard.Smartcard;
 import eu.abc4trust.smartcardManager.AbcSmartcardManager;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.SystemParameters;
@@ -95,7 +95,7 @@ public class SetupPatrasPilotTest {
         String fileStoragePrefix = this.getFolderName(ISSUER_STORAGE_FOLDER) + "/";
 
         IssuanceHelper.initInstance(CryptoEngine.IDEMIX, systemAndIssuerParamsPrefix,
-                fileStoragePrefix, university, cource);
+                fileStoragePrefix, null, university, cource);
 
         System.out.println("setupIssuerParams Done");
     }
@@ -167,14 +167,14 @@ public class SetupPatrasPilotTest {
         System.out.println("DEVICE URI FORM SC : " + softwareSmartcard.getDeviceURI(newPin));
 
         //
-        PKIKeyTool.signIssuerParameters(CryptoEngine.IDEMIX, issuerParameters_credUniv, softwareSmartcard, newPin, pki_sk_root, null, null);
+        PKIKeyTool.signIssuerParameters(CryptoEngine.IDEMIX, issuerParameters_credUniv, softwareSmartcard, pki_sk_root, null, null);
 
         //
         IssuerParameters issuerParameters_credCourse =
                 PKIKeyTool.loadObjectFromResource(this.getFolderName(ISSUER_RESOURCES_FOLDER)
                         + "/issuer_params_urn_patras_issuer_credCourse_idemix");
 
-        PKIKeyTool.signIssuerParameters(CryptoEngine.IDEMIX, issuerParameters_credCourse, softwareSmartcard, newPin, pki_sk_root, null, null);
+        PKIKeyTool.signIssuerParameters(CryptoEngine.IDEMIX, issuerParameters_credCourse, softwareSmartcard, pki_sk_root, null, null);
 
 
 
@@ -255,7 +255,7 @@ public class SetupPatrasPilotTest {
             IssuanceMessageAndBoolean server_im_step = IssuanceHelper.getInstance().issueStep(user_im.im);
 
             // send to server and receive new im
-            server_im = server_im_step.im;
+            server_im = server_im_step.getIssuanceMessage();
             System.out.println(" - got response");
             System.out.println(" - step message - server : " + stepCount + " : "
                     + XmlUtils.toXml(this.of.createIssuanceMessage(server_im), false));

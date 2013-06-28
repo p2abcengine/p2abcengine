@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://abc4trust/skin/overlay.css" type="text/css"?>
+<!DOCTYPE overlay SYSTEM "chrome://abc4trust/locale/overlay.dtd">
+<overlay id="abc4trust-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script src="xmltools.js"/>
+  <script src="jquery-1.7.js"/>
+  <script src="abc4trust.js"/>
+  <script src="overlay.js"/>
+  <script src="idselect.js"/>
+  <script src="credentialui.js"/>
+  <stringbundleset id="stringbundleset">
+		<stringbundle id="overlayStrings" src="chrome://abc4trust/locale/overlay.properties"/>
+  </stringbundleset>
+
+  <menupopup id="menu_ToolsPopup">
+    <menuseparator/> 
+    <menu id="menu_ABC4Trust_new" label="ABC4Trust Menu">
+      <menupopup>
+        <menuitem id="abc4trust-listCredentials" label="&menu.manage;"
+            oncommand="abc4trust.listCredentials();"/>
+        <menuitem id="abc4trust-checkRevocationStatus" label="&menu.revocation;"
+        	oncommand="abc4trust.checkRevocationStatus();"/>
+            <!--
+        <menuitem id="abc4trust-backupRestore" label="ABC4Trust : Backup Smartcard"
+            oncommand="abc4trust.backupSmartcard();"/>
+        <menuitem id="abc4trust-backupRestore" label="ABC4Trust : Restore Smartcard"
+            oncommand="abc4trust.restoreSmartcard();"/>
+            -->
+        <menuitem id="abc4trust-backupRestore" label="&menu.changepin;"
+            oncommand="abc4trust.changePin();"/>
+        <menuitem id="abc4trust-backupRestore" label="&menu.unlock;"
+            oncommand="abc4trust.unlockCard();"/>
+        <menuitem id="abc4trust-backupRestore" label="&menu.debug;"
+            oncommand="abc4trust.debugInfo();"/>
+      </menupopup> 
+    </menu> 
+  </menupopup> 
+
+</overlay>

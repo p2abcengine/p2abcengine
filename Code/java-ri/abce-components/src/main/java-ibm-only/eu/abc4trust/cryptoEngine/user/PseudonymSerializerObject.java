@@ -11,23 +11,40 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.URI;
 
+import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 
 /**
  * This class serializes pseudonym using java object streams.
  * @author enr
  */
-public class PseudonymSerializerObject implements PseudonymSerializer {
+public class PseudonymSerializerObject extends AbstractPseudonymSerializer {
 
+	private final CardStorage cardStorage;
+	
+	public PseudonymSerializerObject(CardStorage cardStorage){
+		this.cardStorage = cardStorage;
+	}
+	
+	@Override
+	public CardStorage getCardStorage(){
+		return this.cardStorage;
+	}
+	
   @Override
-  public byte[] serializePseudonym(PseudonymWithMetadata cred) {
+  public byte[] serializePseudonym(PseudonymWithMetadata pwm) {
+	  if(pwm.getPseudonym().isExclusive()){
+		  return this.serializeExclusivePseudonym(pwm);
+	  }
+	  
     try {
       ByteArrayOutputStream ser = new ByteArrayOutputStream();
       ser.write(magicHeader());
       
       ObjectOutputStream objectOutput = new ObjectOutputStream(ser);
-      objectOutput.writeObject(cred);
+      objectOutput.writeObject(pwm);
       
       return ser.toByteArray();
     } catch (Exception e) {
@@ -36,12 +53,22 @@ public class PseudonymSerializerObject implements PseudonymSerializer {
   }
 
   @Override
-  public PseudonymWithMetadata unserializePseudonym(byte[] data) {
+  public PseudonymWithMetadata unserializePseudonym(byte[] data, URI pseudonymUID) {
+	  PseudonymWithMetadata pwm;
+	  try{
+		  pwm = this.unserializeExclusivePseudonym(data, pseudonymUID);
+		  if(pwm != null){
+			  return pwm;
+		  }
+	  }catch(Exception e){
+		  //Not scope-exclusive. Trying normal pseudonym
+	  }
+	  
     try {
       ByteArrayInputStream bais = new ByteArrayInputStream(data);
       int header = bais.read();
       if(header != magicHeader()) {
-        throw new RuntimeException("Cannot unserialize this credential: header was " + header +
+        throw new RuntimeException("Cannot unserialize this pseudonym: header was " + header +
           " expected header " + magicHeader());
       }
       ObjectInputStream objectInput = new ObjectInputStream(bais);

@@ -1,10 +1,11 @@
 //* Licensed Materials - Property of IBM, Miracle A/S,                *
-//* and Alexandra Instituttet A/S                                     *
+//* Alexandra Instituttet A/S, and Microsoft                          *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
 //* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
 //* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
 //* Rights Reserved.                                                  *
+//* (C) Copyright Microsoft Corp. 2012. All Rights Reserved.          *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*/**/****************************************************************
@@ -48,6 +49,7 @@ import org.datacontract.schemas._2004._07.abc4trust_uprove.ArrayOfUProveKeyAndTo
 import org.datacontract.schemas._2004._07.abc4trust_uprove.FirstIssuanceMessageComposite;
 import org.datacontract.schemas._2004._07.abc4trust_uprove.IssuerParametersComposite;
 import org.datacontract.schemas._2004._07.abc4trust_uprove.SecondIssuanceMessageComposite;
+import org.datacontract.schemas._2004._07.abc4trust_uprove.SubgroupGroupDescriptionComposite;
 import org.datacontract.schemas._2004._07.abc4trust_uprove.ThirdIssuanceMessageComposite;
 import org.datacontract.schemas._2004._07.abc4trust_uprove.UProveKeyAndTokenComposite;
 import org.datacontract.schemas._2004._07.abc4trust_uprove.UProveTokenComposite;
@@ -222,8 +224,8 @@ public class UProveUtils {
 
         // abc:IssuerParameters:abc:SystemParameters <-- ipc.Gq (group description)
         UProveSystemParameters uproveSyspars = new UProveSystemParameters(syspars);
-        if(uproveSyspars.getGroupOID()==null) {
-            syspars.getAny().add(new UProveSerializer().createGroupOIDElement(ipc.getGq().getValue()));
+        if (uproveSyspars.getGroupOID() == null) {
+            syspars.getAny().add(new UProveSerializer().createGroupOIDElement(ipc.getGroupName().getValue()));
         }
         ip.setSystemParameters(syspars);
 
@@ -234,6 +236,7 @@ public class UProveUtils {
             throw new RuntimeException(e);
         }
 
+        
         CryptoParams cryptoParams = of.createCryptoParams();
 
         cryptoParams.getAny().add(ipc.getE().getValue());
@@ -243,6 +246,7 @@ public class UProveUtils {
         cryptoParams.getAny().add(ipc.getUidH().getValue());
         cryptoParams.getAny().add(ipc.getUidP().getValue());
         cryptoParams.getAny().add(new Boolean(ipc.isUsesRecommendedParameters()));
+        cryptoParams.getAny().add(new UProveSerializer().createSubgroupGroupDescriptionCompositeElement(ipc.getGq().getValue()));
         ip.setCryptoParams(cryptoParams);
 
         return ip;
@@ -254,15 +258,18 @@ public class UProveUtils {
 
         IssuerParametersComposite ipc = new IssuerParametersComposite();
 
-        SystemParameters systemParameters = ip.getSystemParameters();
-        UProveSystemParameters uproveSystemParameters = new UProveSystemParameters(systemParameters);
-        ipc.setGq(ofup.createIssuerParametersCompositeGq(uproveSystemParameters.getGroupOID()));
+        //SystemParameters systemParameters = ip.getSystemParameters();
+        //UProveSystemParameters uproveSystemParameters = new UProveSystemParameters(systemParameters);
+        
+        //ipc.setGq(ofup.createIssuerParametersCompositeGq(uproveSystemParameters.getGroupDesc()));
         ipc.setHashFunctionOID(ofup.createIssuerParametersCompositeHashFunctionOID(ip.getHashAlgorithm().toString()));
 
         CryptoParams cryptoEvidence = ip.getCryptoParams();
         ipc.setE(ofup.createIssuerParametersCompositeE((byte[])cryptoEvidence.getAny().get(0)));
         ArrayOfbase64Binary aob = ofup2.createArrayOfbase64Binary();
         @SuppressWarnings("unchecked")
+        // TODO XXX this is so broken. we should not just depend on the order of how we put the values into 
+        // cryptoEvidence. This should be order into different types that we can match on.
         List<byte[]> byteArrayList = (List<byte[]>)cryptoEvidence.getAny().get(1);
         aob.getBase64Binary().addAll(byteArrayList);
         ipc.setG(ofup.createIssuerParametersCompositeG(aob));
@@ -272,7 +279,9 @@ public class UProveUtils {
         ipc.setUidH(ofup.createIssuerParametersCompositeUidH((String)cryptoEvidence.getAny().get(4)));
         ipc.setUidP(ofup.createIssuerParametersCompositeUidP((byte[])cryptoEvidence.getAny().get(5)));
         ipc.setUsesRecommendedParameters((Boolean)cryptoEvidence.getAny().get(6));
-
+        Element element = (Element) cryptoEvidence.getAny().get(7);
+        SubgroupGroupDescriptionComposite foo = new UProveSerializer().getSubGroup("Gq", element);
+        ipc.setGq(ofup.createIssuerParametersCompositeGq(foo));
         return ipc;
     }
 
@@ -353,14 +362,12 @@ public class UProveUtils {
         return tic;
     }
 
-    public static BigInteger getModulus(String OID){
-
-        if("1.3.6.1.4.1.311.75.1.1.1".equals(OID)) {
-            return new BigInteger("ef0990061db67a9eaeba265f1b8fa12b553390a8175bcb3d0c2e5ee5dfb826e229ad37431148ce31f8b0e531777f19c1e381c623e600bff7c55a23a8e649ccbcf833f2dba99e6ad66e52378e92f7492b24ff8c1e6fb189fa8434f5402fe415249ae02bf92b3ed8eaaaa2202ec3417b2079da4f35e985bb42a421cfaba8160b66949983384e56365a4486c046229fc8c818f930b80a60d6c2c2e20c5df880534d4240d0d81e9a370eef676a1c3b0ed1d8ff30340a96b21b89f69c54ceb8f3df17e31bc20c5b601e994445a1d347a45d95f41ae07176c7380c60db2aceddeeda5c5980964362e3a8dd3f973d6d4b241bcf910c7f7a02ed3b60383a0102d8060c27", 16);
-        }
-
-        return null;
+    public static BigInteger getModulus(SubgroupGroupDescriptionComposite OID){
+    	BigInteger foo = new BigInteger(1, OID.getP().getValue()); 
+    	return foo;
     }
+    
+    
 
     private static String STRING_SHA_256 = "urn:abc4trust:1.0:encoding:string:sha-256";
     private static String ANYURI_SHA_256 = "urn:abc4trust:1.0:encoding:anyUri:sha-256";
@@ -462,7 +469,7 @@ public class UProveUtils {
         }
     }
     
-    private static final int UPROVE_COMMON_PORT = 32123;
+    public static final int UPROVE_COMMON_PORT = 32123;
     public int getIssuerServicePort() {
         return UPROVE_COMMON_PORT;
     }
@@ -475,6 +482,9 @@ public class UProveUtils {
     public int getInspectorServicePort() {
         return UPROVE_COMMON_PORT;
     }
+    public int getReIssuerServicePort() {
+    	return UPROVE_COMMON_PORT;
+	}    
     public boolean startUProveServicIfNotRunning() {
         return false;
     }
@@ -605,5 +615,5 @@ public class UProveUtils {
             strings.add(string);
         }
         return arrayOfStringAttributesParam;
-    }
+    }	
 }

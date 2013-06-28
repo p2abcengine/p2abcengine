@@ -89,13 +89,13 @@ public class ReloadUProveTokensTest {
         UProveUtils uproveUtils = new UProveUtils();
 
         // Get Injectors,
-        Injector revocationInjector = Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), CryptoEngine.IDEMIX));
+        Injector revocationInjector = Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector.getInstance(RevocationProxyAuthority.class);
 
         Injector governmentInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231), 
        		 IssuerCryptoEngine.UPROVE, uproveUtils.getIssuerServicePort(), revocationProxyAuthority));
 
-        Injector fakeInjector = Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), CryptoEngine.IDEMIX));
+        Injector fakeInjector = Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231), CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231), 
        		 uproveUtils.getUserServicePort(), revocationProxyAuthority));
@@ -153,13 +153,13 @@ public class ReloadUProveTokensTest {
         
         Reference revocationInfoReference = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(URI.create("example.org"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
                 .setupRevocationAuthorityParameters(keyLength,
                         CryptoUriUtil.getIdemixMechanism(), revParamsUid,
@@ -171,7 +171,7 @@ public class ReloadUProveTokensTest {
         URI hash = new URI("urn:abc4trust:1.0:hashalgorithm:sha-256");
         IssuerParameters issuerParametersGovernment = governmentEngine.setupIssuerParameters(
        		 credSpecIdCard, systemParameters, idCardIssuancePolicyUid, hash, 
-       		 CryptoUriUtil.getUproveMechanism(), revParamsUid);
+       		 CryptoUriUtil.getUproveMechanism(), revParamsUid, null);
 
         issuerKeyManager.storeRevocationAuthorityParameters(revParamsUid, revocationAuthorityParameters);
         userKeyManager.storeRevocationAuthorityParameters(revParamsUid, revocationAuthorityParameters);

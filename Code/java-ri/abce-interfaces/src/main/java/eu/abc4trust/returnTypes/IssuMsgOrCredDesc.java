@@ -15,6 +15,25 @@ import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.IssuanceMessage;
 
 public class IssuMsgOrCredDesc {
+
   public IssuanceMessage im;
   public CredentialDescription cd;
+  
+  public IssuMsgOrCredDesc() {
+    this.im = null;
+    this.cd = null;
+  }
+  
+  public IssuMsgOrCredDesc(IssuanceMessage im) {
+    this.im = im;
+    this.cd = null;
+  }
+  
+  public IssuMsgOrCredDesc(IssuanceReturn ir) {
+    if(ir.uia != null) {
+      throw new RuntimeException("Cannot convert IssuanceReturn->IssuMsgOrCredDesc containing UiIssuanceArguments");
+    }
+    this.im = ir.im;
+    this.cd = ir.cd;
+  }
 }

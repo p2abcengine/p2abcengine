@@ -102,7 +102,7 @@ public class IssuerRevocation {
             attd.setEncoding(encoding);
             attd.setType(type);
             revocationHandleAttribute.setAttributeDescription(attd);
-            attrs.add(revocationHandleAttribute);
+            attrs.add(0, revocationHandleAttribute);
         }
 
         // if the user replied already

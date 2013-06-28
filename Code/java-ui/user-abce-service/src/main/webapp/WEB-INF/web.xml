@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This web.xml file is not required when using Servlet 3.0 container, 
+     see implementation details http://jersey.java.net/nonav/documentation/latest/jax-rs.html#d4e194 -->
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <servlet id="bridge">
+    <servlet-name>equinoxbridgeservlet</servlet-name>
+    <display-name>Equinox Bridge Servlet</display-name>
+    <description>Equinox Bridge Servlet</description>
+    <servlet-class>org.eclipse.equinox.servletbridge.BridgeServlet</servlet-class>
+
+    <init-param>
+      <param-name>commandline</param-name>
+      <param-value> -registryMultiLanguage -console 10001 <!-- -consoleLog --></param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>enableFrameworkControls</param-name>
+      <param-value>true</param-value>
+    </init-param>
+
+    <!--
+      When the framework is deployed, an extension bundle must be present to allow the Servlet API to
+      be exported by the container.  Typically, this extension bundle is created at deploy time by the
+      FrameworkLauncher.  If, however, an extension bundle (with id 'org.eclipse.equinox.servletbridge.extensionbundle') is
+      already present in the 'plugins' area, then preference is given to the existing bundle.
+      If this param is set to 'true', then the existing extension bundle with be *overridden* and
+      the one created by the FrameworkLauncher will replace any existing one.  The default is 'false'
+      (giving preference to the existing extension bundle if present).
+
+      default: false
+    <init-param>
+      <param-name>overrideAndReplaceExtensionBundle</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    -->
+
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>equinoxbridgeservlet</servlet-name>
+    <url-pattern>/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- session timeout in minutes -->
+  <session-config>
+    <session-timeout>20</session-timeout>
+  </session-config>
+
+    <servlet>
+        <servlet-name>Jersey Web Application</servlet-name>
+        <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>com.sun.jersey.config.property.packages</param-name>
+            <param-value>eu.abc4trust.ui.idselectservice</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>Jersey Web Application</servlet-name>
+        <url-pattern>/idselect-user-service/*</url-pattern>
+    </servlet-mapping>
+    <listener>
+		<listener-class>eu.abc4trust.ui.idselectservice.SmartcardServletContext</listener-class>
+	</listener>
+    <listener>
+		<listener-class>eu.abc4trust.ui.idselectservice.InitUserABCEServletContext</listener-class>
+	</listener>
+</web-app>

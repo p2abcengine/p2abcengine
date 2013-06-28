@@ -30,6 +30,7 @@ import com.google.inject.Injector;
 
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
+import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.revocation.RevocationConstants;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.testharness.BridgingModuleFactory;
@@ -67,7 +68,7 @@ import eu.abc4trust.xml.util.XmlUtils;
 //@Ignore
 public class RevocationTest {
     private static final String URN_ABC4TRUST_1_0_ALGORITHM_IDEMIX = "urn:abc4trust:1.0:algorithm:idemix";
-    	 
+
     //@Ignore
     @Test
     public void revocationTest() throws Exception {
@@ -92,11 +93,18 @@ public class RevocationTest {
                     IntegrationTestUtil.REVOCATION_PARAMETERS_UID);
             assertNotNull(pt);
 
+            UserAbcEngine userEngine = userInjector
+                    .getInstance(UserAbcEngine.class);
+            URI credUid = cd.getCredentialUID();
+            assertTrue(!userEngine.isRevoked(credUid));
+
             Attribute revocationHandleAttribute = RevocationTest.this
                     .getRevocationHandle(cd);
             // Step 3. Revoke credential.
             RevocationTest.this.revokeCredential(revocationInjector,
                     issuanceHelper, revParamsUid, revocationHandleAttribute);
+
+            assertTrue(userEngine.isRevoked(credUid));
 
             // The verifier needs to retrive the latest revocation information
             // in order to put in the UID in the presentation policy.
@@ -110,8 +118,8 @@ public class RevocationTest {
         }
     }
 
-//    @Ignore
-    @Test 
+    //    @Ignore
+    @Test
     public void multipleRevokeRevocationTest() throws Exception {
         this.runRevocationTest(new MultipleRevokeRevocationTest());
     }
@@ -128,35 +136,54 @@ public class RevocationTest {
                     .issueAndStoreIdCard(
                             governmentInjector, userInjector, issuanceHelper,
                             "1995-05-05Z");
-            
+
             CredentialDescription cd2 = IntegrationTestUtil
                     .issueAndStoreIdCard(
-                    		governmentInjector, userInjector, issuanceHelper, 
-                    		"1995-05-05Z");
-            
+                            governmentInjector, userInjector, issuanceHelper,
+                            "1995-05-05Z");
+
             CredentialDescription cd3 = IntegrationTestUtil
-            		.issueAndStoreIdCard(
-            				governmentInjector, userInjector, issuanceHelper, 
-            				"1995-05-05Z");
+                    .issueAndStoreIdCard(
+                            governmentInjector, userInjector, issuanceHelper,
+                            "1995-05-05Z");
 
             // Step 2. Get an account (pseudonym) using the identity card.
             PresentationToken pt = IntegrationTestUtil.createAccount(
                     userInjector, verifierInjector, issuanceHelper,
                     IntegrationTestUtil.REVOCATION_PARAMETERS_UID);
             assertNotNull(pt);
-            
+
             // Step 3. Revoke credentials.
+            // Step 3a. Check that the credentials are not revoked.
+            UserAbcEngine userEngine = userInjector
+                    .getInstance(UserAbcEngine.class);
+            URI credUid1 = cd1.getCredentialUID();
+            assertTrue(!userEngine.isRevoked(credUid1));
+
+            URI credUid2 = cd2.getCredentialUID();
+            assertTrue(!userEngine.isRevoked(credUid2));
+
+            URI credUid3 = cd3.getCredentialUID();
+            assertTrue(!userEngine.isRevoked(credUid3));
+
+            // 3b. Revoke credentials
             Attribute revocationHandleAttribute = RevocationTest.this
                     .getRevocationHandle(cd1);
             RevocationTest.this.revoke(revocationInjector, issuanceHelper,
                     revParamsUid,
                     revocationHandleAttribute);
 
+            assertTrue(userEngine.isRevoked(credUid1));
+
             revocationHandleAttribute = RevocationTest.this
                     .getRevocationHandle(cd2);
             RevocationTest.this.revoke(revocationInjector, issuanceHelper,
                     revParamsUid,
                     revocationHandleAttribute);
+
+            assertTrue(userEngine.isRevoked(credUid2));
+
+            assertTrue(!userEngine.isRevoked(credUid3));
 
             // The verifier needs to retrive the latest revocation information
             // in order to put in the UID in the presentation policy.
@@ -211,7 +238,7 @@ public class RevocationTest {
             RevocationInformation revocationInformation,
             URI chosenPresentationToken) throws Exception {
         try {
-        	IntegrationTestUtil.loginToAccount(userInjector, verifierInjector,
+            IntegrationTestUtil.loginToAccount(userInjector, verifierInjector,
                     issuanceHelper, IntegrationTestUtil.REVOCATION_PARAMETERS_UID,
                     revocationInformation, chosenPresentationToken);
             fail("We should not be allowed to log in with a revoked credential");
@@ -225,9 +252,16 @@ public class RevocationTest {
                     ex.getMessage()
                     .startsWith(
                             "The crypto evidence in the presentation token is not valid"));
+        } catch(RuntimeException ex) {
+          assertTrue(
+            "We expect failure to generate a presentation Token",
+            ex.getMessage()
+            .startsWith(
+                    "Cannot generate presentationToken") ||
+            ex.getMessage().startsWith("Cannot choose credential, URI does not exist!"));
         }
     }
-    
+
     private void revokedCredentialsShouldNotBeAllowed(Injector userInjector,
             Injector verifierInjector, IssuanceHelper issuanceHelper,
             RevocationInformation revocationInformation,
@@ -247,6 +281,12 @@ public class RevocationTest {
                     ex.getMessage()
                     .startsWith(
                             "The crypto evidence in the presentation token is not valid"));
+        } catch(RuntimeException ex) {
+          assertTrue(
+            "We expect failure to generate a presentation Token",
+            ex.getMessage()
+            .startsWith(
+                    "Cannot generate presentationToken"));
         }
     }
 
@@ -261,21 +301,21 @@ public class RevocationTest {
 
         Injector revocationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
 
         Injector governmentInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine,
-                        revocationProxyAuthority));
+                        UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
 
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1231), cryptoEngine, revocationProxyAuthority));
+                new Random(1231), cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
 
         Injector verifierInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, revocationProxyAuthority));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
 
         IssuerAbcEngine governmentEngine = governmentInjector
                 .getInstance(IssuerAbcEngine.class);
@@ -318,7 +358,7 @@ public class RevocationTest {
         CredentialSpecification credSpecIdCard = (CredentialSpecification) XmlUtils
                 .getObjectFromXML(
                         this.getClass().getResourceAsStream(
-                        		IntegrationTestUtil.CREDENTIAL_SPECIFICATION_ID_CARD), true);
+                                IntegrationTestUtil.CREDENTIAL_SPECIFICATION_ID_CARD), true);
 
         // Store credential specifications.
         URI credSpecIdCardUID = credSpecIdCard.getSpecificationUID();
@@ -332,13 +372,13 @@ public class RevocationTest {
         URI revParamsUid = IntegrationTestUtil.REVOCATION_PARAMETERS_UID;
         Reference revocationInfoReference = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(
+        nonRrevocationUpdateReference.getReferences().add(
                 URI.create("example.org"));
         RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
                 .setupRevocationAuthorityParameters(keyLength,
@@ -351,7 +391,7 @@ public class RevocationTest {
         IssuerParameters issuerParametersGovernment = governmentEngine
                 .setupIssuerParameters(credSpecIdCard, systemParameters,
                         idCardIssuancePolicyUid, hash, cryptoMechanism,
-                        revParamsUid);
+                        revParamsUid, null);
 
         issuerKeyManager.storeRevocationAuthorityParameters(revParamsUid,
                 revocationAuthorityParameters);
@@ -421,7 +461,7 @@ public class RevocationTest {
 
         Injector revocationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        CryptoEngine.IDEMIX));
+                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
@@ -431,7 +471,7 @@ public class RevocationTest {
                         IssuerCryptoEngine.UPROVE, uproveUtils.getIssuerServicePort(), revocationProxyAuthority));
 
         Injector fakeInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1231), CryptoEngine.IDEMIX));
+                new Random(1231), CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(
                 new Random(1231), uproveUtils.getUserServicePort(), revocationProxyAuthority));
@@ -480,7 +520,7 @@ public class RevocationTest {
         IssuancePolicy issuancePolicyIdCard = (IssuancePolicy) XmlUtils
                 .getObjectFromXML(
                         this.getClass().getResourceAsStream(
-                        		IntegrationTestUtil.ISSUANCE_POLICY_ID_CARD), true);
+                                IntegrationTestUtil.ISSUANCE_POLICY_ID_CARD), true);
 
         URI idCardIssuancePolicyUid = issuancePolicyIdCard
                 .getCredentialTemplate().getIssuerParametersUID();
@@ -489,7 +529,7 @@ public class RevocationTest {
         CredentialSpecification credSpecIdCard = (CredentialSpecification) XmlUtils
                 .getObjectFromXML(
                         this.getClass().getResourceAsStream(
-                        		IntegrationTestUtil.CREDENTIAL_SPECIFICATION_ID_CARD), true);
+                                IntegrationTestUtil.CREDENTIAL_SPECIFICATION_ID_CARD), true);
 
         // Store credential specifications.
         URI credSpecIdCardUID = credSpecIdCard.getSpecificationUID();
@@ -504,13 +544,13 @@ public class RevocationTest {
         URI revParamsUid = IntegrationTestUtil.REVOCATION_PARAMETERS_UID;
         Reference revocationInfoReference = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(URI.create("example.org"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
                 .setupRevocationAuthorityParameters(keyLength,
                         CryptoUriUtil.getIdemixMechanism(), revParamsUid,
@@ -524,7 +564,7 @@ public class RevocationTest {
         IssuerParameters issuerParametersGovernment = governmentEngine
                 .setupIssuerParameters(credSpecIdCard, systemParameters,
                         idCardIssuancePolicyUid, hash,
-                        CryptoUriUtil.getUproveMechanism(), revParamsUid);
+                        CryptoUriUtil.getUproveMechanism(), revParamsUid, null);
 
         issuerKeyManager.storeRevocationAuthorityParameters(revParamsUid,
                 revocationAuthorityParameters);
@@ -580,15 +620,21 @@ public class RevocationTest {
                 verifierInjector, issuanceHelper, IntegrationTestUtil.REVOCATION_PARAMETERS_UID);
         assertNotNull(pt);
 
+        // Step 3a. Check that the credentials are not revoked.
+        UserAbcEngine userEngine = userInjector
+                .getInstance(UserAbcEngine.class);
+        URI credUid = cd.getCredentialUID();
+        assertTrue(!userEngine.isRevoked(credUid));
 
         Attribute revocationHandleAttribute = RevocationTest.this
                 .getRevocationHandle(cd);
 
-        // Step 3. Revoke credential.
+        // Step 3b. Revoke credential.
         RevocationTest.this.revokeCredential(revocationInjector,
                 issuanceHelper, revParamsUid, revocationHandleAttribute);
 
-        
+        assertTrue(userEngine.isRevoked(credUid));
+
         // The verifier needs to retrive the latest revocation information
         // in order to put in the UID in the presentation policy.
         RevocationInformation revocationInformation = revocationEngine
@@ -624,7 +670,7 @@ public class RevocationTest {
 
         Injector revocationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        CryptoEngine.IDEMIX));
+                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
@@ -634,7 +680,7 @@ public class RevocationTest {
                         IssuerCryptoEngine.UPROVE, uproveUtils.getIssuerServicePort(), revocationProxyAuthority));
 
         Injector fakeInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1231), CryptoEngine.IDEMIX));
+                new Random(1231), CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
 
         Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(
                 new Random(1231), uproveUtils.getUserServicePort(), revocationProxyAuthority));
@@ -682,7 +728,7 @@ public class RevocationTest {
         IssuancePolicy issuancePolicyIdCard = (IssuancePolicy) XmlUtils
                 .getObjectFromXML(
                         this.getClass().getResourceAsStream(
-                        		IntegrationTestUtil.ISSUANCE_POLICY_ID_CARD), true);
+                                IntegrationTestUtil.ISSUANCE_POLICY_ID_CARD), true);
 
         URI idCardIssuancePolicyUid = issuancePolicyIdCard
                 .getCredentialTemplate().getIssuerParametersUID();
@@ -691,7 +737,7 @@ public class RevocationTest {
         CredentialSpecification credSpecIdCard = (CredentialSpecification) XmlUtils
                 .getObjectFromXML(
                         this.getClass().getResourceAsStream(
-                        		IntegrationTestUtil.CREDENTIAL_SPECIFICATION_ID_CARD), true);
+                                IntegrationTestUtil.CREDENTIAL_SPECIFICATION_ID_CARD), true);
 
         // Store credential specifications.
         URI credSpecIdCardUID = credSpecIdCard.getSpecificationUID();
@@ -706,13 +752,13 @@ public class RevocationTest {
         URI revParamsUid = IntegrationTestUtil.REVOCATION_PARAMETERS_UID;
         Reference revocationInfoReference = new Reference();
         revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getAny().add(URI.create("example.org"));
+        revocationInfoReference.getReferences().add(URI.create("example.org"));
         Reference nonRevocationEvidenceReference = new Reference();
         nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getAny().add(URI.create("example.org"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
         Reference nonRrevocationUpdateReference = new Reference();
         nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getAny().add(URI.create("example.org"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
         RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
                 .setupRevocationAuthorityParameters(keyLength,
                         CryptoUriUtil.getIdemixMechanism(), revParamsUid,
@@ -725,7 +771,7 @@ public class RevocationTest {
         IssuerParameters issuerParametersGovernment = governmentEngine
                 .setupIssuerParameters(credSpecIdCard, systemParameters,
                         idCardIssuancePolicyUid, hash,
-                        CryptoUriUtil.getUproveMechanism(), revParamsUid);
+                        CryptoUriUtil.getUproveMechanism(), revParamsUid, null);
 
         issuerKeyManager.storeRevocationAuthorityParameters(revParamsUid,
                 revocationAuthorityParameters);
@@ -789,6 +835,19 @@ public class RevocationTest {
         assertNotNull(pt);
 
         // Step 3. Revoke credentials.
+        // Step 3a. Check that the credentials are not revoked.
+        UserAbcEngine userEngine = userInjector
+                .getInstance(UserAbcEngine.class);
+        URI credUid1 = cd1.getCredentialUID();
+        assertTrue(!userEngine.isRevoked(credUid1));
+
+        URI credUid2 = cd2.getCredentialUID();
+        assertTrue(!userEngine.isRevoked(credUid2));
+
+        URI credUid3 = cd3.getCredentialUID();
+        assertTrue(!userEngine.isRevoked(credUid3));
+
+        // Step3b. Revoke credentials.
         Attribute revocationHandleAttribute = RevocationTest.this
                 .getRevocationHandle(cd1);
         this.revoke(revocationInjector, issuanceHelper, revParamsUid,
@@ -798,6 +857,11 @@ public class RevocationTest {
                 .getRevocationHandle(cd2);
         this.revoke(revocationInjector, issuanceHelper, revParamsUid,
                 revocationHandleAttribute);
+
+        // Step 3a. Check that the credentials are revoked.
+        assertTrue(userEngine.isRevoked(credUid1));
+
+        assertTrue(userEngine.isRevoked(credUid2));
 
         // The verifier needs to retrive the latest revocation information
         // in order to put in the UID in the presentation policy.

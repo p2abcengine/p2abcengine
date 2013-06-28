@@ -128,8 +128,28 @@ public class VerificationService {
 
             String[] inspectorPublicKeyResourceList = new String[0];
 
+            File[] revAuthParamsFileList = folder.listFiles(new FilenameFilter() {
+
+                @Override
+                public boolean accept(File arg0, String arg1) {
+                    if (arg1.startsWith("revocation_authority_")) {
+                        System.out.println("Test : " + arg1);
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            });
+            System.out.println("revauthparams files : " + revAuthParamsFileList + " : "
+                    + revAuthParamsFileList.length);
+            String[] revAuthParamsResourceList = new String[revAuthParamsFileList.length];
+            for (int ix = 0; ix < revAuthParamsFileList.length; ix++) {
+                System.out.println(" - " + revAuthParamsFileList[ix].getAbsolutePath());
+                revAuthParamsResourceList[ix] = revAuthParamsFileList[ix].getAbsolutePath();
+            }
+            
             VerificationHelper.initInstance(cryptoEngine, issuerParamsResourceList, credSpecResourceList, inspectorPublicKeyResourceList, 
-                    fileStoragePrefix, presentationPoliciesResouces);
+                    revAuthParamsResourceList, fileStoragePrefix, presentationPoliciesResouces);
 
             // pseudonym values
 
@@ -182,8 +202,9 @@ public class VerificationService {
 
         nonce = VerificationHelper.getInstance().generateNonce();
 
+        //TODO : add revinfouid map
         PresentationPolicyAlternatives ppa =
-                VerificationHelper.getInstance().createPresentationPolicy(policyId, nonce, appData);
+                VerificationHelper.getInstance().createPresentationPolicy(policyId, nonce, appData, null);
 
         // System.out.println("PresentationPolicyAlternatives : " + ppa);
         // System.out.println("- original size of application data : " +

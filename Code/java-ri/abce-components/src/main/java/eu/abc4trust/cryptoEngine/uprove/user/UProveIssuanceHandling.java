@@ -23,7 +23,7 @@ import eu.abc4trust.xml.IssuanceMessage;
  *
  */
 public interface UProveIssuanceHandling {
-
+	
 	/**
 	 * user side implementation of issuanceProtocol for UProve.
 	 * 

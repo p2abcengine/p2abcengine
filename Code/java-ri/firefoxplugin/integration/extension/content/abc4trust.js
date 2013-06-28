@@ -124,11 +124,12 @@ function issue(elm){
 	// Read parameters from dataelement
 	var start_request = elm.getAttribute("start_request");
 	var step_request = elm.getAttribute("step_request");
+	var start_request_mod = encodeURIComponent(start_request);
+	var step_request_mod = encodeURIComponent(step_request);
 	var language = elm.getAttribute("language");
 	if(language == null) {
 		language = "en";
 	}
-	
 	
 	// Contact issuance server to obtain Issuance policy
 	var xmlhttp = new XMLHttpRequest();
@@ -155,7 +156,10 @@ function issue(elm){
 			return true;
 		} else {
 			var abcquery = new XMLHttpRequest();
-			abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStep/"+sessionID,false);
+			abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStep/"+sessionID+
+					"?startRequest="+start_request_mod+
+					"&stepRequest="+step_request_mod,false);
+			//abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStep/"+sessionID,false);
 			abcquery.setRequestHeader("Content-type", "application/xml");
 			if(DEBUG) {alert("sending received xml to user abce");}
 			try {
@@ -235,14 +239,15 @@ function hasChoice_issue(elm){
 	// request to local User ABCE
 	var abcquery = new XMLHttpRequest();
 	abcquery = new XMLHttpRequest();
-	var start_request_mod = start_request.replace(/&/g, "amp;");
-	start_request_mod = start_request_mod.replace(/\?/g, "%3F");
-	var step_request_mod = step_request.replace(/&/g, "amp;");
-	step_request_mod = step_request_mod.replace(/\?/g, "%3F");
+	var start_request_mod = encodeURIComponent(start_request);
+	var step_request_mod = encodeURIComponent(step_request);
+	if(DEBUG){
+		alert("start request encoded: "+start_request_mod);
+		alert("step request encoded: "+step_request_mod);
+	}
 	abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStepSelect/"+sessionID+
 			"?startRequest="+start_request_mod+
 			"&stepRequest="+step_request_mod,false);
-	//abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStepSelect/"+sessionID,false);
 	abcquery.setRequestHeader("Content-type", "application/json");
 	abcquery.setRequestHeader("Accept", "text/xml,application/xml");
 	if(DEBUG) { alert("now sending our choice back to user abce:\n"+choice);}
@@ -281,7 +286,6 @@ function hasChoice_issue(elm){
 		abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStep/"+sessionID+
 				"?startRequest="+start_request_mod+
 				"&stepRequest="+step_request_mod,false);
-		//abcquery.open("POST","http://localhost:9100/service-user/user/issuanceProtocolStep/"+sessionID,false);
 		abcquery.setRequestHeader("Content-type", "application/xml");
 		abcquery.setRequestHeader("Accept", "text/xml,application/xml");
 		if(DEBUG) {alert("plugin sending received xml to user abce  - session : " +sessionID + " - XML from server : "+ xmlhttp.responseText);}

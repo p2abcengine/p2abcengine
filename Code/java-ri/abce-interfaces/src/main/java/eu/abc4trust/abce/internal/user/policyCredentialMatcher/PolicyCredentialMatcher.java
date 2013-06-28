@@ -15,8 +15,15 @@ import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerExcept
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManagerException;
+import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
+import eu.abc4trust.returnTypes.IssuanceReturn;
+import eu.abc4trust.returnTypes.UiIssuanceArguments;
+import eu.abc4trust.returnTypes.UiIssuanceReturn;
+import eu.abc4trust.returnTypes.UiPresentationArguments;
+import eu.abc4trust.returnTypes.UiPresentationReturn;
 import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
+import eu.abc4trust.util.DummyForNewABCEInterfaces;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
@@ -113,6 +120,7 @@ public interface PolicyCredentialMatcher {
             IdentitySelection idSelectionCallback)
             throws CredentialManagerException, CryptoEngineException, KeyManagerException, IdentitySelectionException;
     
+    @Deprecated
     public PresentationToken createPresentationToken(PresentationPolicyAlternatives p,
                                                      IdentitySelectionUi idSelectionCallback)
                                                          throws CredentialManagerException,
@@ -189,8 +197,16 @@ public interface PolicyCredentialMatcher {
      */
     @Deprecated
     public IssuanceMessage createIssuanceToken(IssuanceMessage im,
-            IdentitySelection idSelectionCallback) throws CredentialManagerException, KeyManagerException, IdentitySelectionException;
-
-    public IssuanceMessage createIssuanceToken(IssuanceMessage im,
         IdentitySelectionUi idSelectionCallback) throws CredentialManagerException, KeyManagerException, IdentitySelectionException;
+
+    public IssuanceMessage createIssuanceToken(UiIssuanceReturn uir);
+
+    public UiIssuanceArguments createIssuanceToken(IssuanceMessage im, DummyForNewABCEInterfaces d)
+        throws CredentialManagerException, KeyManagerException;
+
+    public PresentationToken createPresentationToken(UiPresentationReturn upr) throws CryptoEngineException;
+
+    public UiPresentationArguments createPresentationToken(
+        PresentationPolicyAlternatives p, DummyForNewABCEInterfaces d)
+            throws CredentialManagerException, KeyManagerException;
 }

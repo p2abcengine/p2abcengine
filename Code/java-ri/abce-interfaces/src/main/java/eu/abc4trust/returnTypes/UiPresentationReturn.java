@@ -1,12 +1,17 @@
-//* Licensed Materials - Property of IBM                              *
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*/**/****************************************************************
 
 package eu.abc4trust.returnTypes;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +25,10 @@ import eu.abc4trust.xml.PseudonymMetadata;
 @XmlRootElement(name="UiPresentationReturn", namespace = "http://abc4trust.eu/wp2/abcschemav1.0") 
 @XmlAccessorType(XmlAccessType.FIELD)
 public class UiPresentationReturn {
-  
+  /**
+   * The context of the corresponding UiPresentationArguments.
+   */
+  public URI uiContext;
   /**
    * Index of the chosen policy
    */
@@ -48,8 +56,9 @@ public class UiPresentationReturn {
    */
   public List<String> chosenInspectors;
 
-  public UiPresentationReturn(int chosenPolicy, int chosenPresentationToken, Map<String, PseudonymMetadata> metadataToChange,
+  public UiPresentationReturn(URI context, int chosenPolicy, int chosenPresentationToken, Map<String, PseudonymMetadata> metadataToChange,
       int chosenPseudonymList, List<String> chosenInspectors) {
+    this.uiContext = context;
     this.chosenPolicy = chosenPolicy;
     this.chosenPresentationToken = chosenPresentationToken;
     this.metadataToChange = metadataToChange;
@@ -63,6 +72,7 @@ public class UiPresentationReturn {
   }
   
   public UiPresentationReturn() {
+    this.uiContext = null;
     this.chosenPolicy = 0;
     this.chosenPresentationToken = 0;
     this.metadataToChange = null;
@@ -73,9 +83,9 @@ public class UiPresentationReturn {
 
   @Override
   public String toString() {
-    return "UiPresentationReturn [chosenPolicy=" + chosenPolicy + ", chosenPresentationToken="
-        + chosenPresentationToken + ", metadataToChange=" + metadataToChange
-        + ", chosenPseudonymList=" + chosenPseudonymList + ", chosenInspectors=" + chosenInspectors
-        + "]";
+    return "UiPresentationReturn [uiContext=" + uiContext + ", chosenPolicy=" + chosenPolicy
+        + ", chosenPresentationToken=" + chosenPresentationToken + ", metadataToChange="
+        + metadataToChange + ", chosenPseudonymList=" + chosenPseudonymList + ", chosenInspectors="
+        + chosenInspectors + "]";
   }
 }

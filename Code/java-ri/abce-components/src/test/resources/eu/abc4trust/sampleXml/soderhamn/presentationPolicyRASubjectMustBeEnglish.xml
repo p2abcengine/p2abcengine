@@ -5,6 +5,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:restrictedarea:english:pseudon">
     <abc:Message>
       <abc:Nonce>bkQydHBQWDR4TUZzbXJKYUphdVM=</abc:Nonce>
+      <abc:FriendlyPolicyName lang="sv">Åtkomstregel för att logga in i systemet</abc:FriendlyPolicyName>
     </abc:Message>
     <abc:Pseudonym Scope="urn:soderhamn:restrictedarea:english" Established="true"/>
   </abc:PresentationPolicy>

@@ -11,6 +11,7 @@
 
 package eu.abc4trust.keyManager;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,5 +39,11 @@ public class InMemoryKeyStorage implements KeyStorage {
     public URI[] listUris() {
         return this.keys.keySet().toArray(new URI[0]);
     }
+
+	@Override
+	public void addValueAndOverwrite(URI uri, byte[] key) throws IOException {
+		System.out.println("\n\n\n\n\nUSING THIS ONE!!!!!! \n\n\n\n\n");
+		this.addValue(uri, key);
+	}
 
 }

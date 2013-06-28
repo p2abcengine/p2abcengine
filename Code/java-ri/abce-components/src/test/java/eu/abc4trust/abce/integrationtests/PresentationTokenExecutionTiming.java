@@ -26,6 +26,7 @@ import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
 import eu.abc4trust.abce.testharness.PolicySelector;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
@@ -41,7 +42,7 @@ public class PresentationTokenExecutionTiming {
      */
     public static void main(String[] args) throws Exception {
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1985), CryptoEngine.MOCK));
+                new Random(1985), CryptoEngine.MOCK, UProveUtils.UPROVE_COMMON_PORT));
 
         CredentialManager cd = userInjector
                 .getInstance(CredentialManager.class);

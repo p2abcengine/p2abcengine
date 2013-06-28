@@ -157,7 +157,7 @@ public class IdemixIssuerReloadFromStorageInit {
         // step 2 - generate and store issuer parameters
 
         IssuerParameters issuerParameters =
-                issuerEngine.setupIssuerParameters(creditCardSpec, sysParams, uid, hash, cryptoMechanism, revocationId);
+                issuerEngine.setupIssuerParameters(creditCardSpec, sysParams, uid, hash, cryptoMechanism, revocationId, null);
 
         this.saveObject(issuerParameters, storageFolder, ISSUER_STORAGE_PREFIX, "issuer_parameters");
 

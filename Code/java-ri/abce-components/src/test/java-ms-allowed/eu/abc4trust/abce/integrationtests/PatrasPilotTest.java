@@ -1,10 +1,11 @@
 //* Licensed Materials - Property of IBM, Miracle A/S,                *
-//* and Alexandra Instituttet A/S                                     *
+//* Alexandra Instituttet A/S, and Microsoft                          *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
 //* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
 //* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
 //* Rights Reserved.                                                  *
+//* (C) Copyright Microsoft Corp. 2012. All Rights Reserved.          *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*/**/****************************************************************
@@ -34,14 +35,17 @@ import org.xml.sax.SAXException;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.key.VEPublicKey;
+import com.ibm.zurich.idmx.utils.Parser;
+import com.ibm.zurich.idmx.utils.StructureStore;
 
 import edu.rice.cs.plt.tuple.Pair;
+import eu.abc4trust.abce.external.inspector.InspectorAbcEngine;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
 import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.issuer.tokenManagerIssuer.TokenStorageIssuer;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PolicyCredentialMatcherImpl;
 import eu.abc4trust.abce.testharness.BridgingModuleFactory;
 import eu.abc4trust.abce.testharness.BridgingModuleFactory.IssuerCryptoEngine;
@@ -54,14 +58,18 @@ import eu.abc4trust.cryptoEngine.idemix.user.IdemixCryptoEngineUserImpl;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveBindingManager;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.util.CryptoUriUtil;
+import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
+import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PseudonymWithMetadata;
@@ -92,7 +100,11 @@ public class PatrasPilotTest {
 
     private static final String PRESENTATION_POLICY_PATRAS_COURSE_EVALUATION = "/eu/abc4trust/sampleXml/patras/presentationPolicyPatrasCourseEvaluation.xml";
 
+    private static final String PRESENTATION_POLICY_PATRAS_TOMBOLA = "/eu/abc4trust/sampleXml/patras/presentationPolicyPatrasTombola.xml";
 
+    private static final String ISSUANCE_POLICY_PATRAS_TOMBOLA = "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasTombola.xml";
+
+    private static final String CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA = "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasTombola.xml";
 
     // TODO: Backup and restore of attendance credentials.
 
@@ -118,7 +130,7 @@ public class PatrasPilotTest {
         Random random = new Random(1231);
         // Generate system parameters.
         Injector universityInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine));
+                .createInjector(IntegrationModuleFactory.newModule(random, cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         IssuerAbcEngine universityEngine = universityInjector
                 .getInstance(IssuerAbcEngine.class);
         SystemParameters systemParameters = universityEngine
@@ -143,7 +155,7 @@ public class PatrasPilotTest {
         // Generate system parameters.
         Injector universityInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(random,
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         IssuerAbcEngine universityEngine = universityInjector
                 .getInstance(IssuerAbcEngine.class);
         SystemParameters systemParameters = universityEngine
@@ -166,7 +178,7 @@ public class PatrasPilotTest {
                     SAXException, Exception {
         // Create URIs.
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1231), cryptoEngine));
+                new Random(1231), cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
         IdemixCryptoEngineUserImpl userEngine = userInjector
                 .getInstance(IdemixCryptoEngineUserImpl.class);
@@ -182,10 +194,12 @@ public class PatrasPilotTest {
                 secretWrapper.getSecretUID(), userEngine, systemParameters);
         Injector courseEvaluationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
+
+        boolean tombolaTest = true;        
         this.setupEngines(courseEvaluationInjector, keyLength, cryptoMechanism, pwm,
                 secretWrapper,
-                systemParameters, universityInjector, userInjector);
+                systemParameters, universityInjector, userInjector, tombolaTest);
     }
 
     @Test
@@ -205,15 +219,18 @@ public class PatrasPilotTest {
 
         Injector universityInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                    uproveUtils.getIssuerServicePort()));
+                        uproveUtils.getIssuerServicePort()));
         SystemParameters systemParameters = this
                 .getUProveSystemParameters(universityInjector);
         Injector courseEvaluationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                    uproveUtils.getVerifierServicePort()));
+                        uproveUtils.getVerifierServicePort()));
+
+        // No Tobola for UProve - We are missing Carry Over
+        boolean tombolaTest = false;        
         this.setupEngines(courseEvaluationInjector, keyLength, cryptoMechanism, pwm,
                 secretWrapper,
-                systemParameters, universityInjector, userInjector);
+                systemParameters, universityInjector, userInjector, tombolaTest);
 
         int exitCode = userInjector.getInstance(UProveBindingManager.class)
                 .stop();
@@ -229,7 +246,8 @@ public class PatrasPilotTest {
     // @Ignore
     @Test
     public void patrasPilotBridgingTest() throws Exception {
-        int keyLength = 2048;
+        int idemixKeyLength = 2048;
+        int uproveKeylength = 2048;
         SecretWrapper uproveSecretWrapper = new SecretWrapper(this.getUProveSecret());
         SecretWrapper idemixSecretWrapper = new SecretWrapper(this.getIdemixSecret());
 
@@ -240,10 +258,10 @@ public class PatrasPilotTest {
                 new Random(1231), uproveUtils.getUserServicePort()));
         Injector universityInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231), IssuerCryptoEngine.UPROVE,
-                    uproveUtils.getIssuerServicePort()));
+                        uproveUtils.getIssuerServicePort()));
         Injector courseEvaluationInjector = Guice
                 .createInjector(BridgingModuleFactory.newModule(new Random(1231), IssuerCryptoEngine.IDEMIX,
-                    uproveUtils.getVerifierServicePort()));
+                        uproveUtils.getVerifierServicePort()));
         IssuanceHelper issuanceHelper = new IssuanceHelper();
 
         IssuerAbcEngine universityEngine = universityInjector
@@ -273,14 +291,16 @@ public class PatrasPilotTest {
 
         //	Change here if we want dynamic system parameters for uprove
         SystemParameters uproveSystemParameters = this.getUProveSystemParameters(universityInjector);
-        */
+         */
         SystemParametersUtil sysParamUtil = new SystemParametersUtil();
-        SystemParameters sysParam = sysParamUtil.generatePilotSystemParameters_WithIdemixSpecificKeySize(keyLength);
-        
-        userIdemixEngine.loadIdemixSystemParameters(sysParam);
+        SystemParameters sysParam = SystemParametersUtil
+                .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                        idemixKeyLength, uproveKeylength);
+
+        IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(sysParam);
 
 
-       
+
 
 
         PseudonymWithMetadata upwm = this.getUProvePseudonym(uproveSecretWrapper.getSecretUID(), userInjector);
@@ -349,7 +369,7 @@ public class PatrasPilotTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters universityIssuerParameters = universityEngine
                 .setupIssuerParameters(universityCredSpec, sysParam,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         // ObjectFactory of = new ObjectFactory();
         // System.out.println(" - universityParameters : "
@@ -359,7 +379,7 @@ public class PatrasPilotTest {
         revocationId = new URI("revocationUID2");
         IssuerParameters credCourseIssuerParameters = universityEngine
                 .setupIssuerParameters(credCourseSpec, sysParam,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
                 universityIssuerParameters);
@@ -440,7 +460,7 @@ public class PatrasPilotTest {
     private void setupEngines(Injector courseEvaluationInjector, int keyLength,
             URI cryptoMechanism, PseudonymWithMetadata pwm, SecretWrapper secretWrapper,
             SystemParameters systemParameters, Injector universityInjector,
-            Injector userInjector)
+            Injector userInjector, boolean tombolaTest)
                     throws KeyManagerException, JAXBException,
                     UnsupportedEncodingException, SAXException, URISyntaxException,
                     Exception, CredentialManagerException {
@@ -507,7 +527,7 @@ public class PatrasPilotTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters universityIssuerParameters = universityEngine
                 .setupIssuerParameters(universityCredSpec, systemParameters,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         // ObjectFactory of = new ObjectFactory();
         // System.out.println(" - universityParameters : "
@@ -517,8 +537,8 @@ public class PatrasPilotTest {
         revocationId = new URI("revocationUID2");
         IssuerParameters credCourseIssuerParameters = universityEngine
                 .setupIssuerParameters(credCourseSpec, systemParameters,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
-
+                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
+        
         issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
                 universityIssuerParameters);
         userKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
@@ -532,6 +552,7 @@ public class PatrasPilotTest {
                 credCourseIssuerParameters);
         verifierKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
                 credCourseIssuerParameters);
+        
 
         // Load secret and store it.
         CredentialManager userCredentialManager = userInjector
@@ -565,6 +586,99 @@ public class PatrasPilotTest {
         universityTokenStorageManager.addPseudonymPrimaryKey(primaryKey);
 
         this.runTests(userInjector, universityInjector, courseEvaluationInjector, issuanceHelper);
+        
+        if(tombolaTest) {
+            // TODO : Verify New Tombola!!!
+          
+            IssuancePolicy issuancePolicyTombola = (IssuancePolicy) XmlUtils
+                .getObjectFromXML(
+                  this.getClass()
+                  .getResourceAsStream(
+                    ISSUANCE_POLICY_PATRAS_TOMBOLA),
+                    true);
+            
+            try {
+              System.out.println("IssuancePolicy " + XmlUtils.toXml(new ObjectFactory().createIssuancePolicy(issuancePolicyTombola)));
+            } catch(Exception e) {
+              
+            }
+            URI tombolaIssuancePolicyUid = issuancePolicyTombola.getCredentialTemplate()
+                .getIssuerParametersUID();
+
+            CredentialSpecification tombolaCredSpec = (CredentialSpecification) XmlUtils
+                .getObjectFromXML(
+                  this.getClass().getResourceAsStream(
+                    CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA),
+                    true);
+            URI tombolaSpecificationUID = tombolaCredSpec.getSpecificationUID();
+            issuerKeyManager.storeCredentialSpecification(tombolaSpecificationUID, tombolaCredSpec);
+            verifierKeyManager.storeCredentialSpecification(tombolaSpecificationUID, tombolaCredSpec);
+
+            IssuerParameters tombolaIssuerParameters = universityEngine
+                .setupIssuerParameters(tombolaCredSpec, systemParameters,
+                  tombolaIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
+
+            issuerKeyManager.storeIssuerParameters(tombolaIssuancePolicyUid,
+              tombolaIssuerParameters);
+            userKeyManager.storeIssuerParameters(tombolaIssuancePolicyUid,
+              tombolaIssuerParameters);
+            verifierKeyManager.storeIssuerParameters(tombolaIssuancePolicyUid,
+              tombolaIssuerParameters);
+
+            Map<String, Object> atts = new HashMap<String, Object>();
+            issuanceHelper.issueCredential(universityInjector, userInjector,
+              CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA,
+              ISSUANCE_POLICY_PATRAS_TOMBOLA, atts);
+            
+            Injector inspectorInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231),
+              32123)); 
+
+            InspectorAbcEngine inspectorEngine = inspectorInjector.getInstance(InspectorAbcEngine.class);
+            KeyManager injectorKeyManager = inspectorInjector.getInstance(KeyManager.class);
+            injectorKeyManager.storeSystemParameters(systemParameters);
+            
+            CredentialManager inspectorCredentialManager = inspectorInjector.getInstance(CredentialManager.class);
+
+            injectorKeyManager.storeCredentialSpecification(tombolaSpecificationUID, tombolaCredSpec);
+            injectorKeyManager.storeIssuerParameters(tombolaIssuancePolicyUid,
+              tombolaIssuerParameters);
+
+            URI mechanism = CryptoUriUtil.getIdemixMechanism();
+            int inspectorKeySize = 1024;
+            URI inspectorPublicKeyUid = URI.create("urn:patras:inspector:tombola");
+            InspectorPublicKey inspectorPublicKey = inspectorEngine.setupInspectorPublicKey(inspectorKeySize, mechanism, inspectorPublicKeyUid );
+
+            System.out.println("inspectorPublicKey : " + inspectorPublicKey.getPublicKeyUID());
+            userKeyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
+            verifierKeyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
+            
+            VEPublicKey vePubKey =
+                (VEPublicKey) Parser.getInstance().parse(
+                        (org.w3c.dom.Element) inspectorPublicKey.getCryptoParams().getAny().get(0));
+            StructureStore.getInstance().add(inspectorPublicKey.getPublicKeyUID().toString(), vePubKey);
+
+            
+            int presentationTokenChoice = 0;
+            int pseudonymChoice = 0;
+            List<URI> chosenInspectors = new LinkedList<URI>();
+            chosenInspectors.add(inspectorPublicKeyUid);
+            // create presentation policy
+            Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
+                    .createPresentationToken(userInjector, userInjector,
+                            PRESENTATION_POLICY_PATRAS_TOMBOLA,
+                            new PolicySelector(presentationTokenChoice,
+                                    chosenInspectors, pseudonymChoice));
+            // verify..
+            issuanceHelper.verify(courseEvaluationInjector, p.second(), p.first());
+            
+            // inspect..
+            List<Attribute> inspectedAttributes = inspectorEngine.inspect(p.first());
+            System.out.println("inspectedAttributes");
+            for(Attribute a : inspectedAttributes) {
+              System.out.println(" a " + a.getAttributeUID() + " : " + a.getAttributeValue());
+            }
+        }
+
     }
 
     private void runTests(Injector userInjector, Injector universityInjector, Injector courseEvaluationInjector, IssuanceHelper issuanceHelper) throws Exception{
@@ -619,7 +733,7 @@ public class PatrasPilotTest {
     }
 
     private Secret getIdemixSecret()
-      throws JAXBException, UnsupportedEncodingException, SAXException {
+            throws JAXBException, UnsupportedEncodingException, SAXException {
         Secret secret = (Secret) XmlUtils.getObjectFromXML(
                 this.getClass().getResourceAsStream(
                         "/eu/abc4trust/sampleXml/smartcard/sampleSecret.xml"),
@@ -628,7 +742,7 @@ public class PatrasPilotTest {
     }
 
     private Secret getUProveSecret()
-      throws JAXBException, UnsupportedEncodingException, SAXException {
+            throws JAXBException, UnsupportedEncodingException, SAXException {
         Secret secret = (Secret) XmlUtils.getObjectFromXML(
                 this.getClass().getResourceAsStream(
                         "/eu/abc4trust/sampleXml/patras/uprove-secret.xml"),
@@ -729,7 +843,7 @@ public class PatrasPilotTest {
             SystemParameters systemParameters) {
         String scope = "urn:patras:registration";
         try {
-            idemixUser.loadIdemixSystemParameters(systemParameters);
+            IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(systemParameters);
         } catch (CryptoEngineException ex) {
             ex.printStackTrace();
             fail(ex.getLocalizedMessage());
@@ -742,8 +856,6 @@ public class PatrasPilotTest {
     private Map<String, Object> populateCourseAttributes() {
         Map<String, Object> att = new HashMap<String, Object>();
         att.put("urn:patras:credspec:credCourse:courseid", COURSE_UID);
-        att.put("urn:patras:credspec:credCourse:matriculationnr",
-                MATRICULATIONNUMBER);
         att.put(REVOCATION_HANDLE_STR,
                 URI.create("urn:patras:revocation:handle2"));
         return att;

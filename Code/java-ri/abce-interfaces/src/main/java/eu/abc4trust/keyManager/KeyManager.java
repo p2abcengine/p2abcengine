@@ -12,6 +12,7 @@
 package eu.abc4trust.keyManager;
 
 import java.net.URI;
+import java.util.ArrayList;
 
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.InspectorPublicKey;
@@ -185,5 +186,16 @@ public interface KeyManager {
     public void storeRevocationInformation(URI informationUID,
             RevocationInformation revocationInformation)
             throws KeyManagerException;
-
+    
+    /**
+     * This method retrieves the credential tokens stored in persistent memory 
+     * (harddrive) if present, and null if no such object was stored.
+     * @return
+     */
+    public ArrayList<?> getCredentialTokens(URI uid);
+    
+    /**
+     * This method stores an arraylist of credential tokens under the given Uid.
+     */
+    public void storeCredentialTokens(URI uid, ArrayList<?> tokens) throws KeyManagerException;
 }

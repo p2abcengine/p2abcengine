@@ -38,10 +38,10 @@ import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.exceptions.TokenVerificationException;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.ObjectFactory;
@@ -105,16 +105,18 @@ public class UProveCredentialIssuanceIntegrationTest {
         // Step 3. Init the issuer
         IssuerAbcEngine issuerEngine = issuerInjector
                 .getInstance(IssuerAbcEngine.class);
-        
-    	ReloadTokensInMemoryCommunicationStrategy reloadTokens = (ReloadTokensInMemoryCommunicationStrategy) userInjector.getInstance(ReloadTokensCommunicationStrategy.class);
-    	reloadTokens.setIssuerAbcEngine(issuerEngine);
-    	reloadTokens.setIssuancePolicy(ip);
-    	reloadTokens.setIssuerAttributes(issuerAtts);
 
-        int keyLength = 2048;
+        ReloadTokensInMemoryCommunicationStrategy reloadTokens = (ReloadTokensInMemoryCommunicationStrategy) userInjector.getInstance(ReloadTokensCommunicationStrategy.class);
+        reloadTokens.setIssuerAbcEngine(issuerEngine);
+        reloadTokens.setIssuancePolicy(ip);
+
+        int idemixKeyLength = 2048;
+        int uproveKeylength = 2048;
         URI cryptographicMechanism = CryptoUriUtil.getUproveMechanism();
         SystemParametersUtil sysParamUtil = new SystemParametersUtil();
-        SystemParameters sysParam =  sysParamUtil.generatePilotSystemParameters_WithIdemixSpecificKeySize(keyLength);
+        SystemParameters sysParam = SystemParametersUtil
+                .generatePilotSystemParameters_WithIdemixSpecificKeySize(
+                        idemixKeyLength, uproveKeylength);
 
         userKeyManager.storeSystemParameters(sysParam);
         keyManager.storeSystemParameters(sysParam);
@@ -124,7 +126,7 @@ public class UProveCredentialIssuanceIntegrationTest {
         URI hash = CryptoUriUtil.getHashSha256();
         URI revocationId = new URI("issuer-cpr-rev-id");
 
-        IssuerParameters issuerParameters = issuerEngine.setupIssuerParameters(creditCardSpec, sysParam, uid, hash, cryptographicMechanism, revocationId);
+        IssuerParameters issuerParameters = issuerEngine.setupIssuerParameters(creditCardSpec, sysParam, uid, hash, cryptographicMechanism, revocationId, null);
 
         // Store received issuer parameters in all keymanagers...
         keyManager.storeIssuerParameters(issuerParameters.getParametersUID(), issuerParameters);
@@ -212,33 +214,34 @@ public class UProveCredentialIssuanceIntegrationTest {
         // Initialize ABC4Trust Issuance Protocol Issuer side
         // Returns an IssuancePolicy from CryptoEngineIssuer to be passed to CryptoEngineUser initialization
         IssuanceMessageAndBoolean issuerIm = issuerEngine.initIssuanceProtocol(ip, issuerAtts);
-        assertFalse(issuerIm.lastMessage);
+        assertFalse(issuerIm.isLastMessage());
 
         // Initialize ABC4Trust Issuance Protocol Prover side
         // FIXME: userEngine indirectly calls CryptoEngineUser.createIssuanceToken() with the IssuancePolicy from the Issuer and returns an IssuanceToken
         // contained in the IssuanceMessage. This IssuanceToken is simply NOT used for now in the next step of the UProve Credential Issuance protocol.
         // However, this seems to be the only proper way for now to initialise CryptoEngineUser to a working state, despite the createIssuanceToken() step being
         // an optional step for the advanced Issuance setting not supported by UProve for now.
-        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm
+                .getIssuanceMessage());
 
         // Execute the UProve issuance protocol:
 
         // Prover side asks issuer for first message
         issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
-        assertFalse(issuerIm.lastMessage);
+        assertFalse(issuerIm.isLastMessage());
 
         // Prover side generates second message based on the first message
-        userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+        userIm = userEngine.issuanceProtocolStep(issuerIm.getIssuanceMessage());
 
         // Prover side asks issuer for third message based on the second message
         assertNotNull(userIm.im);
         issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
-        assertNotNull(issuerIm.im);
+        assertNotNull(issuerIm.getIssuanceMessage());
 
         // Prover side generates UProve Tokens based on the third message
-        userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+        userIm = userEngine.issuanceProtocolStep(issuerIm.getIssuanceMessage());
         boolean userLastMessage = (userIm.cd != null);
-        assertTrue(issuerIm.lastMessage == userLastMessage);
+        assertTrue(issuerIm.isLastMessage() == userLastMessage);
 
         assertNull(userIm.im);
         assertNotNull(userIm.cd);

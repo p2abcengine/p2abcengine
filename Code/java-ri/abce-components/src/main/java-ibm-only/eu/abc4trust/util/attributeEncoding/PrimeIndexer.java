@@ -20,7 +20,7 @@ public class PrimeIndexer implements EnumIndexer {
   private Map<BigInteger, Integer> primePosition;
   
   public PrimeIndexer() {
-    primes = new ArrayList<BigInteger>();;
+    primes = new ArrayList<BigInteger>();
     primePosition = new HashMap<BigInteger, Integer>();
   }
   

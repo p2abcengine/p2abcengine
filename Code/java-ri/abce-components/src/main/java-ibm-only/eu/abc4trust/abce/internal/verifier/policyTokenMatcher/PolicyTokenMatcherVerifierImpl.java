@@ -19,6 +19,7 @@ import eu.abc4trust.abce.internal.verifier.evidenceVerification.EvidenceVerifica
 import eu.abc4trust.abce.internal.verifier.tokenManagerVerifier.TokenManagerVerifier;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.TokenVerificationException;
+import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.util.MyPresentationPolicy;
 import eu.abc4trust.util.MyPresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
@@ -29,12 +30,14 @@ public class PolicyTokenMatcherVerifierImpl implements PolicyTokenMatcherVerifie
 
     private final EvidenceVerificationOrchestrationVerifier evidenceOrch;
     private final TokenManagerVerifier tokenManager;
+    private final KeyManager keyManager;
 
     @Inject
     public PolicyTokenMatcherVerifierImpl(EvidenceVerificationOrchestrationVerifier evidenceOrch,
-            TokenManagerVerifier tokenManager) {
+            TokenManagerVerifier tokenManager, KeyManager keyManager) {
         this.evidenceOrch = evidenceOrch;
         this.tokenManager = tokenManager;
+        this.keyManager = keyManager;
     }
 
     @Override
@@ -43,7 +46,7 @@ public class PolicyTokenMatcherVerifierImpl implements PolicyTokenMatcherVerifie
         MyPresentationPolicyAlternatives myp = new MyPresentationPolicyAlternatives(p);
         URI policyUri = td.getPolicyUID();
         MyPresentationPolicy pp = myp.findOrThrow(policyUri);
-        return pp.isSatisfiedBy(td, this.tokenManager);
+        return pp.isSatisfiedBy(td, this.tokenManager, keyManager);
     }
 
     @Override

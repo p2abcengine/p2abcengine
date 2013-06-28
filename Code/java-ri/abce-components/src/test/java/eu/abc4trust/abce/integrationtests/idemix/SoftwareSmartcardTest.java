@@ -56,7 +56,6 @@ import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.returnTypes.SitdReturn;
 import eu.abc4trust.returnTypes.SptdReturn;
 import eu.abc4trust.smartcard.CredentialBases;
@@ -77,6 +76,7 @@ import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CryptoParams;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorDescription;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuanceTokenDescription;
 import eu.abc4trust.xml.IssuerParameters;
@@ -271,7 +271,7 @@ public class SoftwareSmartcardTest {
         IssuerParameters universityIssuerParameters =
                 issuerEngine.setupIssuerParameters(universityCredSpec, systemParameters,
                         universityIssuerParametersUID, hash, URI.create("Idemix"),
-                        universityRevocationParamsUid);
+                        universityRevocationParamsUid, null);
 
         issuerKeyManager.storeIssuerParameters(universityIssuerParametersUID,
                 universityIssuerParameters);
@@ -282,7 +282,7 @@ public class SoftwareSmartcardTest {
         // - course - for issuer
         IssuerParameters courseIssuerParameters =
                 issuerEngine.setupIssuerParameters(courseCredSpec, systemParameters,
-                        courseIssuerParametersUID, hash, URI.create("Idemix"), courseRevocationParamsUid);
+                        courseIssuerParametersUID, hash, URI.create("Idemix"), courseRevocationParamsUid, null);
 
         issuerKeyManager.storeIssuerParameters(courseIssuerParametersUID, courseIssuerParameters);
         userKeyManager.storeIssuerParameters(courseIssuerParametersUID, courseIssuerParameters);
@@ -360,7 +360,7 @@ public class SoftwareSmartcardTest {
 
 
             SmartcardStatusCode universityResult =
-                    softwareSmartcard.addIssuerParameters(pin, sk_root, universityParametersUri,
+                    softwareSmartcard.addIssuerParameters(sk_root, universityParametersUri,
                             universityCredBases);
             if (universityResult != SmartcardStatusCode.OK) {
                 throw new RuntimeException("Could not add University IssuerParams to smartcard... "
@@ -382,7 +382,7 @@ public class SoftwareSmartcardTest {
             URI courseParametersUri = courseIssuerParameters.getParametersUID();
 
             SmartcardStatusCode courseResult =
-                    softwareSmartcard.addIssuerParameters(pin, sk_root, courseParametersUri,
+                    softwareSmartcard.addIssuerParameters(sk_root, courseParametersUri,
                             courseCredBases);
             if (courseResult != SmartcardStatusCode.OK) {
                 throw new RuntimeException("Could not add Course IssuerParams to smartcard... "
@@ -611,18 +611,19 @@ public class SoftwareSmartcardTest {
             IdentitySelection policySelector) throws Exception {
         // Issuer starts the issuance.
         IssuanceMessageAndBoolean issuerIm = issuerEngine.initIssuanceProtocol(ip, issuerAtts);
-        assertFalse(issuerIm.lastMessage);
+        assertFalse(issuerIm.isLastMessage());
 
         // ObjectFactory of = new ObjectFactory();
         // JAXBElement<?> actual = of.createIssuanceMessage(issuerIm.im);
         // System.out.println(XmlUtils.toNormalizedXML(actual));
 
         // Reply from user.
-        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm.im, policySelector);
+        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(
+                issuerIm.getIssuanceMessage(), policySelector);
         //     JAXBElement<?> actual = of.createIssuanceMessage(userIm.im);
         //     System.out.println("=========== Presentation From User : ");
         //     System.out.println(XmlUtils.toNormalizedXML(actual));
-        while (!issuerIm.lastMessage) {
+        while (!issuerIm.isLastMessage()) {
             assertNotNull(userIm.im);
             issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
 
@@ -639,15 +640,16 @@ public class SoftwareSmartcardTest {
             //       actual = of.createIssuanceMessage(issuerIm.im);
             //       System.out.println(XmlUtils.toNormalizedXML(actual));
 
-            assertNotNull(issuerIm.im);
-            userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+            assertNotNull(issuerIm.getIssuanceMessage());
+            userIm = userEngine.issuanceProtocolStep(issuerIm
+                    .getIssuanceMessage());
 
             // if (userIm.im != null) {
             // actual = of.createIssuanceMessage(userIm.im);
             // System.out.println(XmlUtils.toNormalizedXML(actual));
             // }
             boolean userLastMessage = (userIm.cd != null);
-            assertTrue(issuerIm.lastMessage == userLastMessage);
+            assertTrue(issuerIm.isLastMessage() == userLastMessage);
         }
         assertNull(userIm.im);
         assertNotNull(userIm.cd);

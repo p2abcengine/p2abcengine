@@ -1,5 +1,5 @@
-//* Licensed Materials - Property of IBM, Miracle A/S,                *
-//* and Alexandra Instituttet A/S                                     *
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
 //* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
@@ -12,7 +12,6 @@
 package eu.abc4trust.abce.integrationtests;
 
 import java.net.URI;
-import java.util.List;
 
 import com.google.inject.Inject;
 
@@ -23,96 +22,101 @@ import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PolicyCredentialM
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.uprove.user.ReloadInformation;
 import eu.abc4trust.cryptoEngine.uprove.user.ReloadTokensCommunicationStrategy;
+import eu.abc4trust.cryptoEngine.uprove.user.UProveCryptoEngineUserImpl;
 import eu.abc4trust.cryptoEngine.uprove.user.UProveIssuanceHandling;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.ui.idSelection.MockIdentitySelectionUi;
-import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.CredentialDescription;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
+import eu.abc4trust.xml.ObjectFactory;
+import eu.abc4trust.xml.util.XmlUtils;
 
 /**
  * This class handles the communication between user abce and issuer abce in our tests.
- * The class handles the communication by calling the relevant methods directly on the engines. 
+ * The class handles the communication by calling the relevant methods directly on the engines.
  * E.g. there is no web service calls involved
  * 
  */
 public class ReloadTokensInMemoryCommunicationStrategy implements ReloadTokensCommunicationStrategy {
 
-	private IssuerAbcEngine issuerAbcEngine;
-	private IssuancePolicy issuancePolicy;
-	private List<Attribute> issuerAttributes;
-	private final UProveIssuanceHandling issuanceHandling;
-	private final CredentialManager credManager;
-	private final PolicyCredentialMatcher policyCredMatcher;
+    private IssuerAbcEngine issuerAbcEngine;
+    private IssuancePolicy issuancePolicy;
+    private final UProveIssuanceHandling issuanceHandling;
+    private final CredentialManager credManager;
+    private final PolicyCredentialMatcher policyCredMatcher;
 
-	@Inject
-	public ReloadTokensInMemoryCommunicationStrategy(UProveIssuanceHandling issuanceHandling, CredentialManager credManager, PolicyCredentialMatcher policyCredMatcher) {
-		this.issuanceHandling = issuanceHandling;	
-		this.credManager = credManager;
-		this.policyCredMatcher = policyCredMatcher;
-	}
+    @Inject
+    public ReloadTokensInMemoryCommunicationStrategy(UProveIssuanceHandling issuanceHandling, CredentialManager credManager, PolicyCredentialMatcher policyCredMatcher) {
+        this.issuanceHandling = issuanceHandling;
+        this.credManager = credManager;
+        this.policyCredMatcher = policyCredMatcher;
+    }
 
-	public void setIssuerAbcEngine(IssuerAbcEngine issuerAbcEngine) {
-		this.issuerAbcEngine = issuerAbcEngine;
-	}
+    public void setIssuerAbcEngine(IssuerAbcEngine issuerAbcEngine) {
+        this.issuerAbcEngine = issuerAbcEngine;
+    }
 
-	public void setIssuancePolicy(IssuancePolicy issuancePolicy) {
-		this.issuancePolicy =issuancePolicy;
-	}
+    public void setIssuancePolicy(IssuancePolicy issuancePolicy) {
+        this.issuancePolicy =issuancePolicy;
+    }
 
-	public void setIssuerAttributes(List<Attribute> issuerAttributes) {
-		this.issuerAttributes = issuerAttributes;
-	}
+    @Override
+    public Credential reloadTokens(Credential cred) throws ReloadException {
+        if ((this.issuerAbcEngine==null) || (this.issuancePolicy==null)) {
+            throw new RuntimeException("Cannot reload tokens. ReloadTokensInMemoryCommunicationStrategy is not initialized properly");
+        }
 
+        try {
+            System.out.println("issuancePolicy used for re-issuance:\n" + XmlUtils.toXml(new ObjectFactory().createIssuancePolicy(this.issuancePolicy)));
+            IssuanceMessageAndBoolean issuerIm = this.issuerAbcEngine.initReIssuanceProtocol(
+                    this.issuancePolicy);
 
-	@Override
-	public Credential reloadTokens(Credential cred) throws ReloadException {
-		if (issuerAbcEngine==null || issuancePolicy==null || issuerAttributes==null)
-			throw new RuntimeException("Cannot reload tokens. ReloadTokensInMemoryCommunicationStrategy is not initialized properly");
-		//issuerAbcEngine.initIssuanceProtocol(ip, attributes);
+            IssuMsgOrCredDesc userIm = new IssuMsgOrCredDesc();
+            UProveCryptoEngineUserImpl.RELOADING_TOKENS = true;
+            userIm.im = this.policyCredMatcher.createIssuanceToken(
+                    issuerIm.getIssuanceMessage(),
+                    new MockIdentitySelectionUi());
+            UProveCryptoEngineUserImpl.RELOADING_TOKENS = false;
+            while (!issuerIm.isLastMessage()) {
+                issuerIm = this.issuerAbcEngine.reIssuanceProtocolStep(userIm.im);
+                userIm = this.issuanceHandling.issuanceProtocolStep(issuerIm
+                        .getIssuanceMessage(), cred.getCredentialDescription()
+                        .getCredentialUID());
+            }
 
-		try {
-			IssuanceMessageAndBoolean issuerIm = issuerAbcEngine.initIssuanceProtocol(
-					issuancePolicy, issuerAttributes);
-
-			IssuMsgOrCredDesc userIm = new IssuMsgOrCredDesc();
-			userIm.im = policyCredMatcher.createIssuanceToken(issuerIm.im, new MockIdentitySelectionUi());
-
-			while (!issuerIm.lastMessage) {
-				issuerIm = issuerAbcEngine.issuanceProtocolStep(userIm.im);
-				userIm = issuanceHandling.issuanceProtocolStep(issuerIm.im, cred.getCredentialDescription().getCredentialUID());
-			}
-
-			return credManager.getCredential(userIm.cd.getCredentialUID());
-		} catch (CredentialManagerException e) {
-			e.printStackTrace();
-			throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
-		} catch (CryptoEngineException e) {
-			e.printStackTrace();
-			throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
+            return this.credManager.getCredential(userIm.cd.getCredentialUID());
+        } catch (CredentialManagerException e) {
+            e.printStackTrace();
+            throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
+        } catch (CryptoEngineException e) {
+            e.printStackTrace();
+            throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
         } catch (IdentitySelectionException e) {
             e.printStackTrace();
             throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
-		} catch (KeyManagerException e) {
-			e.printStackTrace();
-			throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
-		}
-	}
+        } catch (KeyManagerException e) {
+            e.printStackTrace();
+            throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
+        } catch(Exception e){
+            e.printStackTrace();
+            throw new ReloadTokensCommunicationStrategy.ReloadException("reloadTokens failed re-issuance:" + e.getMessage());
+        }
+    }
 
-	@Override
-	public void setCredentialInformation(URI context, ReloadInformation info) {
-		//Empty
-	}
+    @Override
+    public void setCredentialInformation(URI context, ReloadInformation info) {
+        //Empty
+    }
 
-	@Override
-	public void addCredentialIssuer(URI context,
-			CredentialDescription credDesc, String issuanceUrl,
-			String issuanceStepUrl) {
-		//Empty
-	}
+    @Override
+    public void addCredentialIssuer(URI context,
+            CredentialDescription credDesc, String issuanceUrl,
+            String issuanceStepUrl) {
+        //Empty
+    }
 
 }

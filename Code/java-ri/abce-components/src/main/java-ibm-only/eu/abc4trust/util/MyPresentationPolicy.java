@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 import eu.abc4trust.abce.internal.TokenManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
+import eu.abc4trust.abce.internal.user.evidenceGeneration.EvidenceGenerationOrchestration;
+import eu.abc4trust.cryptoEngine.user.AbstractPseudonymSerializer;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.util.attributeTypes.MyAttributeValue;
@@ -37,6 +39,7 @@ import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives.IssuerParametersUI
 import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
+import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.Message;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationPolicy;
@@ -47,6 +50,7 @@ import eu.abc4trust.xml.PseudonymWithMetadata;
 import eu.abc4trust.xml.SecretDescription;
 import eu.abc4trust.xml.VerifierDrivenRevocationInPolicy;
 import eu.abc4trust.xml.VerifierDrivenRevocationInToken;
+import eu.abc4trust.xml.VerifierIdentity;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class MyPresentationPolicy {
@@ -62,7 +66,7 @@ public class MyPresentationPolicy {
     return policy;
   }
 
-  public boolean isSatisfiedBy(PresentationTokenDescription ptd, TokenManager tk) {
+  public boolean isSatisfiedBy(PresentationTokenDescription ptd, TokenManager tk, KeyManager km) {
     if (!ptd.getPolicyUID().equals(policy.getPolicyUID())) {
       logger.warning("Different policyUIDs.");
       return false;
@@ -75,7 +79,7 @@ public class MyPresentationPolicy {
       logger.warning("Pseudonyms don't match");
       return false;
     }
-    if (!credentialsEquals(ptd.getCredential(), policy.getCredential())) {
+    if (!credentialsEquals(ptd.getCredential(), policy.getCredential(), km)) {
       logger.warning("Credentials don't match");
       return false;
     }
@@ -203,7 +207,8 @@ public class MyPresentationPolicy {
     return true;
   }
 
-  private boolean credentialsEquals(List<CredentialInToken> lhs, List<CredentialInPolicy> rhs) {
+  private boolean credentialsEquals(List<CredentialInToken> lhs, List<CredentialInPolicy> rhs,
+                                    KeyManager keyManager) {
 
     if (lhs.size() != rhs.size()) {
       logger.warning("Different number of credentials");
@@ -217,7 +222,7 @@ public class MyPresentationPolicy {
     while (lhsIter.hasNext() && rhsIter.hasNext()) {
       CredentialInToken lhsCred = lhsIter.next();
       CredentialInPolicy rhsCred = rhsIter.next();
-      if (!credentialEquals(lhsCred, rhsCred)) {
+      if (!credentialEquals(lhsCred, rhsCred, keyManager)) {
         logger.warning("Different credential");
         return false;
       }
@@ -226,7 +231,7 @@ public class MyPresentationPolicy {
     return true;
   }
 
-  private boolean credentialEquals(CredentialInToken lhs, CredentialInPolicy rhs) {
+  private boolean credentialEquals(CredentialInToken lhs, CredentialInPolicy rhs, KeyManager keyManager) {
 
     if (!myequals(lhs.getAlias(), rhs.getAlias())) {
       logger.warning("Alias not the same");
@@ -253,8 +258,27 @@ public class MyPresentationPolicy {
       logger.warning("Different SameKeyBindingAs");
       return false;
     }
+    if(keyManager != null) {
+      if(!checkIssuerParameterCredentialSpecConsistency(lhs.getIssuerParametersUID(), 
+          lhs.getCredentialSpecUID(), keyManager)) {
+        logger.warning("Incompatible issuer parameters and credential specification");
+        return false;
+      }
+    } else {
+      logger.warning("Did not check if issuer parameters are for the correct credential spec.");
+    }
 
     return true;
+  }
+
+  private boolean checkIssuerParameterCredentialSpecConsistency(URI issuerParametersUID,
+      URI credentialSpecUID, KeyManager keyManager) {
+    try {
+      IssuerParameters ip = keyManager.getIssuerParameters(issuerParametersUID);
+      return ip.getCredentialSpecUID().equals(credentialSpecUID);
+    } catch (KeyManagerException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private boolean verifierDrivenRevocationListEquals(List<VerifierDrivenRevocationInToken> lhs,
@@ -394,6 +418,10 @@ public class MyPresentationPolicy {
     } else if (!lhs.getScope().equals(pseudonymInPolicy.getScope())) {
       logger.warning("Different scopes");
       return false;
+    } else if(pseudonymInPolicy.getPseudonymValue() != null && !Arrays.equals(pseudonymInPolicy.getPseudonymValue(), lhs.getPseudonymValue())) {
+      // No check if pseudonymInPolicy does not specify a value
+      logger.warning("Incorrect pseudonym value");
+      return false;
     }
     // Skipping isEstablished, since the pseudonym in PresentationToken doesn't set this value
     else if (lhs.isExclusive() != pseudonymInPolicy.isExclusive()) {
@@ -427,6 +455,9 @@ public class MyPresentationPolicy {
       return false;
     } else if (! friendlyEquals(lhs.getFriendlyPolicyDescription(), rhs.getFriendlyPolicyDescription())) {
       logger.warning("Friendly policy description are different");
+      return false;
+    } else if (!verifierIdentityEquals(lhs.getVerifierIdentity(), rhs.getVerifierIdentity())) {
+      logger.warning("Verifier identity is different");
       return false;
     } else if (!applicationDataEquals(lhs.getApplicationData(), rhs.getApplicationData())) {
       logger.warning("Application data is different");
@@ -498,6 +529,40 @@ public class MyPresentationPolicy {
 
     if (!lhsXml.equals(rhsXml)) {
       logger.warning("Application data are not equal.");
+      return false;
+    }
+
+    return true;
+  }
+  
+  private boolean verifierIdentityEquals(VerifierIdentity lhs, VerifierIdentity rhs) {
+    if (lhs == null && rhs == null) {
+      return true;
+    }
+    if (lhs == null && rhs != null) {
+      logger.warning("Missing verifier identity.");
+      return false;
+    }
+    if (lhs != null && rhs == null) {
+      logger.warning("Should not contain verifier identity.");
+      return false;
+    }
+
+    // TODO(enr): Currently the only way to compare a sequence of xs:any
+    ObjectFactory of = new ObjectFactory();
+    String lhsXml, rhsXml;
+    try {
+      lhsXml = XmlUtils.toNormalizedXML(of.createVerifierIdentity(lhs));
+      rhsXml = XmlUtils.toNormalizedXML(of.createVerifierIdentity(rhs));
+    } catch (Exception e) {
+      String errorMessage = "Could not serialize Verifier identity: " + e.getMessage();
+      logger.severe(errorMessage);
+      e.printStackTrace();
+      throw new RuntimeException(errorMessage);
+    }
+
+    if (!lhsXml.equals(rhsXml)) {
+      logger.warning("Verifier identities are not equal.");
       return false;
     }
 
@@ -693,7 +758,9 @@ public class MyPresentationPolicy {
     LinkedList<MyCredentialDescription> candidateCredentials =
         new LinkedList<MyCredentialDescription>();
     for (CredentialDescription cd : credDescMatchingIssuer) {
-      candidateCredentials.add(new MyCredentialDescription(cd, km));
+      if(!cd.isRevokedByIssuer()) {
+        candidateCredentials.add(new MyCredentialDescription(cd, km));
+      }
     }
 
     return candidateCredentials;
@@ -832,17 +899,24 @@ public class MyPresentationPolicy {
   }
 
   public List<List<PseudonymWithMetadata>> computePseudonymChoice(
-      CredentialManager credentialManager, ContextGenerator contextGenerator) {
+      CredentialManager credentialManager, ContextGenerator contextGenerator,
+      EvidenceGenerationOrchestration evidenceOrchestration) {
     try {
       List<SecretDescription> secrets = credentialManager.listSecrets();
       List<List<PseudonymWithMetadata>> ret = new ArrayList<List<PseudonymWithMetadata>>();
       for (PseudonymInPolicy pseudonym : policy.getPseudonym()) {
         String scope = pseudonym.getScope();
         boolean canCreateNew = !pseudonym.isEstablished();
+        
+        if(!pseudonym.isEstablished() && !pseudonym.isExclusive() && pseudonym.getPseudonymValue() != null) {
+          throw new RuntimeException("Cannot specify a value for pseudonym if it is not established and not exclusive");
+        }
 
         List<PseudonymWithMetadata> list =
             credentialManager.listPseudonyms(scope, pseudonym.isExclusive());
-
+        
+        list = filterPseudonymsByValue(list, pseudonym.getPseudonymValue());
+        
         if (list.size() > 0 && pseudonym.isExclusive()) {
           // Can't create a new pseudonym if we are asked a scope exclusive one, and we have one
           // already
@@ -860,7 +934,7 @@ public class MyPresentationPolicy {
             // Will be filled out by crypto engine
             newPseudonym.setCryptoParams(null);
             // Metadata example
-            {
+            if(! pseudonym.isExclusive()) {
               Map<String, String> trans = new HashMap<String, String>();
               //trans.put("en", "New pseudonym with scope %s and secret %s.");
               //trans.put("el", "\u039d\u03ad\u03bf \u03c8\u03b5\u03c5\u03b4\u03ce\u03bd\u03c5\u03bc\u03bf \u03bc\u03b5 \u03c4\u03bf\u03bd \u03c4\u03bf\u03bc\u03ad\u03b1 %s \u03ba\u03b1\u03b9 \u03bc\u03c5\u03c3\u03c4\u03b9\u03ba\u03ae %s.");
@@ -879,6 +953,10 @@ public class MyPresentationPolicy {
                 System.err.println(desc.getValue());
                 newPseudonym.getPseudonymMetadata().getFriendlyPseudonymDescription().add(desc);
               }
+            } else {
+              newPseudonym.setPseudonymMetadata(of.createPseudonymMetadata());
+              FriendlyDescription fd = AbstractPseudonymSerializer.generateFriendlyDescription(scope);
+              newPseudonym.getPseudonymMetadata().getFriendlyPseudonymDescription().add(fd);
             }
   
             newPseudonym.getPseudonym().setScope(scope);
@@ -889,6 +967,13 @@ public class MyPresentationPolicy {
             newPseudonym.getPseudonym().setPseudonymUID(
                 contextGenerator.getUniqueContext(prefix));
             newPseudonym.getPseudonym().setExclusive(pseudonym.isExclusive());
+            if(pseudonym.getPseudonymValue() != null && pseudonym.isExclusive()) {
+              // Ignore scope exclusive pseudonyms where the pseudonym value doesn't match
+              PseudonymWithMetadata newpwm = evidenceOrchestration.createPseudonym(newPseudonym.getPseudonym().getPseudonymUID(), pseudonym.getScope(), pseudonym.isExclusive(), sd.getSecretUID());
+              if(!Arrays.equals(newpwm.getPseudonym().getPseudonymValue(), pseudonym.getPseudonymValue())) {
+                continue;
+              }
+            }
             // Will be filled out by Crypto Engine
             newPseudonym.getPseudonym().setPseudonymValue(null);
   
@@ -903,6 +988,20 @@ public class MyPresentationPolicy {
     }
   }
   
+  private List<PseudonymWithMetadata> filterPseudonymsByValue(
+    List<PseudonymWithMetadata> list, byte[] pseudonymValue) {
+    if(pseudonymValue == null) {
+      return list;
+    }
+    List<PseudonymWithMetadata> ret = new ArrayList<PseudonymWithMetadata>();
+    for(PseudonymWithMetadata pwm: list) {
+      if(Arrays.equals(pwm.getPseudonym().getPseudonymValue(), pseudonymValue)) {
+        ret.add(pwm);
+      }
+    }
+    return ret;
+  }
+
   public Message getMessage() {
     return this.policy.getMessage();
   }

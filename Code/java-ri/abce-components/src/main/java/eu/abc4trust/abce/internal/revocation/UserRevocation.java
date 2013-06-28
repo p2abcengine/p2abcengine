@@ -15,16 +15,21 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.List;
 
+import javax.security.auth.login.CredentialException;
+
 import org.w3c.dom.Element;
 
 import com.google.inject.Inject;
 import com.ibm.zurich.idmx.showproof.accumulator.AccumulatorWitness;
+import com.ibm.zurich.idmx.showproof.accumulator.ValueHasBeenRevokedException;
 import com.ibm.zurich.idmx.utils.Parser;
 
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.xml.Credential;
+import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.NonRevocationEvidence;
 import eu.abc4trust.xml.RevocationInformation;
 import eu.abc4trust.xml.util.XmlUtils;
@@ -56,10 +61,10 @@ public class UserRevocation {
     }
 
     private Credential updateNonRevocationEvidence(Credential cred,
-            RevocationInformation revInfo) {
+            RevocationInformation revInfo) throws CredentialWasRevokedException {
 
-        NonRevocationEvidence nre = (NonRevocationEvidence) XmlUtils.unwrap(cred
-          .getCryptoParams().getAny().get(1), NonRevocationEvidence.class);
+        Object nreElement = cred.getCryptoParams().getAny().get(1);
+        NonRevocationEvidence nre = (NonRevocationEvidence) XmlUtils.unwrap(nreElement, NonRevocationEvidence.class);
 
         RevocationUtility.updateNonRevocationEvidence(nre, revInfo);
         return cred;
@@ -75,7 +80,7 @@ public class UserRevocation {
     }
 
     public Credential updateNonRevocationEvidence(Credential cred,
-            URI raparsuid, List<URI> revokedatts) throws CryptoEngineException {
+            URI raparsuid, List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException {
 
         // TODO(jdn): This might only be working if the existing NRE is the
         // original NRE.
@@ -87,7 +92,7 @@ public class UserRevocation {
 
     public Credential updateNonRevocationEvidence(Credential cred,
             URI raparsuid, List<URI> revokedatts, URI revinfouid)
-                    throws CryptoEngineException {
+                    throws CryptoEngineException, CredentialWasRevokedException {
         RevocationInformation revInfo = null;
         try {
             revInfo = this.keyManager.getRevocationInformation(raparsuid,
@@ -98,5 +103,38 @@ public class UserRevocation {
         }
 
     }
+
+    public boolean isRevoked(Credential cred) throws CryptoEngineException {
+    	try {
+			CredentialSpecification credSpec = keyManager.getCredentialSpecification(cred.getCredentialDescription().getCredentialSpecificationUID());
+			if(!credSpec.isRevocable()) return false;
+		} catch (KeyManagerException e) {
+			throw new CryptoEngineException(e);
+		}
+    	
+        Object nreElement = cred.getCryptoParams().getAny().get(1);
+        NonRevocationEvidence nre = (NonRevocationEvidence) XmlUtils.unwrap(
+                nreElement, NonRevocationEvidence.class);
+
+        URI revParamsUid = nre.getRevocationAuthorityParametersUID();
+
+        Parser xmlParser = Parser.getInstance();
+        Element witnessElement = (Element) nre.getCryptoParams().getAny()
+                .get(0);
+        AccumulatorWitness w1 = (AccumulatorWitness) xmlParser
+                .parse(witnessElement);
+
+        try {
+            RevocationInformation revInfo = this.keyManager
+                    .getLatestRevocationInformation(revParamsUid);
+            RevocationUtility.updateWitness(w1, revInfo);
+            return false;
+        } catch (KeyManagerException ex) {
+            throw new CryptoEngineException(ex);
+        } catch (ValueHasBeenRevokedException ex) {
+            return true;
+        }
+    }
+
 
 }

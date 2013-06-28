@@ -22,7 +22,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
-import eu.abc4trust.ri.servicehelper.issuer.IssuanceHelper.SpecAndPolicy;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.util.XmlUtils;
@@ -253,107 +252,107 @@ public class IssuanceHelperTest {
     @Test(expected=IllegalStateException.class)
     public void test_engine_mismatch() throws Exception {
 
-      IssuanceHelper.resetInstance();
-      this.test_init(CryptoEngine.IDEMIX, "bridged_engine_mismatch" , this.idcard);
-      IssuanceHelper helper = IssuanceHelper.getInstance();
+        IssuanceHelper.resetInstance();
+        this.test_init(CryptoEngine.IDEMIX, "bridged_engine_mismatch" , this.idcard);
+        IssuanceHelper helper = IssuanceHelper.getInstance();
 
-      Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-      attributeValueMap.put("Firstname", "Hans Guldager");
-      attributeValueMap.put("Lastname", "Knudsen");
-      attributeValueMap.put("Birthday", new Date());
+        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
+        attributeValueMap.put("Firstname", "Hans Guldager");
+        attributeValueMap.put("Lastname", "Knudsen");
+        attributeValueMap.put("Birthday", new Date());
 
-      helper.initIssuance(CryptoEngine.UPROVE, "idcard", attributeValueMap);
+        helper.initIssuance(CryptoEngine.UPROVE, "idcard", attributeValueMap);
     }
 
-    
+
     @Test(expected=IllegalStateException.class)
     public void test_bridged_wrongusage() throws Exception {
 
-      IssuanceHelper.resetInstance();
-      this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_wrongusage" , this.idcard);
-      IssuanceHelper helper = IssuanceHelper.getInstance();
+        IssuanceHelper.resetInstance();
+        this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_wrongusage" , this.idcard);
+        IssuanceHelper helper = IssuanceHelper.getInstance();
 
-      Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-      attributeValueMap.put("Firstname", "Hans Guldager");
-      attributeValueMap.put("Lastname", "Knudsen");
-      attributeValueMap.put("Birthday", new Date());
+        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
+        attributeValueMap.put("Firstname", "Hans Guldager");
+        attributeValueMap.put("Lastname", "Knudsen");
+        attributeValueMap.put("Birthday", new Date());
 
-      helper.initIssuance("idcard", attributeValueMap);
+        helper.initIssuance("idcard", attributeValueMap);
     }
 
-//    @Test
+    //    @Test
     public void test_bridged_init_uprove() throws Exception {
 
-      IssuanceHelper.resetInstance();
-      this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_uprove" , this.idcard);
-      IssuanceHelper helper = IssuanceHelper.getInstance();
+        IssuanceHelper.resetInstance();
+        this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_uprove" , this.idcard);
+        IssuanceHelper helper = IssuanceHelper.getInstance();
 
-      Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-      attributeValueMap.put("Firstname", "Hans Guldager");
-      attributeValueMap.put("Lastname", "Knudsen");
-      attributeValueMap.put("Birthday", new Date());
+        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
+        attributeValueMap.put("Firstname", "Hans Guldager");
+        attributeValueMap.put("Lastname", "Knudsen");
+        attributeValueMap.put("Birthday", new Date());
 
-      IssuanceMessage im = helper.initIssuance(CryptoEngine.UPROVE, "idcard", attributeValueMap);
-      System.out.println("IssuanceMessage - UProve : " + XmlUtils.toXml(of.createIssuanceMessage(im)));
+        IssuanceMessage im = helper.initIssuance(CryptoEngine.UPROVE, "idcard", attributeValueMap);
+        System.out.println("IssuanceMessage - UProve : " + XmlUtils.toXml(of.createIssuanceMessage(im)));
     }
 
     @Test
     @Ignore
     public void test_bridged_init_idemix() throws Exception {
 
-      IssuanceHelper.resetInstance();
-      this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_idemix" , this.idcard);
-      IssuanceHelper helper = IssuanceHelper.getInstance();
+        IssuanceHelper.resetInstance();
+        this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_idemix" , this.idcard);
+        IssuanceHelper helper = IssuanceHelper.getInstance();
 
-      Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-      attributeValueMap.put("Firstname", "Hans Guldager");
-      attributeValueMap.put("Lastname", "Knudsen");
-      attributeValueMap.put("Birthday", new Date());
+        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
+        attributeValueMap.put("Firstname", "Hans Guldager");
+        attributeValueMap.put("Lastname", "Knudsen");
+        attributeValueMap.put("Birthday", new Date());
 
-      IssuanceMessage im = helper.initIssuance(CryptoEngine.IDEMIX, "idcard", attributeValueMap);
-      System.out.println("IssuanceMessage - Idemix : " + XmlUtils.toXml(of.createIssuanceMessage(im)));
+        IssuanceMessage im = helper.initIssuance(CryptoEngine.IDEMIX, "idcard", attributeValueMap);
+        System.out.println("IssuanceMessage - Idemix : " + XmlUtils.toXml(of.createIssuanceMessage(im)));
     }
 
     @Test
     @Ignore
     public void test_bridged_init_both() throws Exception {
 
-      IssuanceHelper.resetInstance();
-      this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_both" , this.idcard);
-      IssuanceHelper helper = IssuanceHelper.getInstance();
+        IssuanceHelper.resetInstance();
+        this.test_init(CryptoEngine.BRIDGED, "bridged_idcard_both" , this.idcard);
+        IssuanceHelper helper = IssuanceHelper.getInstance();
 
-      Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-      attributeValueMap.put("Firstname", "Hans Guldager");
-      attributeValueMap.put("Lastname", "Knudsen");
-      attributeValueMap.put("Birthday", new Date());
+        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
+        attributeValueMap.put("Firstname", "Hans Guldager");
+        attributeValueMap.put("Lastname", "Knudsen");
+        attributeValueMap.put("Birthday", new Date());
 
-      IssuanceMessage im_idemix = helper.initIssuance(CryptoEngine.IDEMIX, "idcard", attributeValueMap);
-      System.out.println("IssuanceMessage - Idemix : " + XmlUtils.toXml(of.createIssuanceMessage(im_idemix)));
-      IssuanceMessage im_uprove = helper.initIssuance(CryptoEngine.UPROVE, "idcard", attributeValueMap);
-      System.out.println("IssuanceMessage - UProve : " + XmlUtils.toXml(of.createIssuanceMessage(im_uprove)));
+        IssuanceMessage im_idemix = helper.initIssuance(CryptoEngine.IDEMIX, "idcard", attributeValueMap);
+        System.out.println("IssuanceMessage - Idemix : " + XmlUtils.toXml(of.createIssuanceMessage(im_idemix)));
+        IssuanceMessage im_uprove = helper.initIssuance(CryptoEngine.UPROVE, "idcard", attributeValueMap);
+        System.out.println("IssuanceMessage - UProve : " + XmlUtils.toXml(of.createIssuanceMessage(im_uprove)));
     }
 
-//        IssuanceHelper.resetInstance();
-//        this.test_init(CryptoEngine.IDEMIX, "passport", this.passport_ch);
-//
-//        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
-//        attributeValueMap.put("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle",
-//                "http://admin.ch/passport/revocation/parameters");
-//        attributeValueMap.put("Name", "Alice");
-//        attributeValueMap.put("LastName", "Nextdoor");
-//        attributeValueMap.put("PassportNumber", 42);
-//        Calendar cal = Calendar.getInstance();
-//        cal.set(2011, 1, 1, 0, 0, 0);
-//        attributeValueMap.put("Issued", cal.getTime());
-//        cal.set(2014, 1, 1, 0, 0, 0);
-//        attributeValueMap.put("Expires", cal.getTime());
-//        attributeValueMap.put("IssuedBy", "service_issuer_integration_test");
-//
-//        IssuanceMessage server_im =
-//                IssuanceHelper.getInstance().initIssuance("passport_ch", attributeValueMap);
-//        System.out.println(" - initial message - server : "
-//                + XmlUtils.toXml(of.createIssuanceMessage(server_im), false));
-//
-//    }
+    //        IssuanceHelper.resetInstance();
+    //        this.test_init(CryptoEngine.IDEMIX, "passport", this.passport_ch);
+    //
+    //        Map<String, Object> attributeValueMap = new HashMap<String, Object>();
+    //        attributeValueMap.put("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle",
+    //                "http://admin.ch/passport/revocation/parameters");
+    //        attributeValueMap.put("Name", "Alice");
+    //        attributeValueMap.put("LastName", "Nextdoor");
+    //        attributeValueMap.put("PassportNumber", 42);
+    //        Calendar cal = Calendar.getInstance();
+    //        cal.set(2011, 1, 1, 0, 0, 0);
+    //        attributeValueMap.put("Issued", cal.getTime());
+    //        cal.set(2014, 1, 1, 0, 0, 0);
+    //        attributeValueMap.put("Expires", cal.getTime());
+    //        attributeValueMap.put("IssuedBy", "service_issuer_integration_test");
+    //
+    //        IssuanceMessage server_im =
+    //                IssuanceHelper.getInstance().initIssuance("passport_ch", attributeValueMap);
+    //        System.out.println(" - initial message - server : "
+    //                + XmlUtils.toXml(of.createIssuanceMessage(server_im), false));
+    //
+    //    }
 
 }

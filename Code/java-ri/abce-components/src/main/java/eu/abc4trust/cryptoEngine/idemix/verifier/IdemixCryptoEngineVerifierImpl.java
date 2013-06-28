@@ -129,8 +129,12 @@ public class IdemixCryptoEngineVerifierImpl implements CryptoEngineVerifier {
                     if(child.getTagName().equals("Representations")){
                         NodeList representationElements = child.getChildNodes();
                         for(int j = 0; j<representationElements.getLength(); j++){
-                            Representation rep = (Representation) Parser.getInstance().parse((Element)representationElements.item(j));
-                            representations.add(rep);
+                        	try{
+                        		Representation rep = (Representation) Parser.getInstance().parse((Element)representationElements.item(j));
+                        		representations.add(rep);
+                        	}catch(ClassCastException e){
+                        		//Do nothing as the element is most likely a TextElement which is empty due to some malformed xml containing \r or \n.
+                        	}
                         }
                         proofElement.removeChild(children.item(i));
                         break;

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         id="eu.abc4trust.ri.ui.user.app"
+         name="eu.abc4trust.ri.ui.user.identityselectionapp"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            thread="main"
+            cardinality="singleton-global"
+            visible="true">
+         <run
+               class="eu.abc4trust.ri.ui.user.Application">
+         </run>
+      </application>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            name="%DefaultPerspective_name"
+            class="eu.abc4trust.ri.ui.user.perspective.DefaultPerspective"
+            id="eu.abc4trust.ri.ui.user.perspective.default">
+      </perspective>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            class="eu.abc4trust.ri.ui.user.view.IdentitySelectionView"
+            id="eu.abc4trust.ui.user.view.identityselection"
+            name="%IdentitySelectionView_name"
+            restorable="true">
+      </view>
+      <view
+            class="eu.abc4trust.ri.ui.user.view.CredentialListView"
+            icon="icons/credentials_16x16.png"
+            id="eu.abc4trust.ui.user.view.credentiallist"
+            name="%CredentialListView_name"
+            restorable="true">
+      </view>
+      <view
+            class="eu.abc4trust.ri.ui.user.view.CredentialAttributesView"
+            icon="icons/credential_16x16.png"
+            id="eu.abc4trust.ui.user.view.credentialattributes"
+            name="%CredentialAttributesView_name"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.rap.ui.branding">
+      <branding
+            defaultEntrypointId="eu.abc4trust.ri.ui.user.app"
+            id="eu.abc4trust.ri.ui.user.branding"
+            servletName="user-ui"
+            title="%Application_name">
+      </branding>
+   </extension>
+
+</plugin>

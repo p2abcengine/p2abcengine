@@ -17,6 +17,7 @@ import java.util.Random;
 
 import com.google.inject.Module;
 
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory;
 import eu.abc4trust.guice.configuration.AbceConfiguration;
 import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
@@ -50,6 +51,12 @@ public class IdemixIntegrationModuleFactory {
     config.setDefaultImagePath("file://error");
     config.setImageCacheDir(TemporaryFileFactory.createTemporaryDir());
     config.setPrng(random);
+    
+    //UProve configurations. They are not used, but is needed for the reloading setup within tests.
+    config.setUProveRetryTimeout(3);
+    config.setUProveNumberOfCredentialsToGenerate(2);
+    config.setUProvePortNumber(new UProveUtils().getUserServicePort());
+    config.setUProvePathToExe(new UProveUtils().getPathToUProveExe().getAbsolutePath());
     return config;
   }
 

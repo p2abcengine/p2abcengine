@@ -43,6 +43,7 @@ import com.ibm.zurich.idmx.showproof.predicates.DomainNymPredicate;
 import com.ibm.zurich.idmx.showproof.predicates.InequalityPredicate;
 import com.ibm.zurich.idmx.showproof.predicates.InequalityPredicate.InequalityOperator;
 import com.ibm.zurich.idmx.showproof.predicates.MessagePredicate;
+import com.ibm.zurich.idmx.showproof.predicates.NotEqualPredicate;
 import com.ibm.zurich.idmx.showproof.predicates.Predicate;
 import com.ibm.zurich.idmx.showproof.predicates.PrimeEncodePredicate;
 import com.ibm.zurich.idmx.showproof.predicates.PrimeEncodePredicate.PrimeEncodeOp;
@@ -292,6 +293,7 @@ public class IdemixProofSpecGenerator {
                 credentialAlias = URI.create("abc4trust.eu/credential/"+ credIndex);
             }
             credIndex ++;
+            
             idemixPredicates.add(new CLPredicate(c.getIssuerParametersUID(),
                     c.getCredentialSpecUID(),
                     credentialAlias.toString(),
@@ -339,7 +341,9 @@ public class IdemixProofSpecGenerator {
                     identifiers.addAll(committedIdentifiers.keySet());
                     for(MyAttributeReference mar: identifiers){
                         Identifier i = equalityIdentifiers.get(mar);
-                        if(i == null) i = committedIdentifiers.get(mar);
+                        if(i == null) {
+                            i = committedIdentifiers.get(mar);
+                        }
                         if(mar.getAttributeReference().equals(s+ca.getAttributeType().toString())){
                             ids.add(i);
                             // if we are working with 2 non idemix credentials, ie. comparing 2 committed attributes
@@ -408,8 +412,7 @@ public class IdemixProofSpecGenerator {
         //(equals-equality expressions are already taken care of)
         //////////////////////////////////////////////////////////
 
-        Set<MyPredicate> predicates = statement.keySet();
-        for (MyPredicate predicate: predicates){
+        for (MyPredicate predicate: statement.keySet()){
             List<CredentialInToken> cds = statement.get(predicate);
             handlePredicate(predicate, cds, attrRefToIdentifier, idemixPredicates);
 
@@ -431,7 +434,9 @@ public class IdemixProofSpecGenerator {
             			if(identifier == null){
             				identifier = equalityIdentifiers.get(mar);	
             			}
-            			if(identifier != null) continue;
+            			if(identifier != null) {
+                            continue;
+                        }
             		}
             	}
             }
@@ -463,7 +468,7 @@ public class IdemixProofSpecGenerator {
         // Handle Committed revocation handles:
         ///////////////////////////////////
         
-        if(claim.getCommittedRevocationHandles() != null && claim.getCommittedRevocationHandles().size() != 0){
+        if((claim.getCommittedRevocationHandles() != null) && (claim.getCommittedRevocationHandles().size() != 0)){
         	for(CommittedValue cv : claim.getCommittedRevocationHandles()){
         		MyAttributeReference mar = new MyAttributeReference(URI.create(cv.getAlias()),URI.create(cv.getAttributeType()));
         		Identifier id = equalityIdentifiers.get(mar);
@@ -517,8 +522,12 @@ public class IdemixProofSpecGenerator {
             	String label = attrRefToCredSpecUid.get(mar).toString()+"/"+mar.getAttributeType();
             	
    				Identifier identifier = equalityIdentifiers.get(mar);
-   				if(identifier == null) identifier = committedIdentifiers.get(mar);
-   				if(identifier == null) identifier = inspectableIdentifiers.get(mar); 
+   				if(identifier == null) {
+                    identifier = committedIdentifiers.get(mar);
+                }
+   				if(identifier == null) {
+                    identifier = inspectableIdentifiers.get(mar);
+                } 
 
             	Predicate vePred = new VerEncPredicate(mar.getAttributeReference(), identifier, claim.getInspectorKeyMap().get(mar), label);
             	idemixPredicates.add(vePred);
@@ -533,8 +542,8 @@ public class IdemixProofSpecGenerator {
         Vector<Predicate> idemixPredicatesVector = (Vector<Predicate>) idemixPredicates;
         ProofSpec proofSpec = new ProofSpec(identifierIDToIdentifier,
                 idemixPredicatesVector, groupParametersUID);
-        // System.out.println(" ============= ProofSpecGenerator ============= ");
-        // System.out.println(proofSpec.toStringPretty());
+         System.out.println(" ============= ProofSpecGenerator ============= ");
+         System.out.println(proofSpec.toStringPretty());
 
         return proofSpec;
     }
@@ -617,11 +626,75 @@ public class IdemixProofSpecGenerator {
             ////////////////////////////////////////////////////////////////////////////////////////////
         }else if (function.equals(OperationType.NOTEQUAL)){
             //////////////////////////////////////////////////////////////////////////////////////////////
-            // PS(a != b) => Not supported.
+            // PS(a != b) => only if a is disclosed
             //////////////////////////////////////////////////////////////////////////////////////////////
-            throw new Exception("Generation of an Idemix Proof Specification for expression '"+myPredicate.getPredicateAsString()+"' is currently not supported.");
-            ////////////////////////////////////////////////////////////////////////////////////////////
-            ////////////////////////////////////////////////////////////////////////////////////////////
+          
+        	 MyAttributeReference l = myPredicate.getLeftRef();
+             MyAttributeReference r = myPredicate.getRightRef();
+             boolean lIsConstant = l.isConstant();
+             boolean rIsConstant = r.isConstant();
+             
+             if (!lIsConstant && !rIsConstant) {
+
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+                 // PS(a.b != c.d) => Create Not Equal Predicate. NOTE: Currently NOT supported by Idemix!
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+            	 
+            	 throw new Exception("Generation of an Idemix Proof Specification for expression '"+myPredicate.getPredicateAsString()+"' is currently not supported.");
+
+                 // Once this is supported by Idemix one can use the commented code below:
+            	 // Get the Idemix Identifiers corresponding to the left and right attributes.
+                 /* Identifier leftIdentifier = attrRefToIdentifier.get(l);
+                 Identifier rightIdentifier = attrRefToIdentifier.get(r);
+
+                 // Create the predicate with all the gathered info.
+                 predicates.add(new NotEqualPredicate(leftIdentifier, rightIdentifier)); */
+                
+             } else if (!lIsConstant && rIsConstant) {
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+                 // PS(a.b != constExp) => Create Not Equal Predicate.
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+
+                 // Determine the value of the constant expression.
+                 //now use the same encoding as for the attribute from this predicate
+                 MyAttributeValue mav = myPredicate.getRightVal();
+                 BigInteger value = mav.getIntegerValueUnderEncoding(myPredicate.getEncoding());
+
+                 String expValueAsString;
+
+                 if (value!=null) {
+                     expValueAsString = value.toString();
+                 } else {
+                     throw new Exception("Generation of an Idemix Proof Specification for expression '"+myPredicate.getPredicateAsString()+"' is currently not supported.");
+                 }
+
+                 // Get the Idemix Identifier corresponding to the attribute.
+                 Identifier identifier = attrRefToIdentifier.get(l);
+
+                 // Create the predicate with all the gathered info.
+                 predicates.add(new NotEqualPredicate(identifier, value));
+
+             } else if (lIsConstant && !rIsConstant) {
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+                 // PS(constExp != a.b)  => PS(a.b != constExp)
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+                 MyPredicate invertedPredicate = myPredicate.invertPredicate();
+
+                 handlePredicate(invertedPredicate, credInTokenInPredicate, attrRefToIdentifier, predicates);
+
+             } else if (lIsConstant && rIsConstant) {
+                 //handle a predicate with 2 constants
+                 //evaluateFunction from MyAttrValFAct
+                 if (!myPredicate.evaluateConstantExpression()){
+                     throw new Exception("The predicate statement is not true");
+                 }
+             } else {
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+                 // PS(constNonAttrExp != nonConstNonAttrExp) 	=> Not supported.
+                 //////////////////////////////////////////////////////////////////////////////////////////////
+                 throw new Exception("Generation of an Idemix Proof Specification for expression '"+myPredicate.getPredicateAsString()+"' is currently not supported.");
+             }
+        ////////////////////////////////////////////////////////////////////////////////////////////
         } else if (function.equals(OperationType.EQUALONEOF)) {
             Vector<String> theAttributes = new Vector<String>();
             MyAttributeReference refAttr = null;
@@ -641,6 +714,7 @@ public class IdemixProofSpecGenerator {
                     MyAttributeValue val = argumentMap.get(ref);
                     //TODO:check the encoding???
                     theAttributes.add(type+";"+val.toString());
+                    //TODO: add if not in the right order
                 }
             }
             // Get the Idemix Identifiers corresponding to the left attribute.
@@ -747,7 +821,7 @@ public class IdemixProofSpecGenerator {
                 //evaluateFunction from MyAttrValFAct
                 if (!myPredicate.evaluateConstantExpression()){
                     throw new Exception("The predicate statement is not true");
-                };
+                }
             } else {
                 //////////////////////////////////////////////////////////////////////////////////////////////
                 // PS(constNonAttrExp inequalityOperator nonConstNonAttrExp) 	=> Not supported.

@@ -11,12 +11,14 @@
 
 package eu.abc4trust.abce.internal.issuer.issuanceManager;
 
+import java.net.URI;
 import java.util.List;
 
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 
 public interface IssuanceManagerIssuer {
@@ -103,5 +105,31 @@ public interface IssuanceManagerIssuer {
      */
     public IssuanceMessageAndBoolean issuanceProtocolStep(IssuanceMessage m)
             throws CryptoEngineException;
+
+    /**
+     * This method is responsible for extracting the correct issuanceMessage from
+     * the given policy. It more or less only generates a nonce and wraps everything
+     * in xml.
+     * @param clonedIssuancePolicy
+     * @return
+     * @throws CryptoEngineException
+     */
+    public IssuanceMessageAndBoolean initReIssuanceProtocol(
+            IssuancePolicy clonedIssuancePolicy) throws CryptoEngineException;
+
+    public IssuanceMessageAndBoolean reIssuanceProtocolStep(IssuanceMessage m)
+            throws CryptoEngineException;
+
+    /**
+     * This method looks up an issuance log entry of previously issued
+     * credentials that contains a verified issuance token together with the
+     * attribute values provided by the issuer. The issuance log entry
+     * identifier issuanceEntryUid is the identifier that was included in the
+     * issuance token description that was returned when the token was verified.
+     * 
+     * @throws Exception
+     */
+    public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid)
+            throws Exception;
 
 }

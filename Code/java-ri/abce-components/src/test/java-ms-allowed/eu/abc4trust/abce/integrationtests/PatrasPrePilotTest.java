@@ -45,6 +45,7 @@ import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerExcept
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
 import eu.abc4trust.abce.testharness.PolicySelector;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -108,7 +109,7 @@ public class PatrasPrePilotTest {
         // Generate system parameters.
         Injector universityInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         IssuerAbcEngine universityEngine = universityInjector
                 .getInstance(IssuerAbcEngine.class);
         SystemParameters systemParameters = universityEngine
@@ -132,7 +133,7 @@ public class PatrasPrePilotTest {
                 .getSecretDescription().getSecretUID());
         Injector universityInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         IssuerAbcEngine universityEngine = universityInjector
                 .getInstance(IssuerAbcEngine.class);
         SystemParameters systemParameters = universityEngine
@@ -150,9 +151,9 @@ public class PatrasPrePilotTest {
         IssuanceHelper issuanceHelper = new IssuanceHelper();
         Injector courseEvaluationInjector = Guice
                 .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine));
+                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1231), cryptoEngine));
+                new Random(1231), cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
 
         IssuerAbcEngine universityEngine = universityInjector
                 .getInstance(IssuerAbcEngine.class);
@@ -215,7 +216,7 @@ public class PatrasPrePilotTest {
         URI revocationId = new URI("revocationUID1");
         IssuerParameters universityIssuerParameters = universityEngine
                 .setupIssuerParameters(universityCredSpec, systemParameters,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         // ObjectFactory of = new ObjectFactory();
         // System.out.println(" - universityParameters : "
@@ -225,7 +226,7 @@ public class PatrasPrePilotTest {
         revocationId = new URI("revocationUID2");
         IssuerParameters credCourseIssuerParameters = universityEngine
                 .setupIssuerParameters(credCourseSpec, systemParameters,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId);
+                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
 
         issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
                 universityIssuerParameters);

@@ -28,7 +28,7 @@ public class MyPresentationPolicyTest{
           "/eu/abc4trust/sampleXml/presentationPolicies/emptyPolicy.xml"), true);
     MyPresentationPolicy mypp = new MyPresentationPolicy(ppa.getPresentationPolicy().get(0));
     
-    assertTrue(mypp.isSatisfiedBy(pt, null));
+    assertTrue(mypp.isSatisfiedBy(pt, null, null));
   }
   
   @Test
@@ -42,7 +42,7 @@ public class MyPresentationPolicyTest{
           "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyAlternativesHotel.xml"), true);
     MyPresentationPolicy mypp = new MyPresentationPolicy(ppa.getPresentationPolicy().get(0));
     
-    assertTrue(mypp.isSatisfiedBy(ptd, null));
+    assertTrue(mypp.isSatisfiedBy(ptd, null, null));
   }
 
 }

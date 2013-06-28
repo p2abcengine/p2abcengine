@@ -366,7 +366,7 @@ public interface Smartcard extends BasicSmartcard {
    *     knowledge of a credential fragment that uses this issuer parameters.
    * @return
    */
-  public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(int pin, RSAKeyPair rootKey,
+  public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey,
        URI parametersUri, int keyIDForCounter, CredentialBases credBases, RSAVerificationKey courseKey,
        int minimumAttendance);
   
@@ -377,14 +377,14 @@ public interface Smartcard extends BasicSmartcard {
    * @param credBases
    * @return
    */
-  public SmartcardStatusCode addIssuerParameters(int pin, RSAKeyPair rootKey, URI parametersUri,
+  public SmartcardStatusCode addIssuerParameters(RSAKeyPair rootKey, URI parametersUri,
 		  										 CredentialBases credBases);
   
-  public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(int pin,
-          RSAKeyPair rootKey, URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
+  public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
+          URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
           RSAVerificationKey courseKey, int minimumAttendance);
   
-  public SmartcardStatusCode addUProveIssuerParameters(int pin, RSAKeyPair rootKey, URI parametersUri,
+  public SmartcardStatusCode addUProveIssuerParameters(RSAKeyPair rootKey, URI parametersUri,
 			 UProveParams uProveParams);
   
   /**

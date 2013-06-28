@@ -1,6 +1,10 @@
-//* Licensed Materials - Property of IBM                              *
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
 //* eu.abc4trust.pabce.1.0                                            *
 //* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*/**/****************************************************************
@@ -15,9 +19,11 @@ import eu.abc4trust.cryptoEngine.bridging.verifier.CryptoEngineDelegatorVerifier
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspector;
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspectorImpl;
 import eu.abc4trust.cryptoEngine.issuer.CryptoEngineIssuer;
+import eu.abc4trust.cryptoEngine.issuer.CryptoEngineReIssuer;
 import eu.abc4trust.cryptoEngine.revauth.AccumCryptoEngineRevAuthImpl;
 import eu.abc4trust.cryptoEngine.revocation.CryptoEngineRevocation;
 import eu.abc4trust.cryptoEngine.uprove.issuer.UProveCryptoEngineIssuerImpl;
+import eu.abc4trust.cryptoEngine.uprove.issuer.UProveCryptoEngineReIssuerImpl;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveBindingManager;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveLauncher;
 import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
@@ -29,6 +35,7 @@ public class BridgedCryptoEngineWithUproveIssuerModule extends AbstractModule {
   protected void configure() {
     // 'bridged' is not supported by issuer. instead create both idemix and uprove
     this.bind(CryptoEngineIssuer.class).to(UProveCryptoEngineIssuerImpl.class).in(Singleton.class);
+    this.bind(CryptoEngineReIssuer.class).to(UProveCryptoEngineReIssuerImpl.class).in(Singleton.class);
 
     this.bind(CryptoEngineVerifier.class).to(CryptoEngineDelegatorVerifier.class).in(Singleton.class);
     this.bind(CryptoEngineUser.class).to(CryptoEngineDelegatorUser.class).in(Singleton.class);

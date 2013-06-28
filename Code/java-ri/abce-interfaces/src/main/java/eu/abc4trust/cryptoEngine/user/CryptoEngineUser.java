@@ -14,6 +14,7 @@ package eu.abc4trust.cryptoEngine.user;
 import java.net.URI;
 import java.util.List;
 
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.TokenIssuanceException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
@@ -146,13 +147,16 @@ public interface CryptoEngineUser {
      * information, and possibly calls the RevocationProxy.processRevocationMessage(m, rapars) method
      * to interact with the Revocation Authority.
      * 
+     * If the credential was revoked, this method must throw a CredentialWasRevokedException.
+     * 
      * @param cred
      * @param raparsuid
      * @param revokedatts
      * @return
+     * @throws CredentialWasRevokedException 
      */
     public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
-            List<URI> revokedatts) throws CryptoEngineException;
+            List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException;
 
     /**
      * This method updates the non-revocation evidence stored in credential cred with respect to
@@ -164,15 +168,18 @@ public interface CryptoEngineUser {
      * Revocation Authority parameters. It may call the RevocationProxy.processRevocationMessage(m,
      * rapars) method to interact with the Revocation Authority.
      * 
+     * If the credential was revoked, this method must throw a CredentialWasRevokedException.
+     * 
      * @param cred
      * @param raparsuid
      * @param revokedatts
      * @param revinfouid
      * @return
+     * @throws CredentialWasRevokedException 
      */
     public Credential updateNonRevocationEvidence(Credential cred,
             URI raparsuid, List<URI> revokedatts, URI revinfouid)
-                    throws CryptoEngineException;
+                    throws CryptoEngineException, CredentialWasRevokedException;
 
     /**
      * Create a new pseudonym.
@@ -190,5 +197,15 @@ public interface CryptoEngineUser {
      * The caller is responsible for storing the secret.
      */
     public Secret createSecret();
+
+    /**
+     * This method checks if the given credential has been revoked. Returns true
+     * if the credential is revoked and false otherwise.
+     * 
+     * @param cred
+     * @return
+     * @throws CryptoEngineException
+     */
+    public boolean isRevoked(Credential cred) throws CryptoEngineException;
 
 }

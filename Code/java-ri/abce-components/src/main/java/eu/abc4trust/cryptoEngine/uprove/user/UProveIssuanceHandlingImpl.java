@@ -29,9 +29,11 @@ import org.w3c.dom.Element;
 import com.google.inject.Inject;
 import com.microsoft.schemas._2003._10.serialization.arrays.ArrayOfstring;
 
+import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
+import eu.abc4trust.cryptoEngine.uprove.util.UProveKeyAndToken;
 import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -53,6 +55,8 @@ import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.NonRevocationEvidence;
 import eu.abc4trust.xml.ObjectFactory;
+import eu.abc4trust.xml.PresentationPolicyAlternatives;
+import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
@@ -62,14 +66,19 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 	private final KeyManager keyManager;	
     private final CardStorage cardStorage;
     private final CryptoEngineContext ctxt;
+    private final UserAbcEngine userEngine;
+    private final ReloadTokensCommunicationStrategy reloadTokens;
 
     @Inject
-    public UProveIssuanceHandlingImpl(CryptoEngineContext ctxt, KeyManager keyManager, CredentialManager credManager,CardStorage cardStorage) {
+    public UProveIssuanceHandlingImpl(CryptoEngineContext ctxt, KeyManager keyManager, CredentialManager credManager,
+    		CardStorage cardStorage, UserAbcEngine userEngine, ReloadTokensCommunicationStrategy reloadTokens) {
 		this.utils = new UProveUtils();
 	    this.ctxt = ctxt;
 		this.credManager = credManager;
 		this.keyManager = keyManager;
 		this.cardStorage = cardStorage;
+		this.userEngine = userEngine;
+		this.reloadTokens = reloadTokens;
 	}
 
     /* (non-Javadoc)
@@ -126,8 +135,13 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 
 		        int keyLength = 2048; //new UProveSystemParameters(syspars).getKeyLength();
 				if(scURI != null){
-					HardwareSmartcard sc = (HardwareSmartcard) cardStorage.getSmartcard(scURI);                
-					int credID = sc.getCredentialIDFromUri(cardStorage.getPin(scURI), ctxt.uidOfIssuedCredentialCache.get(context));
+					HardwareSmartcard sc = (HardwareSmartcard) cardStorage.getSmartcard(scURI);
+					byte credID;
+					if(prevCredentialUri != null){
+						credID = sc.getCredentialIDFromUri(cardStorage.getPin(scURI), prevCredentialUri);	
+					}else{
+						credID = sc.getCredentialIDFromUri(cardStorage.getPin(scURI), ctxt.uidOfIssuedCredentialCache.get(context));
+					}
 					sessionKey = utils.getSessionKey(ctxt.binding, cardStorage, credID, keyLength);                	
 				}else{
 					sessionKey = utils.getSessionKey(ctxt.binding, keyLength);
@@ -147,10 +161,13 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 				ret.getAny().add(convertJAXBToW3DOMElement);
 				ret.setContext(context);
 
+				try{System.out.println("Second message from user to issuer: " + XmlUtils.toXml(of.createIssuanceMessage(ret)));}catch(Exception e){e.printStackTrace();}
+				
 				imoc.im = ret;
 			} else if(elementName.equalsIgnoreCase("thirdIssuanceMessageComposite")) {
 				// This is for the third and final step in the UProve issuance protocol for the user side, the issuer side has returned a ThirdIssuanceMessage object.
 				ThirdIssuanceMessageComposite thirdIssuanceMessageComposite = utils.convertW3DomElementToJAXB(ThirdIssuanceMessageComposite.class, element);
+				
 				MyCredentialDescription myCredDesc;
 				try {
 					myCredDesc = new MyCredentialDescription(
@@ -200,13 +217,16 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 				}
 				URI scURI = UProveUtils.getSmartcardUri(cardStorage);
 				if(scURI != null){
-					HardwareSmartcard sc = (HardwareSmartcard) cardStorage.getSmartcard(scURI);                
-					int credID = sc.getCredentialIDFromUri(cardStorage.getPin(scURI), ctxt.uidOfIssuedCredentialCache.get(context));
-					SmartcardStatusCode sStatus = sc.issueCredentialOnSmartcard(cardStorage.getPin(scURI), (byte)credID);
-					if (sStatus != SmartcardStatusCode.OK) {
-						throw new RuntimeException("failed to issue credential on smartcard");
+					HardwareSmartcard sc = (HardwareSmartcard) cardStorage.getSmartcard(scURI);
+					//Only issue when it is a new credential as we otherwise already have a status of 2 on the old credential.
+					byte credID;					
+					if(prevCredentialUri == null){						
+						credID = sc.getCredentialIDFromUri(cardStorage.getPin(scURI), ctxt.uidOfIssuedCredentialCache.get(context));
+						SmartcardStatusCode sStatus = sc.issueCredentialOnSmartcard(cardStorage.getPin(scURI), credID);
+						if (sStatus != SmartcardStatusCode.OK) {
+							throw new RuntimeException("failed to issue credential on smartcard");
+						}
 					}
-
 				}
 				CredentialSpecification credSpec = null;
 				try {
@@ -223,8 +243,12 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 				NonRevocationEvidence nre = null;
 
 				if (credSpec.isRevocable()) {
-					nre = (NonRevocationEvidence) XmlUtils.unwrap(m.getAny()
-							.get(2), NonRevocationEvidence.class);
+					try{
+						nre = (NonRevocationEvidence) XmlUtils.unwrap(m.getAny()
+								.get(2), NonRevocationEvidence.class);
+					}catch(Exception e){
+						System.out.println("Assuming re-issuance");						
+					}
 
 					List<UProveKeyAndTokenComposite> uProveKeyAndTokenComposites = compositeTokens
 							.getUProveKeyAndTokenComposite();
@@ -277,10 +301,14 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 				// 2. issuer parameters
 
 				// Convert ArrayOfUProveKeyAndTokenComposite to serializable version
-				cryptoEvidence.getAny().add(utils.convertArrayOfUProveKeyAndTokenComposite(compositeTokens));
-
+//				cryptoEvidence.getAny().add(utils.convertArrayOfUProveKeyAndTokenComposite(compositeTokens));
+				
+				//Add empty list since logic dictates it has to be there. 
+				//TODO: Make this nicer so as to avoid misunderstandings. Not nice to have an always empty array.
+				cryptoEvidence.getAny().add(new ArrayList<UProveKeyAndToken>());				
+				
 				// Set NonRevocationEvidenceUID.
-				if (credSpec.isRevocable()) {
+				if (credSpec.isRevocable() && nre != null) {					
 					nre.setCredentialUID(myCredDesc.getUid());
 					cred.getNonRevocationEvidenceUID().add(
 							nre.getNonRevocationEvidenceUID());
@@ -289,37 +317,60 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 
 				cred.setCryptoParams(cryptoEvidence);
 
+				@SuppressWarnings("unused")
 				URI newCredentialUri = null;
 				try {
-					newCredentialUri = credManager.storeCredential(cred);
+					if(prevCredentialUri == null){
+						List<URI> credUids = new ArrayList<URI>();
+						credUids.add(cred.getCredentialDescription().getCredentialUID());
+						List<URI> pseudonyms = new ArrayList<URI>();
+						ReloadInformation info = new ReloadInformation(credUids, pseudonyms);
+				        this.reloadTokens.setCredentialInformation(context, info);
+						newCredentialUri = credManager.storeCredential(cred);
+						
+						try {
+							URI credUid = cred.getCredentialDescription().getCredentialUID();
+							this.keyManager.storeCredentialTokens(credUid, utils.convertArrayOfUProveKeyAndTokenComposite(compositeTokens));
+						} catch (KeyManagerException e) {
+							throw new CryptoEngineException(e);
+						}
+					}
 				} catch (CredentialManagerException ex) {
 					throw new CryptoEngineException(ex);
 				}
-
-				if (prevCredentialUri!=null) {
-					// we update the old Uri and delete the new credential
-					cred.getCredentialDescription().setCredentialUID(prevCredentialUri);
-					Exception updateException = null;
-	                try {
-						credManager.updateCredential(cred);
-					} catch (CredentialManagerException e) {
-						updateException = e;
-					} catch (Exception e) {
-						updateException = e;
-					}
-	                
-	                try {
-						credManager.deleteCredential(newCredentialUri);
-					} catch (CredentialManagerException e) {
-						throw new CryptoEngineException(e);
-					}
-	                if (updateException!=null) {
-	                	//Update of old cred failed
-	                	throw new CryptoEngineException(updateException);
-	                }
-				}
 				imoc.cd = cred.getCredentialDescription();
 				imoc.im = null;
+
+				if (prevCredentialUri!=null) {
+					Credential oldCred = null;
+					try {
+						oldCred = credManager.getCredential(prevCredentialUri);
+					} catch (CredentialManagerException e1) {
+						throw new CryptoEngineException(e1);
+					}
+//					
+//					//Update the old credential with the newly created Uprove tokens					
+//					Object tokens_as_object = oldCred.getCryptoParams().getAny().get(0);
+//					@SuppressWarnings("unchecked")
+//					ArrayList<UProveKeyAndToken> old_tokens = (ArrayList<UProveKeyAndToken>) XmlUtils.unwrap(tokens_as_object, ArrayList.class);
+//					System.out.println("old tokens size before adding: " + old_tokens.size());
+//					old_tokens.addAll(utils.convertArrayOfUProveKeyAndTokenComposite(compositeTokens));
+//					System.out.println("old tokens size after adding: " + old_tokens.size());					
+//					
+					imoc.cd = oldCred.getCredentialDescription();
+					try {
+						URI credUid = oldCred.getCredentialDescription().getCredentialUID();
+						this.keyManager.storeCredentialTokens(credUid, utils.convertArrayOfUProveKeyAndTokenComposite(compositeTokens));
+					} catch (KeyManagerException e) {
+						throw new CryptoEngineException(e);
+					}
+//					
+//					try {
+//						credManager.updateCredential(oldCred);
+//					} catch (CredentialManagerException e1) {
+//						throw new CryptoEngineException(e1);
+//					}					
+				}				
 			} else {
 				throw new IllegalStateException("IssuanceMessage from Issuer could not be handled : unknown Element !" + o.getClass() + " : "+ element + ":" +element.getNodeName());
 			}
@@ -341,6 +392,5 @@ public class UProveIssuanceHandlingImpl implements UProveIssuanceHandling {
 		}
 		return attrList;
 	}
-
 
 }

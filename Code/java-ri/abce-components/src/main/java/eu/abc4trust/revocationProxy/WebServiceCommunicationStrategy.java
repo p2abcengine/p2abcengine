@@ -41,7 +41,8 @@ public class WebServiceCommunicationStrategy implements RevocationProxyCommunica
     }
 
     private URI getRevocationServiceURI(Reference r) throws RevocationProxyException {
-        List<Object> anyList = r.getAny();
+        //List<Object> anyList = r.getAny();
+    	List<URI> anyList = r.getReferences();
         if(anyList!=null && anyList.size()>0) {
             Object o = anyList.get(0);
             if(o instanceof URI) {
@@ -56,20 +57,72 @@ public class WebServiceCommunicationStrategy implements RevocationProxyCommunica
     
     private RevocationMessage getRevocationMessageFromServer(Reference reference, RevocationMessage m) throws RevocationProxyException {
 
+      URI revocationServiceURI = getRevocationServiceURI(reference);
+      System.out.println("WebServiceCommunicationStrategy.getRevocationMessageFromServer : " + reference.getReferenceType() + " : " + revocationServiceURI);
+
       // 
       ObjectFactory of = new ObjectFactory();
 
       Client client = Client.create();
-      
-      URI revocationServiceURI = getRevocationServiceURI(reference);
-      
+//      client.setFollowRedirects(false);
+      client.setConnectTimeout(15000);
+      client.setReadTimeout(30000);
+
       WebResource revocationResource = client.resource(revocationServiceURI);
 
       JAXBElement<RevocationMessage> request =  of.createRevocationMessage(m);
       
       RevocationMessage response = revocationResource.post(RevocationMessage.class, request);
-          
+      System.out.println(" - got response from RevocationAuthority...");
+      
       return response;
+      /*
+      ClientResponse resp = revocationResource.post(ClientResponse.class, request);
+      RevocationMessage revMess = resp.getEntity(RevocationMessage.class);
+      CryptoParams cp  = of.createCryptoParams();
+         
+      try {    	  
+    	  NonRevocationEvidence nre = ((JAXBElement<NonRevocationEvidence>)revMess.getCryptoParams().getAny().get(0)).getValue();
+      	  //NonRevocationEvidence nre = resp.getEntity(NonRevocationEvidence.class);
+    	  cp.getAny().add(of.createNonRevocationEvidence(nre));
+          RevocationMessage response = of.createRevocationMessage();
+          response.setCryptoParams(cp);
+          response.setRevocationAuthorityParametersUID(m.getRevocationAuthorityParametersUID());
+          response.setContext(m.getContext());
+          return response;
+      } catch (Exception e) {
+    	  System.out.println("received message was not non revocation evidence: "+e);
+      }
+
+      try {
+    	  RevocationInformation ri = ((JAXBElement<RevocationInformation>)revMess.getCryptoParams().getAny().get(0)).getValue();
+      	  //RevocationInformation ri = resp.getEntity(RevocationInformation.class);
+    	  cp.getAny().add(of.createRevocationInformation(ri));
+          RevocationMessage response = of.createRevocationMessage();
+          response.setCryptoParams(cp);
+          response.setRevocationAuthorityParametersUID(m.getRevocationAuthorityParametersUID());
+          response.setContext(m.getContext());
+          return response;
+      } catch (Exception e) {
+    	  System.out.println("received message was not revocation information: "+e);
+      }
+
+      try {
+    	  NonRevocationEvidenceUpdate nreu = ((JAXBElement<NonRevocationEvidenceUpdate>)revMess.getCryptoParams().getAny().get(0)).getValue();
+      	  //NonRevocationEvidenceUpdate nreu = resp.getEntity(NonRevocationEvidenceUpdate.class);
+    	  cp.getAny().add(of.createNonRevocationEvidenceUpdate(nreu));
+          RevocationMessage response = of.createRevocationMessage();
+          response.setCryptoParams(cp);
+          response.setRevocationAuthorityParametersUID(m.getRevocationAuthorityParametersUID());
+          response.setContext(m.getContext());
+          return response;
+      } catch (Exception e) {
+    	  System.out.println("received message was not non revocation evidence: "+e);
+      }
+      
+   	  RevocationMessage rm = resp.getEntity(RevocationMessage.class);
+   	  return rm;
+      */
     }
 
     @Override

@@ -222,5 +222,10 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
         s.getSecretDescription().setSecretUID(URI.create("secret-uid"));
         return s;
     }
+    
+    @Override
+    public boolean isRevoked(Credential cred) throws CryptoEngineException {     	
+         throw new UnsupportedOperationException();                   
+    }
 
 }

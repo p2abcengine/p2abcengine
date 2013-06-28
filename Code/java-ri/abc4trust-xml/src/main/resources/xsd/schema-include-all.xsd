@@ -8,6 +8,6 @@
   <xs:include schemaLocation="schema-ui-json.xsd" />
   <xs:include schemaLocation="schema-test.xsd" />
   <xs:include schemaLocation="schema-pilot.xsd" />
+  <xs:include schemaLocation="schema-idmx.xsd" />
     
-
 </xs:schema>

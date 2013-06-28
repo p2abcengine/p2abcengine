@@ -9,7 +9,9 @@ package eu.abc4trust.cryptoEngine.user;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 
+import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 import eu.abc4trust.xml.util.XmlUtils;
@@ -19,10 +21,25 @@ import eu.abc4trust.xml.util.XmlUtils;
  * 
  * @author enr
  */
-public class PseudonymSerializerXml implements PseudonymSerializer {
+public class PseudonymSerializerXml extends AbstractPseudonymSerializer {
 
+	private final CardStorage cardStorage;
+	
+	public PseudonymSerializerXml(CardStorage cardStorage){
+		this.cardStorage = cardStorage;
+	}
+	
+	@Override
+	public CardStorage getCardStorage(){
+		return this.cardStorage;
+	}
+	
   @Override
   public byte[] serializePseudonym(PseudonymWithMetadata pwm) {
+	  if(pwm.getPseudonym().isExclusive()){
+		  return this.serializeExclusivePseudonym(pwm);
+	  }
+	  
     try {
       ByteArrayOutputStream ser = new ByteArrayOutputStream();
       ser.write(magicHeader());
@@ -38,12 +55,22 @@ public class PseudonymSerializerXml implements PseudonymSerializer {
   }
 
   @Override
-  public PseudonymWithMetadata unserializePseudonym(byte[] data) {
+  public PseudonymWithMetadata unserializePseudonym(byte[] data, URI pseudonymUID) {
+	  PseudonymWithMetadata pwm;
+	  try{
+		  pwm = this.unserializeExclusivePseudonym(data, pseudonymUID);
+		  if(pwm != null){
+			  return pwm;
+		  }
+	  }catch(Exception e){
+		  //Not scope-exclusive. Trying normal pseudonym
+	  }
+	  
     try {
       ByteArrayInputStream bais = new ByteArrayInputStream(data);
       int header = bais.read();
       if (header != magicHeader()) {
-        throw new RuntimeException("Cannot unserialize this credential: header was " + header
+        throw new RuntimeException("Cannot unserialize this pseudonym: header was " + header
             + " expected header " + magicHeader());
       }
       return (PseudonymWithMetadata) XmlUtils.getObjectFromXML(bais, true);

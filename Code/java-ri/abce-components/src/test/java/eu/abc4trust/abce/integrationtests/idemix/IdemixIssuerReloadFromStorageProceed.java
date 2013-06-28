@@ -37,12 +37,12 @@ import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.ObjectFactory;
@@ -134,15 +134,17 @@ public class IdemixIssuerReloadFromStorageProceed {
         // step 2 - Issuer starts the issuance
         System.out.println(" - start issuance - Issuer ");
         IssuanceMessageAndBoolean issuerIm = issuerEngine.initIssuanceProtocol(ip, issuerAtts);
-        assertFalse(issuerIm.lastMessage);
+        assertFalse(issuerIm.isLastMessage());
 
         if (DEBUG) {
-            System.out.println(XmlUtils.toXml((new ObjectFactory()).createIssuanceMessage(issuerIm.im)));
+            System.out.println(XmlUtils.toXml((new ObjectFactory())
+                    .createIssuanceMessage(issuerIm.getIssuanceMessage())));
         }
 
         // step 3 : Reply from user
         System.out.println(" - start issuance - User ");
-        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm
+                .getIssuanceMessage());
         if (DEBUG) {
             System.out.println(XmlUtils.toXml(of.createIssuanceMessage(userIm.im)));
         }
@@ -153,15 +155,16 @@ public class IdemixIssuerReloadFromStorageProceed {
         // Ping-pong until both user and issuer finish
         System.out.println(" - run issuance steps...");
 
-        while(!issuerIm.lastMessage) {
+        while (!issuerIm.isLastMessage()) {
 
             issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
 
-            userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+            userIm = userEngine.issuanceProtocolStep(issuerIm
+                    .getIssuanceMessage());
 
             boolean userLastMessage = (userIm.cd != null);
 
-            assertTrue(issuerIm.lastMessage == userLastMessage);
+            assertTrue(issuerIm.isLastMessage() == userLastMessage);
         }
         cd = userIm.cd;
 

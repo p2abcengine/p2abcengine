@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- 
+  This is the ABC4Trust presentation policy for the School Registration System 
+-->
+
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  Version="1.0">
+  <abc:PresentationPolicy PolicyUID="urn:soederhamn:policies:loginPseudonym">
+    <abc:Message>
+      <abc:Nonce>bkQydHBQWDR4TUZzbXJKYUphdVM=</abc:Nonce>
+    </abc:Message>
+    <abc:Pseudonym Exclusive="true" Scope="urn:soederhamn:registration"/>
+  </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

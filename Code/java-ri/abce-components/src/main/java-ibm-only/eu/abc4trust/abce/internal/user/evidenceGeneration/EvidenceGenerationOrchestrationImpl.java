@@ -16,6 +16,7 @@ import java.util.List;
 
 import com.google.inject.Inject;
 
+import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
 import eu.abc4trust.exceptions.TokenIssuanceException;
@@ -79,13 +80,13 @@ public class EvidenceGenerationOrchestrationImpl implements EvidenceGenerationOr
 
     @Override
     public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
-        List<URI> revokedatts) throws CryptoEngineException {
+        List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException {
       return this.cryptoEngine.updateNonRevocationEvidence(cred, raparsuid, revokedatts);
     }
 
     @Override
     public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
-        List<URI> revokedatts, URI revinfouid) throws CryptoEngineException {
+        List<URI> revokedatts, URI revinfouid) throws CryptoEngineException, CredentialWasRevokedException {
       return this.cryptoEngine.updateNonRevocationEvidence(cred, raparsuid, revokedatts, revinfouid);
     }
 

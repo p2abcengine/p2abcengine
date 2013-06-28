@@ -31,7 +31,7 @@ import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBElement;
 
 import eu.abc4trust.abce.internal.revocation.RevocationConstants;
-import eu.abc4trust.guice.ProductionModule;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.returnTypes.RevocationMessageAndBoolean;
 import eu.abc4trust.ri.servicehelper.revocation.RevocationHelper;
 import eu.abc4trust.ri.servicehelper.revocation.RevocationHelper.RevocationReferences;
@@ -86,7 +86,7 @@ public class RevocationService {
     URI nonRevocationEvidenceReference = URI.create("http://localhost:9094/integration-test-revocation/nonrevocation/evidence");
     URI nonRevocationUpdateReference = URI.create("http://localhost:9094/integration-test-revocation/nonrevocation/update");;
     RevocationReferences revocationReferences = new RevocationReferences(soderhamnRevocationAuthority, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference);
-    RevocationHelper.initInstance(ProductionModule.CryptoEngine.BRIDGED, fileStoragePrefix, fileStoragePrefix, systemParametersResource, issuerParamsResourceList , credSpecResourceList, revocationReferences );
+    RevocationHelper.initInstance(CryptoEngine.BRIDGED, fileStoragePrefix, fileStoragePrefix, systemParametersResource, issuerParamsResourceList , credSpecResourceList, revocationReferences );
   }
 
   @GET()

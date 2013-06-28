@@ -14,6 +14,7 @@ package eu.abc4trust.cryptoEngine.idemix.user;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -101,13 +102,12 @@ public class IdemixClaimGenerator {
     };
 
     public Element getPresentationEvidenceInternal(IdemixClaim idmxClaim,
-            Map<URI, Credential> aliasCreds,
-            Map<URI, PseudonymWithMetadata> aliasNyms) {
+                                                   LinkedHashMap<URI, Credential> aliasCreds,
+                                                   LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms) {
 
         VerifiableClaim verClaim = null;
         try {
-            verClaim = this.generatePresentationEvidence(idmxClaim, aliasCreds,
-                    aliasNyms);
+            verClaim = this.generatePresentationEvidence(idmxClaim, aliasCreds, aliasNyms);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -116,9 +116,10 @@ public class IdemixClaimGenerator {
     }
 
     public Element getPresentationEvidenceWithCommitment(PresentationTokenDescriptionWithCommitments ptd,
-            Map<URI, Credential> aliasCreds,
-            Map<String, CredentialSpecification> aliasCredSpecs,
-            Map<URI, PseudonymWithMetadata> aliasNyms, KeyManager keyManager) {
+            LinkedHashMap<URI, Credential> aliasCreds,
+            LinkedHashMap<String, CredentialSpecification> aliasCredSpecs,
+            LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms, KeyManager keyManager
+        ) {
         PolicyTranslator pt = new PolicyTranslator(ptd, aliasCredSpecs, keyManager);
 
         IdemixClaim idmxClaim = new IdemixClaim(pt, this.keyManager,
@@ -129,8 +130,8 @@ public class IdemixClaimGenerator {
     }
 
     public Element getPresentationEvidence(PresentationTokenDescription ptd,
-            Map<URI, Credential> aliasCreds, Map<String, CredentialSpecification> aliasCredSpecs,
-            Map<URI, PseudonymWithMetadata> aliasNyms) {
+                                           LinkedHashMap<URI, Credential> aliasCreds, LinkedHashMap<String, CredentialSpecification> aliasCredSpecs,
+                                           LinkedHashMap<URI, PseudonymWithMetadata> aliasNyms) {
         PolicyTranslator pt = new PolicyTranslator(ptd, aliasCredSpecs);
         IdemixClaim idmxClaim = new IdemixClaim(pt, this.keyManager,
                 this.generator, null);
@@ -139,8 +140,8 @@ public class IdemixClaimGenerator {
 
     @SuppressWarnings({ "rawtypes" })
     public VerifiableClaim generatePresentationEvidence(final Claim claim,
-            final Map<URI, Credential> credAssignment,
-            final Map<URI, PseudonymWithMetadata> nymAssignment)
+            final LinkedHashMap<URI, Credential> credAssignment,
+            final LinkedHashMap<URI, PseudonymWithMetadata> nymAssignment)
                     throws Exception {
         IdemixClaim ic = (IdemixClaim) claim;
 
@@ -191,69 +192,69 @@ public class IdemixClaimGenerator {
                 input.pseudonyms.put(key, p);
             }
         }
-        
+
         // Handle UProve revocation handles
         if(ic.getCommittedRevocationHandles() !=null){
-        	for(CommittedValue crh: ic.getCommittedRevocationHandles()){
-  
-        		String name = crh.getAlias()+"http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle";
-        		RepresentationOpening ro = new RepresentationOpening(crh.getBases(), crh.getExponents(), crh.getModulus(),name);
+            for(CommittedValue crh: ic.getCommittedRevocationHandles()){
 
-        		ic.getRepresentationOpenings().put(name,ro);
-        		ic.getRepresentations().add(ro.getRepresentationObject());
-        		input.representationOpenings.put(name, ro);
-        	}
+                String name = crh.getAlias()+"http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle";
+                RepresentationOpening ro = new RepresentationOpening(crh.getBases(), crh.getExponents(), crh.getModulus(),name);
+
+                ic.getRepresentationOpenings().put(name,ro);
+                ic.getRepresentations().add(ro.getRepresentationObject());
+                input.representationOpenings.put(name, ro);
+            }
         }
-        
+
         // Handle UProve inspectable values
         if(ic.getCommittedInspectableValues() != null){
-        	for(CommittedValue cv : ic.getCommittedInspectableValues()){
-        		String name = cv.getAlias()+cv.getAttributeType();
-        		RepresentationOpening ro = new RepresentationOpening(cv.getBases(), cv.getExponents(), cv.getModulus(),name);
+            for(CommittedValue cv : ic.getCommittedInspectableValues()){
+                String name = cv.getAlias()+cv.getAttributeType();
+                RepresentationOpening ro = new RepresentationOpening(cv.getBases(), cv.getExponents(), cv.getModulus(),name);
 
-        		ic.getRepresentationOpenings().put(name,ro);
-        		ic.getRepresentations().add(ro.getRepresentationObject());
-        		input.representationOpenings.put(name, ro);
-        	}
+                ic.getRepresentationOpenings().put(name,ro);
+                ic.getRepresentations().add(ro.getRepresentationObject());
+                input.representationOpenings.put(name, ro);
+            }
         }
-        
+
         // Handle inspection
         if(ic.getInspectableAttributes().size() > 0){
-        	ObjectFactory of = new ObjectFactory();
-        	for(MyAttributeReference mar: ic.getInspectableAttributes()){
-            	CommittedAttribute comAttr = of.createCommittedAttribute();
-        		URI ipkuid = ic.getInspectorKeyMap().get(mar);
-        		InspectorPublicKey inspectorPublicKey = keyManager.getInspectorPublicKey(ipkuid);
-        		
-            	Element pkElement = (Element) inspectorPublicKey.getCryptoParams()
+            ObjectFactory of = new ObjectFactory();
+            for(MyAttributeReference mar: ic.getInspectableAttributes()){
+                CommittedAttribute comAttr = of.createCommittedAttribute();
+                URI ipkuid = ic.getInspectorKeyMap().get(mar);
+                InspectorPublicKey inspectorPublicKey = this.keyManager.getInspectorPublicKey(ipkuid);
+
+                Element pkElement = (Element) inspectorPublicKey.getCryptoParams()
                         .getAny().get(0);
                 VEPublicKey pk = (VEPublicKey) Parser.getInstance()
                         .parse(pkElement);
                 BigInteger r1 = pk.getRandom();
                 BigInteger message = null;
-           
+
                 Credential c = credAssignment.get(URI.create(mar.getCredentialAlias()));
-                
+
                 for(Attribute a: c.getCredentialDescription().getAttribute()){
-                	if(a.getAttributeDescription().getType().equals(URI.create(mar.getAttributeType()))){
-                		MyAttributeValue mav = MyAttributeEncodingFactory.parseValueFromEncoding(a.getAttributeDescription().getEncoding(), a.getAttributeValue(), new EnumAllowedValues(a.getAttributeDescription()));
+                    if(a.getAttributeDescription().getType().equals(URI.create(mar.getAttributeType()))){
+                        MyAttributeValue mav = MyAttributeEncodingFactory.parseValueFromEncoding(a.getAttributeDescription().getEncoding(), a.getAttributeValue(), new EnumAllowedValues(a.getAttributeDescription()));
                         message = mav.getIntegerValueOrNull();
                         comAttr.setAttributeType(a.getAttributeDescription().getType());
-                		break;                		
-                	}
+                        break;
+                    }
                 }
-                
+
                 URI vepkId = inspectorPublicKey.getPublicKeyUID();
                 String label = c.getCredentialDescription().getCredentialSpecificationUID().toString()+"/"+mar.getAttributeType();
                 VerifiableEncryptionOpening pEnc1 = new VerifiableEncryptionOpening(
                         message, r1, vepkId, label);
                 VerifiableEncryption vEnc1 = pEnc1.getEncryption();
-            	input.verifiableEncryptions.put(mar.getAttributeReference(), pEnc1);      
-        	}
+                input.verifiableEncryptions.put(mar.getAttributeReference(), pEnc1);
+            }
         }
-        
-        
-        
+
+
+
         // Add opening information for commitments
         if(ic.getAliasCommittedAttributes() != null){
             for(String s: ic.getAliasCommittedAttributes().keySet()) {
@@ -306,12 +307,12 @@ public class IdemixClaimGenerator {
             input.messages.put(IdemixConstants.messageName, msg);
         }
 
-        
+
         // Handle revocation.
         Collection<RevocationProofData> revocationProofData = new LinkedList<RevocationProofData>();
         // Map<URI, RevocationInformation> revInfoUidToRevInfo = new
         // HashMap<URI, RevocationInformation>();
-        for (Credential cred : credAssignment.values()) {
+        for (Credential cred: credAssignment.values()) {
             List<Object> any = cred.getCryptoParams().getAny();
             URI credSpecUid = cred.getCredentialDescription()
                     .getCredentialSpecificationUID();
@@ -320,7 +321,7 @@ public class IdemixClaimGenerator {
 
             boolean isIdemix = this.revocationProof.isIdemix(cred);
             if (isIdemix && credentialSpecification.isRevocable()) {
-                
+
                 URI revInfoUid = this.revocationProof
                         .getCredentialRevocationInformationUid(credSpecUid);
 
@@ -353,7 +354,7 @@ public class IdemixClaimGenerator {
         // ic.getRevocationInformation().putAll(revInfoUidToRevInfo);
         ic.getRevocationProofData().addAll(revocationProofData);
 
-        
+
         int inx = 0;
         for (RevocationProofData revocationProofDatum : ic
                 .getRevocationProofData()) {
@@ -362,7 +363,7 @@ public class IdemixClaimGenerator {
             input.accumulatorWitnesses.put(tempName, witness);
             inx++;
         }
-        
+
 
         // Generate Idemix Proof Specification
         ProofSpec proofSpec =
@@ -373,6 +374,7 @@ public class IdemixClaimGenerator {
 
         // Generate Idemix Prover and build the proof
         Proof proof = new Prover(input, proofSpec, ic.getNonce()).buildProof();
+        System.out.println("SPEC_PROVER\n" + proofSpec.toStringPretty());
         ic.setEvidence(proof);
 
         return ic;

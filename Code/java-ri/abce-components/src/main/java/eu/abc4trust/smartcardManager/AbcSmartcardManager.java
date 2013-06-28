@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -34,8 +35,12 @@ import eu.abc4trust.smartcard.BasicSmartcard;
 import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.smartcard.CredentialBases;
 import eu.abc4trust.smartcard.GroupParameters;
+import eu.abc4trust.smartcard.InsufficientStorageException;
 import eu.abc4trust.smartcard.SecretBasedSmartcard;
+import eu.abc4trust.smartcard.Smartcard;
+import eu.abc4trust.smartcard.SmartcardBlob;
 import eu.abc4trust.smartcard.SmartcardStatusCode;
+import eu.abc4trust.smartcard.SystemParameters;
 import eu.abc4trust.smartcard.Utils;
 import eu.abc4trust.smartcard.ZkProofCommitment;
 import eu.abc4trust.smartcard.ZkProofResponse;
@@ -147,7 +152,7 @@ public class AbcSmartcardManager implements IdemixSmartcardManager {
         }
         SmartcardStatusCode ret = s.allocateCredential(pin, newCredUri, issuerUri);
         if (ret != SmartcardStatusCode.OK) {
-            throw new RuntimeException("Credential " + newCredUri + " could not be created on card "
+            throw new InsufficientStorageException("Credential " + newCredUri + " could not be created on card "
                     + smartcardUri + ". Status code: " + ret.ordinal() + " " + ret.name());
         }
     }
@@ -234,11 +239,12 @@ public class AbcSmartcardManager implements IdemixSmartcardManager {
 
     @Override
     public boolean credentialExists(URI smartcardUri, URI credUri) {
-        BasicSmartcard s = this.getSmartcard(smartcardUri);
+    	System.out.println("sc uri: " + smartcardUri + "\n credUri: " + credUri);    	
+        BasicSmartcard s = this.getSmartcard(smartcardUri);                
         if(s == null) {
             return false;
         }        
-        Integer pin = this.storage.getPin(smartcardUri);
+        Integer pin = this.storage.getPin(smartcardUri);        
         return s.credentialExists(pin, credUri);
     }
 
@@ -426,8 +432,11 @@ public class AbcSmartcardManager implements IdemixSmartcardManager {
     public int getChallengeSizeBytes() {
         Set<Integer> challengeSizes = new HashSet<Integer>();
         for(Entry<URI, BasicSmartcard> s: this.storage.getSmartcards().entrySet()) {
-            Integer pin = this.storage.getPin(s.getKey());
-            challengeSizes.add(s.getValue().getSystemParameters(pin).zkChallengeSizeBytes);
+            URI key = s.getKey();
+            Integer pin = this.storage.getPin(key);
+            BasicSmartcard value = s.getValue();
+            SystemParameters systemParameters = value.getSystemParameters(pin);
+            challengeSizes.add(systemParameters.zkChallengeSizeBytes);
         }
         if(challengeSizes.size() == 1) {
             return challengeSizes.iterator().next();

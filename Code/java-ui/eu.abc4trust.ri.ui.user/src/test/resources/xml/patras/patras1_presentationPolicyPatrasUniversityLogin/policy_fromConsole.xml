@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust presentation policy for... -->
+
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0">
+    <abc:PresentationPolicy PolicyUID="urn:patras:policies:loginPseudonym">
+        <abc:Message>
+            <abc:Nonce>gvApVI41Ttfe+Q==</abc:Nonce>
+        </abc:Message>
+        <abc:Pseudonym Exclusive="true" Scope="urn:patras:registration"/>
+    </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

@@ -18,9 +18,11 @@ import com.google.inject.Inject;
 
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.issuer.CryptoEngineIssuer;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
+import eu.abc4trust.cryptoEngine.uprove.issuer.UProveCryptoEngineReIssuerImpl;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.util.ContextGenerator;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuancePolicy;
 
@@ -28,12 +30,14 @@ public class IssuanceManagerIssuerImpl implements IssuanceManagerIssuer {
 
     private final CryptoEngineIssuer cryptoEngineIssuer;
     private final ContextGenerator contextGenerator;
+    private final UProveCryptoEngineReIssuerImpl cryptoEngineReIssuer;
 
     @Inject
     public IssuanceManagerIssuerImpl(CryptoEngineIssuer cryptoEngineIssuer,
-            ContextGenerator contextGenerator) {
+            ContextGenerator contextGenerator, UProveCryptoEngineReIssuerImpl cryptoEngineReIssuer) {
         this.cryptoEngineIssuer = cryptoEngineIssuer;
         this.contextGenerator = contextGenerator;
+        this.cryptoEngineReIssuer = cryptoEngineReIssuer;
         System.out.println("Hello from IssuanceManagerIssuerImpl()");
     }
 
@@ -52,5 +56,24 @@ public class IssuanceManagerIssuerImpl implements IssuanceManagerIssuer {
             throws CryptoEngineException {
         return this.cryptoEngineIssuer.issuanceProtocolStep(m);
     }
+
+ @Override
+ public IssuanceMessageAndBoolean initReIssuanceProtocol(
+ IssuancePolicy clonedIssuancePolicy) throws CryptoEngineException {
+ URI context = null;
+ context = this.contextGenerator.getUniqueContext(URI.create("abc4trust.eu/reissuance-protocol"));
+ return this.cryptoEngineReIssuer.initReIssuanceProtocol(clonedIssuancePolicy, context);
+ }
+
+ @Override
+ public IssuanceMessageAndBoolean reIssuanceProtocolStep(IssuanceMessage m)
+ throws CryptoEngineException {
+ return this.cryptoEngineReIssuer.reIssuanceProtocolStep(m);
+ }
+
+  @Override
+  public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid) throws Exception {
+    return this.cryptoEngineIssuer.getIssuanceLogEntry(issuanceEntryUid);
+  }
 
 }

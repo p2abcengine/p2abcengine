@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 import org.xml.sax.SAXException;
@@ -42,7 +43,6 @@ import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.uprove.user.ReloadTokensCommunicationStrategy;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.returnTypes.IssuanceMessageAndBoolean;
 import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.AttributeDescription;
@@ -53,6 +53,8 @@ import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives;
 import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives.IssuerParametersUID;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.InspectorPublicKey;
+import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationPolicy;
@@ -143,15 +145,23 @@ public class IssuanceHelper {
                 .getInstance(IssuerAbcEngine.class);
         UserAbcEngine userEngine = userInjector
                 .getInstance(UserAbcEngine.class);
-        
-    	//For reload of tokens set these on the UProve reloader
+
+        //For reload of tokens set these on the UProve reloader
         Integer port = userInjector.getInstance(Key.get(Integer.class, Names.named("UProvePortNumber")));
         if (port!=null) {
-        	//uprove is set up
-        	ReloadTokensInMemoryCommunicationStrategy reloadTokens = (ReloadTokensInMemoryCommunicationStrategy) userInjector.getInstance(ReloadTokensCommunicationStrategy.class);
-        	reloadTokens.setIssuerAbcEngine(issuerEngine);
-        	reloadTokens.setIssuancePolicy(ip);
-        	reloadTokens.setIssuerAttributes(issuerAtts);
+            //uprove is set up
+            ReloadTokensInMemoryCommunicationStrategy reloadTokens = (ReloadTokensInMemoryCommunicationStrategy) userInjector.getInstance(ReloadTokensCommunicationStrategy.class);
+            reloadTokens.setIssuerAbcEngine(issuerEngine);
+            //We need the re-issuance policy instead, but not all tests have those, so ignore if not present
+            IssuancePolicy ip_reIssuance;
+            try{
+                ip_reIssuance = (IssuancePolicy) XmlUtils.getObjectFromXML(this
+                        .getClass().getResourceAsStream(issuancePolicyFilename.subSequence(0, issuancePolicyFilename.length()-4)+"_reIssuance.xml"), true);
+            }catch(Exception e){
+                ip_reIssuance = (IssuancePolicy) XmlUtils.getObjectFromXML(this
+                        .getClass().getResourceAsStream(issuancePolicyFilename), true);
+            }
+            reloadTokens.setIssuancePolicy(ip_reIssuance);
         }
         IssuanceHelper testHelper = new IssuanceHelper();
         CredentialDescription cd = testHelper.runIssuanceProtocol(issuerEngine,
@@ -183,19 +193,22 @@ public class IssuanceHelper {
         // Issuer starts the issuance.
         IssuanceMessageAndBoolean issuerIm = issuerEngine.initIssuanceProtocol(
                 ip, issuerAtts);
-        assertFalse(issuerIm.lastMessage);
+        assertFalse(issuerIm.isLastMessage());
 
-        // ObjectFactory of = new ObjectFactory();
-        // JAXBElement<?> actual = of.createIssuanceMessage(issuerIm.im);
-        // System.out.println(XmlUtils.toNormalizedXML(actual));
+        ObjectFactory of = new ObjectFactory();
+        System.out.println("Trying to print first issuance message");
+        JAXBElement<IssuanceMessage> actual = of.createIssuanceMessage(issuerIm
+                .getIssuanceMessage());
+        System.out.println(XmlUtils.toNormalizedXML(actual));
 
         // Reply from user.
-        IssuMsgOrCredDesc userIm =  userEngine.issuanceProtocolStep(issuerIm.im);
-        // actual = of.createIssuanceMessage(userIm.im);
-        // System.out.println(XmlUtils.toNormalizedXML(actual));
-        // int round = 1;
-        while (!issuerIm.lastMessage) {
-            // System.out.println("Issuance round: " + round);
+        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm
+                .getIssuanceMessage());
+        actual = of.createIssuanceMessage(userIm.im);
+        System.out.println(XmlUtils.toNormalizedXML(actual));
+        int round = 1;
+        while (!issuerIm.isLastMessage()) {
+            System.out.println("Issuance round: " + round);
             assertNotNull(userIm.im);
             issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
 
@@ -213,8 +226,9 @@ public class IssuanceHelper {
             // actual = of.createIssuanceMessage(issuerIm.im);
             // System.out.println(XmlUtils.toNormalizedXML(actual));
 
-            assertNotNull(issuerIm.im);
-            userIm = userEngine.issuanceProtocolStep(issuerIm.im);
+            assertNotNull(issuerIm.getIssuanceMessage());
+            userIm = userEngine.issuanceProtocolStep(issuerIm
+                    .getIssuanceMessage());
 
             // if (userIm.im != null) {
             // System.out.println("User message:");
@@ -222,7 +236,7 @@ public class IssuanceHelper {
             // System.out.println(XmlUtils.toNormalizedXML(actual));
             // }
             boolean userLastMessage = (userIm.cd != null);
-            assertTrue(issuerIm.lastMessage == userLastMessage);
+            assertTrue(issuerIm.isLastMessage() == userLastMessage);
         }
         assertNull(userIm.im);
         assertNotNull(userIm.cd);
@@ -268,6 +282,9 @@ public class IssuanceHelper {
         PresentationToken presentationToken = userEngine
                 .createPresentationToken(presentationPolicyAlternatives,
                         idSelectionCallback);
+        if(presentationToken == null) {
+          throw new RuntimeException("Cannot generate presentationToken");
+        }
         assertNotNull(presentationToken);
 
         return new Pair<PresentationToken, PresentationPolicyAlternatives>(
@@ -293,6 +310,41 @@ public class IssuanceHelper {
 
         return null;
     }
+    
+    public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken_NotSatisfied(
+            Injector verfierInjector, Injector userInjector, RevocationInformation revocationInformation, 
+            String presentationPolicyFilename,
+            IdentitySelection idSelectionCallback) throws Exception {
+        assertNotNull(presentationPolicyFilename);
+        PresentationPolicyAlternatives presentationPolicyAlternatives = this.loadPresentationPolicy(presentationPolicyFilename);
+        assertNotNull(presentationPolicyAlternatives);
+        
+        if (revocationInformation != null) {
+            for (PresentationPolicy pp : presentationPolicyAlternatives
+                    .getPresentationPolicy()) {
+                for (CredentialInPolicy cred : pp.getCredential()) {
+                    IssuerAlternatives ia = cred.getIssuerAlternatives();
+                    for (IssuerParametersUID ipUid : ia
+                            .getIssuerParametersUID()) {
+
+                        URI revInfoUid = revocationInformation.getInformationUID();
+                        ipUid.setRevocationInformationUID(revInfoUid);
+                    }
+                }
+            }
+        }
+        
+        UserAbcEngine userEngine = userInjector
+                .getInstance(UserAbcEngine.class);
+
+        PresentationToken presentationToken = userEngine
+                .createPresentationToken(presentationPolicyAlternatives,
+                        idSelectionCallback);
+
+        assertNull(presentationToken);
+
+        return null;
+    }     
 
     private PresentationPolicyAlternatives loadPresentationPolicy(
             String presentationPolicyFilename) throws JAXBException,

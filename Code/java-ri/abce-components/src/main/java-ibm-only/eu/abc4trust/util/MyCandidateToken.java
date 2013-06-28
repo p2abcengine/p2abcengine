@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PresentationState;
 import eu.abc4trust.exceptions.IdentitySelectionException;
+import eu.abc4trust.keyManager.KeyManager;
+import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.SitdReturn;
 import eu.abc4trust.returnTypes.SptdReturn;
 import eu.abc4trust.returnTypes.UiIssuanceArguments;
@@ -24,8 +27,10 @@ import eu.abc4trust.returnTypes.UiPresentationArguments;
 import eu.abc4trust.returnTypes.UiPresentationReturn;
 import eu.abc4trust.returnTypes.ui.AddTokenCandidate;
 import eu.abc4trust.returnTypes.ui.CredentialInUi;
+import eu.abc4trust.returnTypes.ui.CredentialSpecInUi;
 import eu.abc4trust.returnTypes.ui.InspectableAttribute;
 import eu.abc4trust.returnTypes.ui.InspectorInUi;
+import eu.abc4trust.returnTypes.ui.IssuerInUi;
 import eu.abc4trust.returnTypes.ui.PseudonymInUi;
 import eu.abc4trust.returnTypes.ui.PseudonymListCandidate;
 import eu.abc4trust.returnTypes.ui.RevealedFactsAndAttributeValues;
@@ -36,12 +41,17 @@ import eu.abc4trust.ui.idSelection.IdentitySelection;
 import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialDescription;
+import eu.abc4trust.xml.CredentialInPolicy;
+import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives.IssuerParametersUID;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CredentialTemplate;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorDescription;
+import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuanceTokenDescription;
+import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.PolicyDescription;
+import eu.abc4trust.xml.PresentationPolicy;
 import eu.abc4trust.xml.PresentationTokenDescription;
 import eu.abc4trust.xml.PseudonymDescription;
 import eu.abc4trust.xml.PseudonymWithMetadata;
@@ -238,8 +248,8 @@ public class MyCandidateToken {
     pp.updateIssuerToRevocationInformationUidMap(toUpdate);
   }
 
-  public static MyUiPresentationReturn callPresentationUi(IdentitySelectionUi identitySelection,
-      List<MyCandidateToken> candidateTokens) throws IdentitySelectionException {
+  public static UiPresentationArguments prepareUiPresentationArguments(
+      List<MyCandidateToken> candidateTokens, KeyManager km, ContextGenerator contextGenerator) {
     UiPresentationArguments arg = new UiPresentationArguments();
     
     TokenCandidatePerPolicy tcpp = null;
@@ -252,16 +262,74 @@ public class MyCandidateToken {
         tcpp = new TokenCandidatePerPolicy();
         policyId = token.ptd.getPolicyUID();
         tcpp.policy = token.pp.getPolicy();
+        populatePolicy(arg.data, tcpp.policy, km);
       }
       token.populate(arg.data, tcpp);
     }
     if(tcpp!=null) {
       arg.addTokenCandidate(tcpp);
     }
+    arg.uiContext = contextGenerator.getUniqueContext(URI.create("ui-context-p/"));
     
-    
-    UiPresentationReturn ret = identitySelection.selectPresentationTokenDescription(arg);
-    return new MyUiPresentationReturn(arg, ret, candidateTokens);
+    return arg;
+  }
+
+  private static void populatePolicy(UiCommonArguments data, PresentationPolicy policy, KeyManager km) {
+    List<URI> neededIssuers = new ArrayList<URI>();
+    for(CredentialInPolicy cip: policy.getCredential()) {
+      for(IssuerParametersUID ipu: cip.getIssuerAlternatives().getIssuerParametersUID()) {
+        neededIssuers.add(ipu.getValue());
+      }
+    }
+    for(URI u: neededIssuers) {
+      try {
+        if(u == null) {
+          continue;
+        }
+        IssuerParameters ip = km.getIssuerParameters(u);
+        if(ip == null) {
+          continue;
+        }
+        URI credUri = ip.getCredentialSpecUID();
+        if(credUri == null) {
+          continue;
+        }
+        CredentialSpecification spec = km.getCredentialSpecification(credUri);
+        if(spec == null) {
+          continue;
+        }
+        data.addIssuer(new IssuerInUi(ip, spec));
+      } catch(KeyManagerException kme) {
+        //Ignore
+        continue;
+      }
+    }
+  }
+  
+  private static void populatePolicy(UiCommonArguments data, IssuancePolicy policy, KeyManager km) {
+    populatePolicy(data, policy.getPresentationPolicy(), km);
+    try {
+      URI issuri = policy.getCredentialTemplate().getIssuerParametersUID();
+      if(issuri == null) {
+        return;
+      }
+      IssuerParameters ip = km.getIssuerParameters(issuri);
+      if(ip == null) {
+        return;
+      }
+      URI credSpec = ip.getCredentialSpecUID();
+      if(credSpec == null) {
+        return;
+      }
+      CredentialSpecification spec = km.getCredentialSpecification(credSpec);
+      if(spec == null) {
+        return;
+      }
+      data.addIssuer(new IssuerInUi(ip, spec));
+    } catch(KeyManagerException kme) {
+      // Ignore
+      return;
+    }
   }
 
   private void populate(UiCommonArguments data, AddTokenCandidate atc) {
@@ -402,8 +470,8 @@ public class MyCandidateToken {
   }
   */
 
-  public static MyUiIssuanceReturn callIssuanceUi(IdentitySelectionUi identitySelection,
-      List<MyCandidateToken> candidateTokens) throws IdentitySelectionException {
+  public static UiIssuanceArguments prepareUiIssuanceArguments(List<MyCandidateToken> candidateTokens,
+      KeyManager km, ContextGenerator contextGenerator) {
     UiIssuanceArguments arg = new UiIssuanceArguments();
     for(MyCandidateToken token: candidateTokens) {
       token.populate(arg.data, arg);
@@ -412,11 +480,12 @@ public class MyCandidateToken {
       arg.policy.setCredentialTemplate(candidateTokens.get(0).itd.getCredentialTemplate());
       arg.policy.setPresentationPolicy(candidateTokens.get(0).pp.getPolicy());
       arg.policy.setVersion("1.0");
+      populatePolicy(arg.data, arg.policy, km);
     } else {
       throw new RuntimeException("Cannot satisfy policy (no candidate tokens).");
     }
+    arg.uiContext = contextGenerator.getUniqueContext(URI.create("ui-context-i/"));
     
-    UiIssuanceReturn ret = identitySelection.selectIssuanceTokenDescription(arg);
-    return new MyUiIssuanceReturn(arg, ret, candidateTokens);
+    return arg;
   }
 }
