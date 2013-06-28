@@ -186,6 +186,30 @@ namespace abc4trust_uprove
       return up;
     }
 
+
+    public static SubgroupGroupDescriptionComposite convertSubgroupDescription(GroupDescription Gq)
+    {
+      SubgroupGroupDescription sGroup = (SubgroupGroupDescription)Gq;
+      //TODO add error handling here.
+      SubgroupGroupDescriptionComposite sGroupComp = new SubgroupGroupDescriptionComposite();
+      sGroupComp.P = sGroup.P.ToByteArray();
+      sGroupComp.Q = sGroup.Q.ToByteArray();
+      sGroupComp.G = sGroup.G.GetEncoded();
+      return sGroupComp;
+    }
+
+
+    public static GroupDescription convertSubgroupDescription(SubgroupGroupDescriptionComposite sGroupComp)
+    {
+      SubgroupGroupDescription sGroup = new SubgroupGroupDescription();
+      // TODO add error handling here.
+      sGroup.P = new BigInteger(1, sGroupComp.P);
+      sGroup.Q = new BigInteger(1, sGroupComp.Q);
+      sGroup.G = new SubgroupGroupElement(new BigInteger(1, sGroupComp.G), sGroup.P);
+
+      return sGroup;
+    }
+
     public static IssuerParametersComposite convertIssuerParameters(IssuerParameters ip)
     {
       IssuerParametersComposite ipc = new IssuerParametersComposite();
@@ -199,29 +223,42 @@ namespace abc4trust_uprove
 
       ipc.G = gtemp;
 
+      ipc.Gq = convertSubgroupDescription(ip.Gq);
       if (ip.Gd != null)
       {
         ipc.Gd = ip.Gd.GetEncoded();
+        ipc.Gq.Gd = ip.Gd.GetEncoded();
       }
-
-      ipc.Gq = ip.Gq.GroupName;
+      
       ipc.HashFunctionOID = ip.HashFunctionOID;
       ipc.IsDeviceSupported = ip.IsDeviceSupported;
       ipc.S = ip.S;
       ipc.UidH = ip.UidH;
       ipc.UidP = ip.UidP;
       ipc.UsesRecommendedParameters = ip.UsesRecommendedParameters;
+      ipc.GroupName = ip.Gq.GroupName;
 
       return ipc;
     }
 
-    public static IssuerParameters convertIssuerParametersComposite(IssuerParametersComposite ipc, ParameterSet pSet)
+    
+
+    public static IssuerParameters convertIssuerParametersComposite(IssuerParametersComposite ipc, SessionData sessionData)
     {
+
       IssuerParameters ip = new IssuerParameters();
 
       ip.E = ipc.E;
-      ip.Gq = pSet.Group;
-      
+
+      if (sessionData.group == null)
+      {
+        GroupDescription sGroup = convertSubgroupDescription(ipc.Gq);
+        ip.Gq = sGroup;
+      }
+      else
+      {
+        ip.Gq = sessionData.group;
+      }
 
       GroupElement[] geArray = new GroupElement[ipc.G.Length];
       for (int i = 0; i < ipc.G.Length; i++)
@@ -230,27 +267,42 @@ namespace abc4trust_uprove
       }
 
       ip.G = geArray;
-      if (ipc.Gd != null)
+      if (ipc.UsesRecommendedParameters && ipc.Gd == null)
+      {
+        ip.Gd = sessionData.parameterSet.Gd;
+      }
+      else if (ipc.Gd != null)
       {
         ip.Gd = ip.Gq.CreateGroupElement(ipc.Gd);
       }
       else
       {
-        ip.Gd = pSet.Gd;// parametersSet.Gd;
+        ip.Gd = ip.Gq.CreateGroupElement(ipc.Gq.Gd); //sessionData.groupElement;// parametersSet.Gd;
       }
+      
+
+      
 
       ip.S = ipc.S;
       ip.UidH = ipc.UidH;
       ip.UidP = ipc.UidP;
       ip.UsesRecommendedParameters = ipc.UsesRecommendedParameters;
+      sessionData.group = ip.Gq;
+      sessionData.groupElement = ip.Gd;
       return ip;
     }
+
+    
+
+    
+
+    
 
     public static PresentationProof convertPresentationProofComposite(IssuerParameters ip, PresentationProofComposite pc, out byte[] tokenID, out byte[] proofSession)
     {
       PresentationProof p = new PresentationProof();
 
-      p.A = pc.A;
+      p.A = (pc.A == null ? null : pc.A);
       p.Ap = (pc.Ap == null ? null : pc.Ap);
       p.DisclosedAttributes = pc.DisclosedAttributes;
       p.Ps = (pc.Ps == null ? null : ip.Gq.CreateGroupElement(pc.Ps));

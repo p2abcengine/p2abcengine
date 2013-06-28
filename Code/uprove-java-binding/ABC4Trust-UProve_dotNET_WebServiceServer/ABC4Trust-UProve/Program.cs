@@ -37,6 +37,9 @@ namespace abc4trust_uprove
         debugConsole.dateFormat = "{0:dd/MM/yyyy H:mm:ss zzz} : ";
         debugConsole.logType = Logger.LogType.Console;
         Logger.Instance.AppendLoggerSpec(debugConsole);
+
+        ParseConfigManager.SetupConfigLoggers();
+        
       }
 
 
@@ -44,7 +47,6 @@ namespace abc4trust_uprove
       {
         setupLoggers();
         Log cOut = Logger.Instance.getLog(LoggerDefine.OUT_CONSOLE);
-        ParseConfigManager.SetupConfigLoggers();
         // Create a WSHttpBinding instance
         WSHttpBinding binding = new WSHttpBinding();
         binding.Security.Mode = SecurityMode.None;
@@ -95,6 +97,12 @@ namespace abc4trust_uprove
 
           host.Description.Behaviors.Add(smb);
 
+          // add time profile logger if needed.
+          if (ParseConfigManager.SetupTimeProfiles())
+          {
+            WcfProfileLogger pExt = new WcfProfileLogger();
+            host.Description.Behaviors.Add(pExt);
+          }
           // Add a service endpoint using the created binding
           ServiceEndpoint endp = host.AddServiceEndpoint(typeof(IService1), binding, baseAddress);
           endp.Behaviors.Add(new FlatWsdl());

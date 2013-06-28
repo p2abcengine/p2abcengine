@@ -370,6 +370,45 @@ namespace abc4trust_uprove
 
   }
 
+
+  [DataContract]
+  public class SubgroupGroupDescriptionComposite
+  {
+    byte[] p;
+    byte[] q;
+    byte[] g;
+    byte[] gd;
+
+    [DataMember]
+    public byte[] P
+    {
+      get { return p; }
+      set { p = value; }
+    }
+
+    [DataMember]
+    public byte[] Q
+    {
+      get { return q; }
+      set { q = value; }
+    }
+
+    [DataMember]
+    public byte[] G
+    {
+      get { return g; }
+      set { g = value; }
+    }
+
+    [DataMember]
+    public byte[] Gd
+    {
+      get { return gd; }
+      set { gd = value; }
+    }
+
+  }
+
   /**
        public byte[] E { get; set; }
         public GroupElement[] G { get; set; }
@@ -389,7 +428,8 @@ namespace abc4trust_uprove
     byte[] e;
     byte[][] g;
     byte[] gd;
-    string gq; // GroupDescription is a name when usesRecommendedParameters = true
+    SubgroupGroupDescriptionComposite gq; // GroupDescription is a name when usesRecommendedParameters = true
+    string groupName;
     string hashFunctionOID;
     bool isDeviceSupported;
     byte[] s;
@@ -433,7 +473,7 @@ namespace abc4trust_uprove
     }
 
     [DataMember]
-    public string Gq
+    public SubgroupGroupDescriptionComposite Gq
     {
       get { return gq; }
       set { gq = value; }
@@ -466,6 +506,20 @@ namespace abc4trust_uprove
       get { return usesRecommendedParameters; }
       set { usesRecommendedParameters = value; }
     }
+
+    [DataMember]
+    public string GroupName
+    {
+      get
+      {
+        return groupName;
+      }
+      set
+      {
+        groupName = value;
+      }
+    }
+
   }
 
   [DataContract]

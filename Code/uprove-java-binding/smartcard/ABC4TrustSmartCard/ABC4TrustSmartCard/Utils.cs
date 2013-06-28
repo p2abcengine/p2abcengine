@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections;
+using System.ServiceModel.Channels;
 
 namespace ABC4TrustSmartCard
 {
@@ -21,6 +22,31 @@ namespace ABC4TrustSmartCard
 
    public static class Utils
    {
+     public static double GetTime(TimeSpan t, TimeProfileElement.timeunit tUnit)
+     {
+       if (tUnit == TimeProfileElement.timeunit.miliseconds)
+       {
+         return t.TotalMilliseconds;
+       }
+       else
+       {
+         return t.TotalSeconds;
+       }
+     }
+
+     public static WebContentFormat GetMessageContentFormat(Message message)
+     {
+       WebContentFormat format = WebContentFormat.Default;
+       if (message.Properties.ContainsKey(WebBodyFormatMessageProperty.Name))
+       {
+         WebBodyFormatMessageProperty bodyFormat;
+         bodyFormat = (WebBodyFormatMessageProperty)message.Properties[WebBodyFormatMessageProperty.Name];
+         format = bodyFormat.Format;
+       }
+
+       return format;
+     }
+
      public static byte[] GetBytesFromString(String str, int splitNum = 2)
      {
        List<String> listAs2Byte = str.SplitInParts(splitNum).ToList<String>();
@@ -64,7 +90,22 @@ namespace ABC4TrustSmartCard
        hex.AppendFormat("{0:x2}-", p);
        return hex.ToString();
      }
+
+     public static byte[] GetBytes(string str)
+     {
+       byte[] bytes = new byte[str.Length * sizeof(char)];
+       System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
+       return bytes;
+     }
    }
 
+
+   public class ProfilingObject
+   {
+     public AbcTimer timer { get; set; }
+     public string action { get; set; }
+   }
+
+   
 
 }

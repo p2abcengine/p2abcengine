@@ -111,33 +111,18 @@ namespace abc4trust_uprove
 
       try
       {
-        IssuerSetupParameters isp = new IssuerSetupParameters();
-
-        // pick the group construction (defaults to subgroup, but ECC is more efficient)
-        // TODOv2: Enable the UProve module to switch between ECC and subgroup based on ie. a config file.
-        // isp.GroupConstruction = GroupConstruction.ECC;
-        // right now, we need to use the subgroup construction to interop with Idemix
-        isp.GroupConstruction = GroupConstruction.Subgroup;
-        isp.ParameterSet = sessionDB[sessionID].parameterSet;
-        isp.UidH = hash;
-
-        // pick a unique identifier for the issuer params
-        isp.UidP = encoding.GetBytes(uniqueIdentifier);
-
-        // set the encoding parameters for the attributes
-        isp.E = attributeEncoding;
-
-        // specification field unused in ABC4Trust
-        isp.S = null;
-
-        // generate the serializable IssuerKeyAndParameters		
-        IssuerKeyAndParameters ikap = isp.Generate(true);
-        IssuerKeyAndParametersComposite ikpc = new IssuerKeyAndParametersComposite();
-        ikpc.IssuerParameters = ConvertUtils.convertIssuerParameters(ikap.IssuerParameters);
-        ikpc.PrivateKey = ikap.PrivateKey.ToByteArray();
-
-        return ikpc;
-
+        if (attributeEncoding.Length > 21)
+        {
+          if (sessionDB[sessionID].securityLevel != 2048)
+          {
+            throw new Exception("With attribute length > 21 only a security level of 2048 is supported");
+          }
+          return UseCustomParameterSet(uniqueIdentifier, attributeEncoding, hash, sessionID);
+        }
+        else
+        {
+          return UsePreComputeParameterSet(uniqueIdentifier, attributeEncoding, hash, sessionID);
+        }
       }
       catch (Exception e)
       {
@@ -146,6 +131,68 @@ namespace abc4trust_uprove
       }
 
       return null;
+    }
+
+    private static IssuerKeyAndParametersComposite UseCustomParameterSet(string uniqueIdentifier, byte[] attributeEncoding, string hash, string sessionID)
+    {
+      IssuerSetupParameters isp = new IssuerSetupParameters();
+
+      
+      isp.GroupConstruction = GroupConstruction.Subgroup;
+      // pick a unique identifier for the issuer params
+      isp.UidP = encoding.GetBytes(uniqueIdentifier);
+
+      // set the encoding parameters for the attributes
+      isp.E = attributeEncoding;
+
+      isp.UseRecommendedParameterSet = false; // we don't use the recommended parameters
+
+      // specification field unused in ABC4Trust
+      isp.S = null;
+
+      // generate the serializable IssuerKeyAndParameters		
+      IssuerKeyAndParameters ikap = isp.Generate(true);
+      sessionDB[sessionID].group = ikap.IssuerParameters.Gq;
+      sessionDB[sessionID].groupElement = ikap.IssuerParameters.Gd;
+      IssuerKeyAndParametersComposite ikpc = new IssuerKeyAndParametersComposite();
+      
+      ikpc.IssuerParameters = ConvertUtils.convertIssuerParameters(ikap.IssuerParameters);
+      ikpc.PrivateKey = ikap.PrivateKey.ToByteArray();
+
+      return ikpc;
+    }
+
+    private static IssuerKeyAndParametersComposite UsePreComputeParameterSet(string uniqueIdentifier, byte[] attributeEncoding, string hash, string sessionID)
+    {
+      IssuerSetupParameters isp = new IssuerSetupParameters();
+
+      // pick the group construction (defaults to subgroup, but ECC is more efficient)
+      // TODOv2: Enable the UProve module to switch between ECC and subgroup based on ie. a config file.
+      // isp.GroupConstruction = GroupConstruction.ECC;
+      // right now, we need to use the subgroup construction to interop with Idemix
+      isp.GroupConstruction = GroupConstruction.Subgroup;
+      isp.ParameterSet = sessionDB[sessionID].parameterSet;
+      sessionDB[sessionID].group = isp.ParameterSet.Group;
+      sessionDB[sessionID].groupElement = isp.ParameterSet.Gd;
+
+      isp.UidH = hash;
+
+      // pick a unique identifier for the issuer params
+      isp.UidP = encoding.GetBytes(uniqueIdentifier);
+
+      // set the encoding parameters for the attributes
+      isp.E = attributeEncoding;
+
+      // specification field unused in ABC4Trust
+      isp.S = null;
+
+      // generate the serializable IssuerKeyAndParameters		
+      IssuerKeyAndParameters ikap = isp.Generate(true);
+      IssuerKeyAndParametersComposite ikpc = new IssuerKeyAndParametersComposite();
+      ikpc.IssuerParameters = ConvertUtils.convertIssuerParameters(ikap.IssuerParameters);
+      ikpc.PrivateKey = ikap.PrivateKey.ToByteArray();
+
+      return ikpc;
     }
 
     /// <summary>
@@ -159,7 +206,7 @@ namespace abc4trust_uprove
       cOut.write("Verifying Issuer parameters: ");
       try
       {
-        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc,  sessionDB[sessionID].parameterSet);
+        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc,  sessionDB[sessionID]);
         ip.Verify();
         return true;
       }
@@ -214,7 +261,7 @@ namespace abc4trust_uprove
           attributes[i] = encoding.GetBytes(attributesParam[i]);
         }
 
-        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID].parameterSet);
+        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID]);
         byte[] issuerPrivateKey = sessionDB[sessionID].privateKey;
         if (issuerPrivateKey == null)
         {
@@ -226,7 +273,7 @@ namespace abc4trust_uprove
 
         // setup the issuer and generate the first issuance message
 
-        GroupElement hdG = sessionDB[sessionID].parameterSet.Group.CreateGroupElement(hd);
+        GroupElement hdG = ip.Gq.CreateGroupElement(hd);
 
         Issuer issuer = new Issuer(ikap, numberOfTokensParam, attributes, null, hdG);
 
@@ -281,7 +328,7 @@ namespace abc4trust_uprove
         // specify the number of tokens to issue
         int numberOfTokens = numberOfTokensParam;
 
-        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID].parameterSet);
+        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID]);
 
         // Convert serializable FirstIssuanceMessageComposite members to FirstIssuanceMessage
         FirstIssuanceMessage fi = ConvertUtils.convertFirstIssuanceMessageComposite(firstMessage, ip);
@@ -420,7 +467,7 @@ namespace abc4trust_uprove
           attributes[i] = encoding.GetBytes(attributesParam[i]);
         }
 
-        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID].parameterSet);
+        IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID]);
         // the application-specific message that the prover will sign. Typically this is a nonce combined
         // with any application-specific transaction data to be signed.
         byte[] message = encoding.GetBytes(messageParam);
@@ -486,7 +533,7 @@ namespace abc4trust_uprove
 
       cOut.write("Verifying a U-Prove token");
       VerifySessionId(sessionID);
-      IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID].parameterSet);
+      IssuerParameters ip = ConvertUtils.convertIssuerParametersComposite(ipc, sessionDB[sessionID]);
 
       // the application-specific message that the prover will sign. Typically this is a nonce combined
       // with any application-specific transaction data to be signed.

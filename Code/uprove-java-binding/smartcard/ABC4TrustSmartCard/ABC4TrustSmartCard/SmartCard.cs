@@ -13,13 +13,34 @@ namespace ABC4TrustSmartCard
   {
     private ABC4TrustSmartCard device;
     private SCardReaderDisposition disMethod;
+    private AbcTimer timer;
+    private Log profileLogger;
+
+    private double getTime(TimeSpan t)
+    {
+      if (device.pInfo.timeAs == TimeProfileElement.timeunit.miliseconds)
+      {
+        return t.TotalMilliseconds;
+      }
+      else
+      {
+        return t.TotalSeconds;
+      }
+    }
 
     public SmartCardTransaction(ABC4TrustSmartCard device, SCardReaderDisposition disMethod = SCardReaderDisposition.Leave)
     {
       this.device = device;
       this.disMethod = disMethod;
-      int noRetry = 3;
+      int noRetry = 10;
       int i = 0;
+      if (device.doProfile)
+      {
+        profileLogger = Logger.Instance.getLog(device.pInfo.loggerToUse);
+        timer = new AbcTimer();
+        timer.Start();
+      }
+
       while (TryTransaction() != 0)
       {
         if (i < noRetry)
@@ -44,8 +65,18 @@ namespace ABC4TrustSmartCard
 
     public void Dispose()
     {
-      
       this.device.sIO.GetReader().EndTransaction(disMethod);
+      
+      if (device.doProfile)
+      {
+        timer.Stop();
+        double t = getTime(timer.getElapsed());
+        System.Diagnostics.StackTrace st = new System.Diagnostics.StackTrace(new System.Diagnostics.StackFrame(1));
+        string methodName = st.GetFrame(0).GetMethod().Name;
+        profileLogger.write("--> Hardware smartcard method '{0}' was running for '{1}' {2}", methodName, Math.Round(t), device.pInfo.timeAs.ToString());
+        timer.Dispose();
+      }
+      
     }
   }
 
@@ -71,7 +102,7 @@ namespace ABC4TrustSmartCard
       this.pin = pin;
     }
 
-    public SmartCard(String readerName, string pin)
+    public SmartCard(String readerName, string pin, bool doProfile = false)
     {
       this.device = new ABC4TrustSmartCard(readerName);
       this.pin = Encoding.ASCII.GetBytes(pin);
@@ -563,6 +594,8 @@ namespace ABC4TrustSmartCard
       }
 
     }
+
+
 
   }
 }

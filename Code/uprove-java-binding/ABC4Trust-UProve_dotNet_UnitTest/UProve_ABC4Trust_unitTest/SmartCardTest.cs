@@ -33,8 +33,8 @@ namespace UProve_ABC4Trust_unitTest
 
       this.smartCard.BeginCommitment(1);
 
-      BigInteger deviceCommitment = this.smartCard.GetDeviceCommitment();
-      Assert.AreEqual<BigInteger>(1, deviceCommitment.Sign, "The BigInteger must be positive");
+      byte[] deviceCommitment = this.smartCard.GetDeviceCommitment();
+      Assert.AreEqual<byte>(deviceCommitment[deviceCommitment.Length - 1], 0x00, "The BigInteger must be positive");
 
       this.smartCard.EndCommitment();
     }
@@ -47,8 +47,8 @@ namespace UProve_ABC4Trust_unitTest
 
       this.smartCard.BeginCommitment(1);
 
-      BigInteger scopeExlusive = this.smartCard.GetScopeExclusiveCommitment("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter");
-      Assert.AreEqual<BigInteger>(1, scopeExlusive.Sign, "The BigInteger must be positive");
+      byte[] scopeExlusive = this.smartCard.GetScopeExclusiveCommitment(Utils.GetBytes("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter"));
+      Assert.AreEqual<byte>(scopeExlusive[scopeExlusive.Length - 1], 0x00, "The BigInteger must be positive");
       
       this.smartCard.EndCommitment();
     }
@@ -61,8 +61,8 @@ namespace UProve_ABC4Trust_unitTest
 
       this.smartCard.BeginCommitment(1);
 
-      BigInteger scopeExlusiveP = this.smartCard.GetScopeExclusivePseudonym("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter");
-      Assert.AreEqual<BigInteger>(1, scopeExlusiveP.Sign, "The BigInteger must be positive");
+      byte[] scopeExlusiveP = this.smartCard.GetScopeExclusivePseudonym(Utils.GetBytes("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter"));
+      Assert.AreEqual<byte>(scopeExlusiveP[scopeExlusiveP.Length - 1], 0x00, "The BigInteger must be positive");
 
       Console.Out.WriteLine(scopeExlusiveP);
       this.smartCard.EndCommitment();
@@ -76,14 +76,14 @@ namespace UProve_ABC4Trust_unitTest
 
       this.smartCard.BeginCommitment(1);
 
-      BigInteger deviceCommitment = this.smartCard.GetDeviceCommitment();
-      Assert.AreEqual<BigInteger>(1, deviceCommitment.Sign, "The BigInteger must be positive");
+      byte[] deviceCommitment = this.smartCard.GetDeviceCommitment();
+      Assert.AreEqual<byte>(deviceCommitment[deviceCommitment.Length - 1], 0x00, "The BigInteger must be positive");
 
-      BigInteger scopeExlusive = this.smartCard.GetScopeExclusiveCommitment("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter");
-      Assert.AreEqual<BigInteger>(1, scopeExlusive.Sign, "The BigInteger must be positive");
+      byte[] scopeExlusive = this.smartCard.GetScopeExclusiveCommitment(Utils.GetBytes("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter"));
+      Assert.AreEqual<byte>(scopeExlusive[scopeExlusive.Length - 1], 0x00, "The BigInteger must be positive");
 
-      BigInteger scopeExlusiveP = this.smartCard.GetScopeExclusivePseudonym("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter");
-      Assert.AreEqual<BigInteger>(1, scopeExlusiveP.Sign, "The BigInteger must be positive");
+      byte[] scopeExlusiveP = this.smartCard.GetScopeExclusivePseudonym(Utils.GetBytes("MyVeryNiceScopeThatJustKeepGettingBetterAndBetter"));
+      Assert.AreEqual<byte>(scopeExlusiveP[scopeExlusiveP.Length - 1], 0x00, "The BigInteger must be positive");
 
       this.smartCard.EndCommitment();
 

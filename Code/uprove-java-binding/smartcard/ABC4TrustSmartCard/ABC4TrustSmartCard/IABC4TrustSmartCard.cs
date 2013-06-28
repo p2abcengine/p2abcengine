@@ -571,8 +571,15 @@ namespace ABC4TrustSmartCard
     /// <returns>ErrorCode</returns>
     ErrorCode StoreBlob(byte[] pin, byte[] uri);
 
-    // TODO: if needed impl this.
-    //ErrorCode ListBlobs 
+
+    /// <summary>
+    /// Get
+    /// </summary>
+    /// <param name="pin"></param>
+    /// <param name="nreads"></param>
+    /// <returns></returns>
+    //ErrorCode ListBlobs(byte[] pin, byte nreads, out byte[] blobs);
+
 
     /// <summary>
     /// If pin = PIN, returns the data eld of the blob which URI field equals uri.

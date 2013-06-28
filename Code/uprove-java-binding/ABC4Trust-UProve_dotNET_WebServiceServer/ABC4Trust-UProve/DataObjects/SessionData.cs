@@ -11,6 +11,7 @@ namespace abc4trust_uprove.DataObjects
     public SessionData(LoginComposite inParm, String sessionID, int securityLevel)
     {
       SmartCardParams sParams = new SmartCardParams(inParm.PinCode, inParm.CredID, inParm.GroupID, inParm.ProverID);
+      _securityLevel = securityLevel;
       _parameterSet = SecurityLevelUtils.getRecommendedSet(securityLevel);
       deviceManager = new DeviceManager(sParams, parameterSet, inParm.UseVirtualDevice);
       
@@ -39,6 +40,33 @@ namespace abc4trust_uprove.DataObjects
     Prover _prover;
     byte[] _privateKey;
     ParameterSet _parameterSet;
+    int _securityLevel;
+    GroupDescription _group;
+    GroupElement _groupElement;
+
+    public GroupElement groupElement
+    {
+      get
+      {
+        return _groupElement;
+      }
+      set
+      {
+        _groupElement = value;
+      }
+    }
+
+    public GroupDescription group
+    {
+      get
+      {
+        return _group;
+      }
+      set
+      {
+        _group = value;
+      }
+    }
 
     public ParameterSet parameterSet
     {
@@ -49,6 +77,18 @@ namespace abc4trust_uprove.DataObjects
       set
       {
         _parameterSet = value;
+      }
+    }
+
+    public int securityLevel
+    {
+      get
+      {
+        return _securityLevel;
+      }
+      set
+      {
+        _securityLevel = value;
       }
     }
 

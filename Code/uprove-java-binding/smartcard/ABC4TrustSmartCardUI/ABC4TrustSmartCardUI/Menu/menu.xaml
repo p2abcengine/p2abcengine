@@ -1,0 +1,13 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    x:Class="ABC4TrustSmartCardUI.Menu.MenuResourceDictionary">
+
+
+    <Menu x:Name="mainMenu1" x:Key="mainMenu" IsMainMenu="True">
+        <MenuItem Header="_File"  >
+            <MenuItem Header="_Select card"  Click="click_select_card"/>
+        </MenuItem>
+
+    </Menu>
+
+</ResourceDictionary>

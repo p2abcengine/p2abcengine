@@ -61,7 +61,8 @@ namespace abc4trust_uprove
         // TODO create a better exception
         throw new Exception("No card founds in working mode");
       }
-      this.device = new SmartCard(readerName, pin);
+      bool doTimeProfile = ParseConfigManager.doTimeProfile();
+      this.device = new SmartCard(readerName, pin, doTimeProfile);
       // As the group and generator is set from the java init service we will only verify
       // TODO fix to see that group 0 is set on the hw smartcard.
       //if (!this.device.IsGeneratorSet(groupID))

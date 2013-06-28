@@ -1,0 +1,16 @@
+﻿<Window x:Class="ABC4TrustSmartCardUI.InitCardWindow"
+        xmlns:prop="clr-namespace:ABC4TrustSmartCardUI.Properties"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="InitCardWindow" Height="300" Width="300">
+    <Grid>
+        <TextBox Height="58" HorizontalAlignment="Left" Text="{x:Static prop:Resources.initCard}" Margin="33,32,0,0" Name="virginWarning" VerticalAlignment="Top" Width="207" TextWrapping="Wrap" FontWeight="Bold" />
+        <Label Content="p value" Height="28" HorizontalAlignment="Left" Margin="33,96,0,0" Name="pLabel" VerticalAlignment="Top" />
+        <TextBox Height="28" HorizontalAlignment="Left" Margin="87,96,0,0" Name="pValue" VerticalAlignment="Top" Width="153" />
+        <Label Content="q value" Height="28" HorizontalAlignment="Left" Margin="33,130,0,0" Name="qLabel" VerticalAlignment="Top" />
+        <TextBox Height="28" HorizontalAlignment="Left" Margin="87,130,0,0" Name="qValue" VerticalAlignment="Top" Width="153" />
+        <Label Content="pin" Height="28" HorizontalAlignment="Left" Margin="33,164,0,0" Name="pinLabel" VerticalAlignment="Top" />
+        <Label Height="28" HorizontalAlignment="Left" Margin="87,164,0,0" Name="pinValue" VerticalAlignment="Top" Width="153" />
+        <Button Content="Init Card" HorizontalAlignment="Left" Margin="87,226,0,0" Name="initCardButton" VerticalAlignment="Top" Click="initCardButton_Click" />
+    </Grid>
+</Window>

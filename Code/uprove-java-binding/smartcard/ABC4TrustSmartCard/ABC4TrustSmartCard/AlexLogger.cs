@@ -10,8 +10,8 @@ namespace ABC4TrustSmartCard
 
   public static class LoggerDefine
   {
-    public static String OUT_CONSOLE = "out_console";
-    public static String DEBUG_CONSOLE = "debug_console";
+    public static String OUT_CONSOLE = "std_out";
+    public static String DEBUG_CONSOLE = "debug_out";
   }
 
 
@@ -199,7 +199,7 @@ namespace ABC4TrustSmartCard
   }
 
 
-  public class LogWriterFile : LogWriter, IDisposable
+  public sealed class LogWriterFile : LogWriter, IDisposable
   {
     private static object sync = new Object();
     private string filename;
