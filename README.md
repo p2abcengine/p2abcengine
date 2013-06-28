@@ -34,17 +34,17 @@ The following components are required for building the project:
     
     Although we use Maven as build tool, there are two required libraries that are not available in public Maven repositories. Therefore, in the following, we provide instructions on how these libraries can be integrated with your local Maven repository.
 
-*   IBM Identity Mixer Version 2.3.40.
+*   IBM Identity Mixer Version 2.3.42.
   
-    [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-40.jar) and install it into your local maven repository:
+    [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-42.jar) and install it into your local maven repository:
     
     ```
     mvn install:install-file \
        -DgroupId=com.ibm.zurich \
        -DartifactId=idmx \
        -Dpackaging=jar \
-       -Dversion=2-3-40 \
-       -Dfile=com.ibm.zurich.idmx.2-3-40.jar \
+       -Dversion=2-3-42 \
+       -Dfile=com.ibm.zurich.idmx.2-3-42.jar \
        -DgeneratePom=true
     ```
 
