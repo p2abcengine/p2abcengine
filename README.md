@@ -66,21 +66,19 @@ The following components are required for building the project:
 
     [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: Ubuntu does not come with Mono installed by default any more. Also the _mono-runtime_ package is not sufficient).
 
-*   [Microsoft U-Prove Binary](http://uprovecsharp.codeplex.com)
-
 ### Building
 
+5.  On Windows 7: start the ABC4Trust-UProve Service:
+
+    ```ABC4Trust-UProve.exe 32123```
+    
+    This executable is located in the folder `Code/uprove-java-binding/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release/`.
+
+    On Windows XP/Unix/Mono platforms, the service is started automatically.
+    
 2.  Change directory:
 
     ```cd Code/java-ri```
-
-4.  Place U-Prove binaries in dotNet/releases/1.0.0/
-
-5.  On Windows 7 - start UProve Service:
-
-    ```ABC4Trust-UProve.exe 32123```
-
-    On Windows XP/Unix/Mono platforms, the service starts automatically.
 
 6.  Build the code with the command
    
@@ -90,9 +88,20 @@ The following components are required for building the project:
     * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
     * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
 
-    Once the code can successfully be built, you can go a step further and also execute all unit tests:
+7.  Once the code can successfully be built, you can go a step further and also execute all unit tests.
+    
+    _Windows XP/Unix/Mono platforms_: First, you need to determine the absolute path to the folder containing the ABC4Trust-UProve service. For convenience, you could copy this folder's content to `/usr/lib/ABC4Trust-UProve` with the following command (on Unix):
 
-    ```mvn clean install```
+    ```
+    sudo cp -r \
+       Code/uprove-java-binding/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release \
+       /usr/lib/ABC4Trust-UProve
+    ```
+    Knowing the path to the service, you can perform (for example):
+
+    ```mvn clean install -DPathToUProveExe=/usr/lib/ABC4Trust-UProve```
+    
+    _Windows 7_: `mvn clean install`
 
 ### Eclipse Import
 
