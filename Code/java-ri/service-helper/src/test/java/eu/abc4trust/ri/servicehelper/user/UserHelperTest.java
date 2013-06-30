@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.net.URI;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.ibm.zurich.idmx.dm.StoredDomainPseudonym;
@@ -229,6 +230,7 @@ public class UserHelperTest {
 
 
 
+    @Ignore
     @Test()
     public void test_init_idemix() throws Exception {
         this.initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "alice_idemix");
@@ -239,6 +241,7 @@ public class UserHelperTest {
         this.initHelper(CryptoEngine.UPROVE, CryptoEngine.UPROVE, "alice_uprove");
     }
 
+    @Ignore
     @Test()
     public void test_init_bridged() throws Exception {
         this.initHelper(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, "alice_bridged");

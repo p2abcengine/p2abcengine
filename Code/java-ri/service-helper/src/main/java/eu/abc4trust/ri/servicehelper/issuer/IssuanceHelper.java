@@ -161,6 +161,8 @@ public class IssuanceHelper extends AbstractHelper {
         return instance;
     }
 
+    private final String systemAndIssuerParamsPrefix;
+
     /**
      * Private constructor
      * 
@@ -309,7 +311,6 @@ public class IssuanceHelper extends AbstractHelper {
     private KeyManager uproveKeyManager;
     private KeyManager idemixKeyManager;
 
-    private final String systemAndIssuerParamsPrefix;
     private final String fileStoragePrefix;
     private final String systemParametersResource;
 
@@ -345,12 +346,13 @@ public class IssuanceHelper extends AbstractHelper {
             switch (cryptoEngine) {
             case BRIDGED: {
                 this.setupIdemixEngine(cryptoEngine,
+                        fileStoragePrefix,
                         revocationAuthorityParametersResourcesList,
                         specAndPolicyList, uproveUtils);
             }
             {
                 AbceConfigurationImpl configuration = this
-                        .setupUProveEngine(cryptoEngine,
+                        .setupUProveEngine(cryptoEngine, fileStoragePrefix,
                                 revocationAuthorityParametersResourcesList,
                                 specAndPolicyList, uproveUtils);
 
@@ -362,7 +364,7 @@ public class IssuanceHelper extends AbstractHelper {
 
             default:
                 AbceConfigurationImpl configuration = this.setupSingleEngine(
-                        cryptoEngine,
+                        cryptoEngine, fileStoragePrefix,
                         revocationAuthorityParametersResourcesList,
                         specAndPolicyList, uproveUtils);
 
@@ -384,7 +386,7 @@ public class IssuanceHelper extends AbstractHelper {
                     throws Exception {
 
         AbceConfigurationImpl configuration = this.setupConfiguration(
-                cryptoEngine, uproveUtils, cryptoEngine);
+                cryptoEngine, this.fileStoragePrefix, uproveUtils, cryptoEngine);
 
         Injector injector = Guice.createInjector(ProductionModuleFactory
                 .newModule(configuration, cryptoEngine));
@@ -420,12 +422,13 @@ public class IssuanceHelper extends AbstractHelper {
     }
 
     private AbceConfigurationImpl setupSingleEngine(CryptoEngine cryptoEngine,
+            String fileStoragePrefix,
             String[] revocationAuthorityParametersResourcesList,
             ArrayList<SpecAndPolicy> specAndPolicyList,
             UProveUtils uproveUtils)
                     throws Exception {
         AbceConfigurationImpl configuration = this.setupConfiguration(
-                cryptoEngine, uproveUtils,
+                cryptoEngine, fileStoragePrefix, uproveUtils,
                 cryptoEngine);
 
 
@@ -443,7 +446,7 @@ public class IssuanceHelper extends AbstractHelper {
                 .getInstance(CredentialManager.class);
 
         this.initSystemAndIssuerParams(this.keyManager,
-                revocationAuthorityParametersResourcesList,
+                fileStoragePrefix, revocationAuthorityParametersResourcesList,
                 specAndPolicyList,
                 cryptoEngine, injector, engine, this.credentialManager);
 
@@ -452,13 +455,14 @@ public class IssuanceHelper extends AbstractHelper {
 
 
     private void setupIdemixEngine(CryptoEngine cryptoEngine,
+            String fileStoragePrefix,
             String[] revocationAuthorityParametersResourcesList,
             ArrayList<SpecAndPolicy> specAndPolicyList,
             UProveUtils uproveUtils)
                     throws Exception {
         CryptoEngine specificCryptoEngine = CryptoEngine.IDEMIX;
         AbceConfigurationImpl configuration = this.setupConfiguration(
-                cryptoEngine, uproveUtils,
+                cryptoEngine, fileStoragePrefix, uproveUtils,
                 specificCryptoEngine);
 
         //
@@ -475,18 +479,20 @@ public class IssuanceHelper extends AbstractHelper {
         this.idemixKeyManager = injector.getInstance(KeyManager.class);
         engine = this.idemixEngine;
         this.initSystemAndIssuerParams(this.idemixKeyManager,
+                fileStoragePrefix,
                 revocationAuthorityParametersResourcesList, specAndPolicyList,
                 specificCryptoEngine, injector, engine, this.credentialManager);
     }
 
     private AbceConfigurationImpl setupUProveEngine(CryptoEngine cryptoEngine,
+            String fileStoragePrefix,
             String[] revocationAuthorityParametersResourcesList,
             ArrayList<SpecAndPolicy> specAndPolicyList, UProveUtils uproveUtils)
                     throws Exception {
         CryptoEngine specificCryptoEngine = CryptoEngine.UPROVE;
         AbceConfigurationImpl configuration = this
                 .setupConfiguration(cryptoEngine,
-                        uproveUtils,
+                        fileStoragePrefix, uproveUtils,
                         specificCryptoEngine);
 
 
@@ -507,19 +513,22 @@ public class IssuanceHelper extends AbstractHelper {
         this.uproveKeyManager = injector.getInstance(KeyManager.class);
         engine = this.uproveEngine;
         this.initSystemAndIssuerParams(this.uproveKeyManager,
+                fileStoragePrefix,
                 revocationAuthorityParametersResourcesList, specAndPolicyList,
                 specificCryptoEngine, injector, engine, this.credentialManager);
         return configuration;
     }
 
     private void initSystemAndIssuerParams(KeyManager keyManager,
+            String fileStoragePrefix,
             String[] revocationAuthorityParametersResourcesList,
             ArrayList<SpecAndPolicy> specAndPolicyList,
             CryptoEngine cryptoEngine, Injector injector,
             IssuerAbcEngine engine, CredentialManager credentialManager)
                     throws Exception {
 
-        this.initSystemParameters(keyManager);
+        this.initSystemParameters(
+                fileStoragePrefix, keyManager);
         this.initParamsForEngine(cryptoEngine, engine, keyManager,
                 specAndPolicyList, credentialManager);
 
@@ -531,11 +540,11 @@ public class IssuanceHelper extends AbstractHelper {
 
 
     private AbceConfigurationImpl setupConfiguration(CryptoEngine cryptoEngine,
-            UProveUtils uproveUtils,
+            String fileStoragePrefix, UProveUtils uproveUtils,
             CryptoEngine specificCryptoEngine) throws Exception {
         AbceConfigurationImpl configuration = this
                 .setupStorageFilesForConfiguration(this.getFileStoragePrefix(
-                        this.fileStoragePrefix, specificCryptoEngine), cryptoEngine);
+                        fileStoragePrefix, specificCryptoEngine), cryptoEngine);
         configuration.setUProvePathToExe(new UProveUtils().getPathToUProveExe()
                 .getAbsolutePath());
         configuration.setUProvePortNumber(uproveUtils.getIssuerServicePort());
@@ -545,16 +554,16 @@ public class IssuanceHelper extends AbstractHelper {
         return configuration;
     }
 
-    private String getFileStoragePrefix(String filePrefix, CryptoEngine cryptoEngine) {
-        if((filePrefix!=null) && (filePrefix.length()>0)) {
-            if(filePrefix.endsWith("_")) {
-                return filePrefix + ("" +cryptoEngine).toLowerCase() + "_";
+    private String getFileStoragePrefix(String fileStoragePrefix, CryptoEngine cryptoEngine) {
+        if((fileStoragePrefix!=null) && (fileStoragePrefix.length()>0)) {
+            if(fileStoragePrefix.endsWith("_")) {
+                return fileStoragePrefix + ("" +cryptoEngine).toLowerCase() + "_";
             } else {
-                if(filePrefix.endsWith("/") || filePrefix.endsWith("\\")) {
+                if(fileStoragePrefix.endsWith("/") || fileStoragePrefix.endsWith("\\")) {
                     // this is a folder...
-                    return filePrefix + ("" +cryptoEngine).toLowerCase() + "_";
+                    return fileStoragePrefix + ("" +cryptoEngine).toLowerCase() + "_";
                 } else {
-                    return filePrefix + ("_" +cryptoEngine).toLowerCase() + "_";
+                    return fileStoragePrefix + ("_" +cryptoEngine).toLowerCase() + "_";
                 }
             }
         }
@@ -564,10 +573,11 @@ public class IssuanceHelper extends AbstractHelper {
     private SystemParameters generatedSystemParameters = null;
 
 
-    private void initSystemParameters(KeyManager keyManager) throws Exception {
+    private void initSystemParameters(
+            String fileStoragePrefix, KeyManager keyManager) throws Exception {
         IssuanceHelper.log.info("initSystemParameters");
 
-        String systemParametersResource = this.fileStoragePrefix
+        String systemParametersResource = fileStoragePrefix
                 + SYSTEM_PARAMS_NAME_BRIDGED;
 
         this.generatedSystemParameters = SystemParametersHelper
@@ -632,13 +642,13 @@ public class IssuanceHelper extends AbstractHelper {
         return this.generatedSystemParameters;
     }
 
-    private void storeSystemParametersAsXML(String filePrefix,
+    private void storeSystemParametersAsXML(String fileStoragePrefix,
             SystemParameters systemParameters, String name) throws Exception {
         SystemParameters serializedSystemParameters = SystemParametersUtil
                 .serialize(systemParameters);
         JAXBElement<SystemParameters> asXml = this.of
                 .createSystemParameters(serializedSystemParameters);
-        AbstractHelper.storeObjectAsXMLInFile(asXml, filePrefix, name);
+        AbstractHelper.storeObjectAsXMLInFile(asXml, fileStoragePrefix, name);
     }
 
 
@@ -769,12 +779,12 @@ public class IssuanceHelper extends AbstractHelper {
                 + credSpec.getSpecificationUID() + " - key : "
                 + issuerParamsUid + " - filename : " + issuer_params_filename);
 
-        storeObjectInFile(issuerParameters, this.systemAndIssuerParamsPrefix,
+        storeObjectInFile(issuerParameters, systemAndIssuerParamsPrefix,
                 issuer_params_filename);
 
         AbstractHelper.storeObjectAsXMLInFile(
                 this.of.createCredentialSpecification(credSpec),
-                this.systemAndIssuerParamsPrefix,
+                systemAndIssuerParamsPrefix,
                 credSpec_filename);
 
 
@@ -783,7 +793,7 @@ public class IssuanceHelper extends AbstractHelper {
                     credentialManager.getIssuerSecretKey(issuerParamsUid);
 
             if (issuerPrivateKeyForIssuerParameters != null) {
-                storeObjectInFile(issuerPrivateKeyForIssuerParameters, this.fileStoragePrefix,
+                storeObjectInFile(issuerPrivateKeyForIssuerParameters, systemAndIssuerParamsPrefix,
                         "private_key_"
                                 + issuer_params_filename);
             }
@@ -939,10 +949,11 @@ public class IssuanceHelper extends AbstractHelper {
 
         String sapKey = specAndPolicyKey + "::" + cryptoEngine;
         SpecAndPolicy cached = this.specAndPolicyMap.get(sapKey);
-        
-        System.out.println("initSpecAndPolicy - cached! \n- " + XmlUtils.toXml(of.createIssuancePolicy(cached.getIssuancePolicy())));
 
-        return new SpecAndPolicy(cached);
+        SpecAndPolicy cloned = new SpecAndPolicy(cached);
+
+        this.initSpecAndPolicyFromResouces(cloned);
+        return cloned;
     }
 
     private SpecAndPolicy initSpecAndPolicyFromResouces(SpecAndPolicy cloneThisSap) throws Exception {
@@ -972,7 +983,7 @@ public class IssuanceHelper extends AbstractHelper {
         sap.setCredentialSpecification(credSpec);
         sap.setIssuancePolicy(issuancePolicy);
 
-//        sap.setIssuancePolicyBytes(XmlUtils.toXml(this.of.createIssuancePolicy(issuancePolicy), true).getBytes());
+        sap.setIssuancePolicyBytes(XmlUtils.toXml(this.of.createIssuancePolicy(issuancePolicy), true).getBytes());
 
         return sap;
     }
@@ -1123,7 +1134,6 @@ public class IssuanceHelper extends AbstractHelper {
                     + this.specAndPolicyMap);
             throw new IllegalStateException("Unknown Spec And Policy Key " + sapKey);
         }
-        
         IssuanceMessageAndBoolean initReIssuanceProtocol = this.uproveEngine.initReIssuanceProtocol(
                 specAndPolicy.cloneIssuancePolicy());
         return initReIssuanceProtocol.getIssuanceMessage();
@@ -1275,8 +1285,18 @@ public class IssuanceHelper extends AbstractHelper {
 
         List<Attribute> issuerAtts = new ArrayList<Attribute>();
 
-        this.populateIssuerAttributes(specAndPolicy, issuerAtts,
+        this.populateIssuerAttributes(specAndPolicy.getCredentialSpecification(), issuerAtts,
                 attributeValueMap);
+
+        //    try {
+        //      URI uid = specAndPolicy.getIssuancePolicy().getCredentialTemplate().getIssuerParametersUID();
+        //
+        // this.log.info("IssuerParametersUID : " + uid);
+        //      IssuerParameters issuerParameters = keyManager.getIssuerParameters(uid);
+        // this.log.info("IssuerParameters : " + issuerParameters);
+        //    } catch (Exception e) {
+        //      System.err.println("FAILED TO GET ISSUER PARAMS UID");
+        //    }
 
         IssuancePolicy clonedIssuancePolicy = specAndPolicy.cloneIssuancePolicy();
         URI policyIssuerParametersUID = specAndPolicy.issuerParamsUid_URI;
@@ -1314,15 +1334,9 @@ public class IssuanceHelper extends AbstractHelper {
     }
 
 
-    private void populateIssuerAttributes(SpecAndPolicy specAndPolicy,
+    private void populateIssuerAttributes(CredentialSpecification credSpec,
             List<Attribute> issuerAtts, Map<String, Object> attributeValueMap) {
-      
-        CredentialSpecification credSpec = specAndPolicy.getCredentialSpecification();
-        IssuancePolicy ip = specAndPolicy.getIssuancePolicy();
-        
-        // TODO - to make proper check - also check 'unknown' from IssuancePolicy
-        // eg findUnknownAttributtes(ip);
-        // and check that all attribues in credspecs are matched..
+
         if (credSpec.getAttributeDescriptions().getAttributeDescription().size() < attributeValueMap
                 .size()) {
             throw new IllegalStateException("Wrong number of attributes ? - in credspec : "

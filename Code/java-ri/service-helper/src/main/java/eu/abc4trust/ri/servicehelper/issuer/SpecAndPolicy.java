@@ -12,18 +12,17 @@
 package eu.abc4trust.ri.servicehelper.issuer;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.bind.JAXBElement;
 
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.ObjectFactory;
+import eu.abc4trust.xml.util.XmlUtils;
 
 /**
  * Helper class. Holds CredentialsSpecification + matching IssuancePolicy
@@ -85,26 +84,22 @@ public class SpecAndPolicy {
             i++;
         }
     }
-    public SpecAndPolicy(SpecAndPolicy cloneThisSap) throws Exception {
-        this.key = new String(cloneThisSap.key);
-        this.specResource = new String(cloneThisSap.specResource);
-        this.policyResource = new String(cloneThisSap.policyResource);
-        this.issuerParamsUid = cloneThisSap.issuerParamsUid != null ? new String(cloneThisSap.issuerParamsUid) : null;
-        this.revocationParamsUid = cloneThisSap.revocationParamsUid != null ? new String(cloneThisSap.revocationParamsUid) : null;
+    public SpecAndPolicy(SpecAndPolicy cloneThisSap) {
+        this.key = cloneThisSap.key;
+        this.specResource = cloneThisSap.specResource;
+        this.policyResource = cloneThisSap.policyResource;
+        this.issuerParamsUid = cloneThisSap.issuerParamsUid;
+        this.revocationParamsUid = cloneThisSap.revocationParamsUid;
+        this.issuanceBytes = cloneThisSap.issuanceBytes;
+        this.friendlyDescriptions = cloneThisSap.friendlyDescriptions;
         
-        this.friendlyDescriptions = cloneJaxBList(cloneThisSap.friendlyDescriptions);
-        
-        this.issuerParamsUid_URI = cloneThisSap.issuerParamsUid_URI != null ? new URI(cloneThisSap.issuerParamsUid_URI.toString()) : null;
-        this.revocationParamsUid_URI = cloneThisSap.revocationParamsUid_URI != null ? new URI(cloneThisSap.revocationParamsUid_URI.toString()) : null;
-        
-        this.credentialSpecification = cloneJaxB(cloneThisSap.credentialSpecification);
-        this.issuancePolicy = cloneJaxB(cloneThisSap.issuancePolicy);
+        this.issuerParamsUid_URI = cloneThisSap.issuerParamsUid_URI;
+        this.revocationParamsUid_URI = cloneThisSap.revocationParamsUid_URI;
     }
-
 
     private CredentialSpecification credentialSpecification;
     private IssuancePolicy issuancePolicy;
-
+    private byte[] issuanceBytes;
 
     public CredentialSpecification getCredentialSpecification() {
         return this.credentialSpecification;
@@ -123,27 +118,17 @@ public class SpecAndPolicy {
         this.issuancePolicy = issuancePolicy;
     }
 
-    private <T extends Serializable> List<T> cloneJaxBList(List<T> original) throws Exception {
-      List<T> list = new ArrayList<T>();
-      for(T t : original) {
-        list.add(cloneJaxB(t));
-      }
-      return list;
+    public void setIssuancePolicyBytes(byte[] bytes) {
+        this.issuanceBytes = bytes;
     }
 
-    public <T extends Serializable> T cloneJaxB(T jaxbObject) throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ObjectOutputStream o = new ObjectOutputStream(out);
-        o.writeObject(jaxbObject);
-        o.flush();
-  
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-        ObjectInputStream i = new ObjectInputStream(in);
-        return (T) i.readObject();
-    }
-    
     public IssuancePolicy cloneIssuancePolicy() throws Exception {
-        return cloneJaxB(issuancePolicy);
+        JAXBElement<?> clone = XmlUtils.getJaxbElementFromXml(
+                new ByteArrayInputStream(this.issuanceBytes), true);
+        IssuancePolicy cloneValue = (IssuancePolicy) clone.getValue();
+        cloneValue.getCredentialTemplate().setIssuerParametersUID(
+                this.issuerParamsUid_URI);
+        return cloneValue;
     }
 
 }

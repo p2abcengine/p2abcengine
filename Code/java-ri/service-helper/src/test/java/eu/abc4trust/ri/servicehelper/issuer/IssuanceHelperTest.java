@@ -147,7 +147,6 @@ public class IssuanceHelperTest {
         helper.initIssuance("idcard", attributeValueMap);
     }
 
-    @Ignore
     @Test()
     public void test_patrasCredSpecs() throws Exception {
 
@@ -155,7 +154,6 @@ public class IssuanceHelperTest {
         this.test_init(CryptoEngine.IDEMIX,"patras", this.patras_university, this.patras_cource);
     }
 
-    @Ignore
     @Test()
     public void test_creditcard_visa() throws Exception {
 
@@ -163,7 +161,6 @@ public class IssuanceHelperTest {
         this.test_init(CryptoEngine.IDEMIX, "visa", this.creditcard_visa);
     }
 
-    @Ignore
     @Test()
     public void test_creditcard_amex() throws Exception {
 
@@ -171,7 +168,6 @@ public class IssuanceHelperTest {
         this.test_init(CryptoEngine.IDEMIX, "amex", this.creditcard_amex);
     }
 
-    @Ignore
     @Test()
     public void test_passport_ch() throws Exception {
 
