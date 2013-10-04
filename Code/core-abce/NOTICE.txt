@@ -1,0 +1,307 @@
+Licensed Materials - Property of IBM, Miracle A/S, and Alexandra Instituttet A/S
+eu.abc4trust.pabce.1.0
+© Copyright IBM Corp. 2012. All Rights Reserved.
+© Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.
+© Copyright Alexandra Instituttet A/S, Denmark. 2012. All Rights Reserved.
+US Government Users Restricted Rights - Use, duplication or disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+
+
+This program depends on the following packages:
+
+- Stax 1.0-2, http://stax.codehaus.org/, Apache License 2.0
+Copyright 2003-2006 - The Codehaus. All rights reserved unless otherwise noted.
+
+
+- EasyMock 3.1, http://easymock.org/, Apache License 2.0
+© 2001-2012 Tammo Freese, Henri Tremblay.
+
+
+- Objenesis 1.2, http://code.google.com/p/objenesis/, Apache License 2.0
+Copyright (c) 2003-2009, Objenesis Team and all contributors
+
+
+- cglib 2.2, http://cglib.sourceforge.net/, Apache License 2.0
+© 2002-2004, cglib 
+
+
+- Google Guice 3.0, http://code.google.com/p/google-guice/, Apache License 2.0
+Copyright (C) 2006 Google Inc.
+
+
+- Atinject 1 (javax.inject-1.jar), http://code.google.com/p/atinject/, Apache License 2.0
+Copyright (C) 2009 The JSR-330 Expert Group
+
+
+- Apache Ant 1.6.5, http://ant.apache.org/, Apache License 2.0
+Copyright © 1999-2011, The Apache Software Foundation.
+
+
+- bndlib 0.0.145, http://www.aqute.biz/Bnd/Bnd, Apache License 2.0
+Copyright 2006 aQute SARL, All Rights Reserved
+
+
+- Apache Commons Configuration 1.6, http://commons.apache.org/configuration/, Apache License 2.0
+Copyright © 2001-2012 The Apache Software Foundation. All Rights Reserved. 
+
+
+- Apache Commons IO 2.4, http://commons.apache.org/io/, Apache License 2.0
+Copyright © 2002-2012 The Apache Software Foundation. All Rights Reserved. 
+
+
+- Apache Maven, http://maven.apache.org/, Apache License 2.0
+© 2002-2012 The Apache Software Foundation
+
+
+- Geronimo Annotation 1.0, http://geronimo.apache.org/, Apache License 2.0
+ Copyright © 2003-2011, The Apache Software Foundation,
+
+
+- geronimo-spec-jta 1.0.1B-RC4, http://vmgump.apache.org/gump/public/jta/geronimo-spec-jta/index.html, Apache License 2.0
+
+
+- Jettison 1.1, http://jettison.codehaus.org/, Apache License 2.0
+Copyright 2006 Envoi Solutions LLC
+
+
+- Plexus Maven plugin, http://plexus.codehaus.org/plexus-maven-plugin/, Apache License 2.0
+© 2001-2009 Codehaus
+
+
+- Maven Anno Mojo plugin 1.3.1, http://wiki.jfrog.org/confluence/display/OSS/Maven+Anno+Mojo, Apache License 2.0
+Copyright © 2012 JFrog Ltd.
+
+
+- JAXWS maven plugin 1.12, http://jax-ws-commons.java.net/jaxws-maven-plugin/, Apache License 2.0
+Copyright 2006 Codehaus
+
+
+- Build Helper Maven Plugin 1.7, http://mojo.codehaus.org/build-helper-maven-plugin/, MIT
+Copyright (c) 2004, The Codehaus
+
+
+- Maven JAXB plugin 0.8.0, http://confluence.highsource.org/display/MJIIP/Maven+JAXB2+Plugin, 3-clause BSD
+Copyright (c) 2006-2010, Aleksei Valikov
+This product was built using Maven JAXB2 Plugin software developed by Aleksei Valikov, Highsource.
+
+
+- JLine 0.9.1, http://jline.sourceforge.net/, BSD license
+Copyright (c) 2002-2012, the original author or authors.
+All rights reserved.
+
+
+- XStream 1.3.1, http://xstream.codehaus.org/, BSD License - see http://xstream.codehaus.org/license.html
+Copyright (c) 2003-2006, Joe Walnes
+Copyright (c) 2006-2009, 2011 XStream Committers
+All rights reserved.
+
+
+- Hamcrest 1.1, http://code.google.com/p/hamcrest/, BSD 2-Clause License
+Copyright (c) 2000-2006, www.hamcrest.org
+All rights reserved.
+
+
+- JAXB 2.2.4-1 + 2.2.3, http://jaxb.java.net/,  Dual license consisting of the CDDL v1.1 and GPL v2 with classpath exception.
+Copyright (c) 1997-2011 Oracle and/or its affiliates. All rights reserved.
+IBM elects to include this software in this distribution under the CDDL license.
+
+- Jersey 1.10, http://jersey.java.net/,  Dual license consisting of the CDDL v1.1 and GPL v2 with classpath exception.
+Copyright (c) 2010-2011 Oracle and/or its affiliates. All rights reserved.
+IBM elects to include this software in this distribution under the CDDL license.
+
+- Junit 4, http://www.junit.org/, Common Public License 1.0
+
+
+- AOP Alliance 1.0, http://aopalliance.sourceforge.net/, Public Domain
+
+
+- ASM 3.1, http://asm.ow2.org/, custom license, see http://asm.ow2.org/license.html
+Copyright (c) 2000-2011 INRIA, France Telecom
+All rights reserved.
+
+
+- backport-util-concurrent 3.1, http://backport-jsr166.sourceforge.net/, Public Domain
+
+
+- Apache XML Commons Resolver 20050927, http://www.apache.org/dist/xerces/xml-commons/, unknown license for this old version (possible parts under Apache license, W3C licence (http://www.w3.org/Consortium/Legal/2002/copyright-documents-20021231) and public domain)
+Copyright 1999-2009 The Apache Software Foundation.
+
+
+- Jetty, Version 6.1.26, http://www.eclipse.org/jetty/, Apache License 2.0
+==============================================================
+ Jetty Web Container 
+ Copyright 1995-2009 Mort Bay Consulting Pty Ltd
+==============================================================
+
+The Jetty Web Container is Copyright Mort Bay Consulting Pty Ltd
+unless otherwise noted. It is licensed under the apache 2.0
+license.
+
+The javax.servlet package used by Jetty is copyright 
+Sun Microsystems, Inc and Apache Software Foundation. It is 
+distributed under the Common Development and Distribution License.
+You can obtain a copy of the license at 
+https://glassfish.dev.java.net/public/CDDLv1.0.html.
+
+The UnixCrypt.java code ~Implements the one way cryptography used by
+Unix systems for simple password protection.  Copyright 1996 Aki Yoshida,
+modified April 2001  by Iris Van den Broeke, Daniel Deville.
+Permission to use, copy, modify and distribute UnixCrypt 
+for non-commercial or commercial purposes and without fee is
+granted provided that the copyright notice appears in all copies.
+
+The default JSP implementation is provided by the Glassfish JSP engine
+from project Glassfish http://glassfish.dev.java.net.  Copyright 2005
+Sun Microsystems, Inc. and portions Copyright Apache Software Foundation.
+
+Some portions of the code are Copyright:
+  2006 Tim Vernum 
+  1999 Jason Gilbert.
+
+The jboss integration module contains some LGPL code.
+
+The win32 Java Service Wrapper (v3.2.3) is Copyright (c) 1999, 2006 
+Tanuki Software, Inc.  and 2001 Silver Egg Technology.  It is 
+covered by an open license which is viewable at
+http://svn.codehaus.org/jetty/jetty/branches/jetty-6.1/extras/win32service/LICENSE.txt
+
+
+- Eclipse Core Resources, version 3.3.0-v20070604, http://www.eclipse.org/eclipse/platform-core/, Eclipse Public License Version 1.0
+
+
+- Jackson 1.8.3, http://jackson.codehaus.org/, (Dual Licensed: LGPL or Apache License 2.0)
+Copyright ©2009 FasterXML, LLC
+IBM elects to include this software in this distribution under the Apache license.
+
+
+- Classworlds 1.1, http://classworlds.codehaus.org/, custom license, see http://classworlds.codehaus.org/license.html
+Copyright 2002 (C) The Codehaus. All Rights Reserved.
+ 
+ Redistribution and use of this software and associated documentation
+ ("Software"), with or without modification, are permitted provided
+ that the following conditions are met:
+
+ 1. Redistributions of source code must retain copyright
+    statements and notices.  Redistributions must also contain a
+    copy of this document.
+ 
+ 2. Redistributions in binary form must reproduce the
+    above copyright notice, this list of conditions and the
+    following disclaimer in the documentation and/or other
+    materials provided with the distribution.
+ 
+ 3. The name "classworlds" must not be used to endorse or promote
+    products derived from this Software without prior written
+    permission of The Codehaus.  For written permission, please 
+    contact bob@codehaus.org.
+ 
+ 4. Products derived from this Software may not be called "classworlds"
+    nor may "classworlds" appear in their names without prior written
+    permission of The Codehaus. "classworlds" is a registered
+    trademark of The Codehaus.
+ 
+ 5. Due credit should be given to The Codehaus.
+    (http://classworlds.codehaus.org/).
+ 
+ THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
+ ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
+ NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+- XML Pull Parser 1.1.4c (XPP3), http://www.extreme.indiana.edu/xgws/xsoap/xpp/mxp1/, Indiana University Extreme! Lab Software License, version 1.1.1, BSD Style
+Indiana University Extreme! Lab Software License
+
+Version 1.1.1
+
+Copyright (c) 2002 Extreme! Lab, Indiana University. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions 
+are met:
+
+1. Redistributions of source code must retain the above copyright notice, 
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright 
+   notice, this list of conditions and the following disclaimer in 
+   the documentation and/or other materials provided with the distribution.
+
+3. The end-user documentation included with the redistribution, if any, 
+   must include the following acknowledgment:
+
+  "This product includes software developed by the Indiana University 
+  Extreme! Lab (http://www.extreme.indiana.edu/)."
+
+Alternately, this acknowledgment may appear in the software itself, 
+if and wherever such third-party acknowledgments normally appear.
+
+4. The names "Indiana Univeristy" and "Indiana Univeristy Extreme! Lab" 
+must not be used to endorse or promote products derived from this 
+software without prior written permission. For written permission, 
+please contact http://www.extreme.indiana.edu/.
+
+5. Products derived from this software may not use "Indiana Univeristy" 
+name nor may "Indiana Univeristy" appear in their name, without prior 
+written permission of the Indiana University.
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS OR ITS CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+- Apache Felix 0.8.0, Subproject Gogo, http://felix.apache.org/, Apache License 2.0
+
+
+-Google Guice, http://code.google.com/p/google-guice/, Apache License 2.0 
+Copyright (C) 2006 Google Inc.
+
+
+-JavaBeans Activation Framework 1.1, http://geronimo.apache.org/, Apache License 2.0 
+ Copyright © 2003-2011, The Apache Software Foundation
+
+
+-Java Mail 1.4, http://geronimo.apache.org/, Apache License 2.0
+ Copyright © 2003-2011, The Apache Software Foundation,
+
+ 
+- Eclipse Core, Version 4.2, http://www.eclipse.org/juno/, Eclipse Public License 1.0
+Copyright © 2012 The Eclipse Foundation. All Rights Reserved.
+
+
+- Eclipse Equinox, Version 3.8.1, http://www.eclipse.org/equinox/, Eclipse Public License 1.0, Apache License 2.0
+
+
+- ICU - International Components for Unicode, version 4.4.2, http://site.icu-project.org/, ICU License - ICU 1.8.1 and later (http://source.icu-project.org/repos/icu/icu/trunk/license.html)
+Copyright (c) 1995-2012 International Business Machines Corporation and others
+
+- Eclipse Help, Version 4.2, Eclipse Public License 1.0, W3C Software License (http://www.w3.org/Consortium/Legal/copyright-software-19980720), http://www.eclipse.org/juno/
+
+
+- Eclipse Rich Ajax Platform, Version 1.5, http://www.eclipse.org/rap/, Eclipse Public License 1.0
+
+
+- PLT Utilities 1.0, http://www.drjava.org/, BSD License; dependencies require also Eclipse Public License 1.0 and a (rather non-restrictive) custom license see http://drjava.sourceforge.net/license.shtml 
+Copyright (c) 2001-2010, JavaPLT group at Rice University (drjava@rice.edu) All rights reserved. 
+
+
+- Apache Commons FileUpload 1.2.2, http://commons.apache.org/fileupload/, Apache License 2.0
+© 2002-2010 The Apache Software Foundation
+
+
+- Java Mail 1.4.1, http://glassfish.java.net/, CDDL 1.0
+

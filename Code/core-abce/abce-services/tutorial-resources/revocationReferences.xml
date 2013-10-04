@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:RevocationReferences 
+   xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+   xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:RevocationInfoReference ReferenceType="http">
+    <abc:References>http://localhost:9500/revocation/updaterevocationinformation</abc:References>
+  </abc:RevocationInfoReference>
+  <abc:NonRevocationEvidenceReference ReferenceType="http">
+    <abc:References>http://localhost:9500/revocation/generatenonrevocationevidence</abc:References>
+  </abc:NonRevocationEvidenceReference>
+  <abc:NonRevocationEvidenceUpdateReference ReferenceType="http">
+    <abc:References>http://localhost:9500/revocation/generatenonrevocationevidenceupdate</abc:References>
+  </abc:NonRevocationEvidenceUpdateReference>
+</abc:RevocationReferences>

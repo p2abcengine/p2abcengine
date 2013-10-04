@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:UiPresentationReturn xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+  <uiContext>REPLACE-THIS-CONTEXT</uiContext>
+  <chosenIssuanceToken>0</chosenIssuanceToken>
+  <chosenPolicy>0</chosenPolicy>
+  <chosenPresentationToken>0</chosenPresentationToken>
+  <chosenPseudonymList>0</chosenPseudonymList>
+  <chosenInspectors/>
+  <metadataToChange/>
+</abc:UiPresentationReturn>

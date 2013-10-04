@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust presentation token for booking the hotel. A standard offer was chosen, 
+  as the user has credentials satisfying these conditions. -->
+
+<abc:PresentationToken 
+  xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  Version="Version 1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationTokenDescription PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard"
+    TokenUID="abc4trust.eu/token-uid/2">
+    <abc:Message>
+      <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
+      <abc:ApplicationData>
+        <RoomType>Double</RoomType>
+        <Bedsize>King</Bedsize>
+        <ArrivalDate>2012-04-01</ArrivalDate>
+        <NrOfNights>2</NrOfNights>
+        <ReservationCode>HCJ095</ReservationCode>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+    </abc:Message>
+    <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com"
+      Alias="mainPseudonym"/>
+    <abc:Credential Alias="#creditcard">
+        <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+        <abc:IssuerParametersUID>http://www.amex.com/abc/isskey</abc:IssuerParametersUID>
+      <abc:DisclosedAttribute AttributeType="Status"
+        DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
+        <abc:AttributeValue>123123</abc:AttributeValue>
+      </abc:DisclosedAttribute>
+      <abc:DisclosedAttribute AttributeType="CardType"
+        DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
+        <abc:AttributeValue>gold</abc:AttributeValue>
+      </abc:DisclosedAttribute>
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:dateTime-greater-than-or-equal">
+      <abc:Attribute CredentialAlias="#creditcard" AttributeType="ExpirationDate" />
+      <abc:ConstantValue>2012-01-06T00:00:00Z</abc:ConstantValue>
+    </abc:AttributePredicate>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:dateTime-less-than-or-equal">
+      <abc:Attribute CredentialAlias="#creditcard" AttributeType="ExpirationDate" />
+      <abc:ConstantValue>2014-01-06T00:00:00Z</abc:ConstantValue>
+    </abc:AttributePredicate>
+  </abc:PresentationTokenDescription>
+  <abc:CryptoEvidence>
+    <abc:TestCryptoParams>
+      <abc:Data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xsi:type="xs:string">4654v76g57i6bghfgheru6tr$^$FUV7kibg7,hjuy6brju bgmjytrvfuyrj</abc:Data>
+    </abc:TestCryptoParams>
+  </abc:CryptoEvidence>
+</abc:PresentationToken>

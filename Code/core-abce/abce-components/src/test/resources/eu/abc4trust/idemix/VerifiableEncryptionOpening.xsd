@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.zurich.ibm.com/security/idemix" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:idemix="http://www.zurich.ibm.com/security/idemix">
+  <xs:element name="VerifiableEncryptionOpening">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Locations"/>
+        <xs:element ref="idemix:Elements"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Locations">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:VEPublicKeyLocation"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="VEPublicKeyLocation" type="xs:anyURI"/>
+  <xs:element name="Elements">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Message"/>
+        <xs:element ref="idemix:r"/>
+        <xs:element ref="idemix:Label"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Message" type="xs:integer"/>
+  <xs:element name="r" type="xs:integer"/>
+  <xs:element name="Label" type="xs:integer"/>
+</xs:schema>

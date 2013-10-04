@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StoredDomainPseudonym 
+  xmlns="http://www.zurich.ibm.com/security/idemix" 
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../../idemix/Pseudonym.xsd">
+  <scope>http://www.zurich.ibm.com/gameRoom</scope>
+  <smartcardUid>secret://sample-1234</smartcardUid>
+  <GroupParameters>http://www.zurich.ibm.com/security/idmx/v2/gp.xml</GroupParameters>
+</StoredDomainPseudonym>

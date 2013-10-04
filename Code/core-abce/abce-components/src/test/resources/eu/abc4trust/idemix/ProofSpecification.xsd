@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.zurich.ibm.com/security/idemix" xmlns="http://www.zurich.ibm.com/security/idemix"
+	elementFormDefault="qualified">
+
+	<xs:element name="ProofSpecification">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Declaration" type="DeclarationType" />
+				<xs:element name="Specification" type="SpecificationType" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<xs:complexType name="DeclarationType">
+		<xs:sequence>
+			<xs:element name="AttributeId" type="AttributeIdType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="AttributeIdType">
+		<xs:attribute name="name" type="NonEmptyStringType" use="required" />
+		<xs:attribute name="proofMode" type="proofModeType" use="required" />
+		<xs:attribute name="type" type="dataType" use="required" />
+	</xs:complexType>
+
+	<xs:simpleType name="NonEmptyStringType">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1" />
+			<xs:whiteSpace value="collapse" />
+		</xs:restriction>
+	</xs:simpleType>
+    <xs:simpleType name="NonEmptyUriType">
+        <xs:restriction base="xs:anyURI">
+            <xs:minLength value="1" />
+            <xs:whiteSpace value="collapse" />
+        </xs:restriction>
+    </xs:simpleType>
+
+	<xs:simpleType name="proofModeType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="unrevealed" />
+			<xs:enumeration value="revealed" />
+			<xs:enumeration value="commitment" />
+			<xs:enumeration value="verenc" />
+			<xs:enumeration value="nym" />
+			<xs:enumeration value="message" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<!-- remove and import from credential structure -->
+	<xs:simpleType name="dataType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="int" />
+			<xs:enumeration value="string" />
+			<xs:enumeration value="epoch" />
+			<xs:enumeration value="enum" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="SpecificationType">
+		<xs:sequence>
+			<xs:element name="Credentials" type="CredentialsType" />
+            <xs:element name="CredentialCommitments" type="CredentialCommitmentsType" minOccurs="0"/>
+			<xs:element name="EnumAttributes" type="EnumAttributesType" />
+			<xs:element name="Inequalities" type="InequalitiesType" />
+			<xs:element name="Commitments" type="CommitmentsType" />
+			<xs:element name="Representations" type="RepresentationsType" />
+			<xs:element name="Pseudonyms" type="PseudonymsType" />
+			<xs:element name="VerifiableEncryptions" type="VerifiableEncryptionsType" />
+			<xs:element name="Messages" type="MessagesType" />
+            <xs:element name="Accumulators" type="AccumulatorsType" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="CredentialsType">
+		<xs:sequence>
+			<xs:element name="Credential" type="CredentialType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+  
+    <xs:complexType name="CredentialCommitmentsType">
+        <xs:sequence>
+            <xs:element name="CredentialCommitment" type="CredentialType"
+                minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+	<xs:complexType name="CredentialType">
+		<xs:sequence>
+			<xs:element name="Attribute" type="AttributeType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+        <xs:attribute name="issuerPublicKey" type="xs:anyURI" use="required"/>
+		<xs:attribute name="credStruct" type="xs:anyURI" use="required" />
+		<xs:attribute name="name" type="NonEmptyStringType" use="required" />
+        <xs:attribute name="secretName" type="NonEmptyStringType" use="optional" />
+	</xs:complexType>
+
+	<xs:complexType name="AttributeType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="name" type="NonEmptyStringType"
+					use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="EnumAttributesType">
+		<xs:sequence>
+			<xs:element name="EnumAttribute" type="EnumAttributeType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="EnumAttributeType">
+		<xs:sequence>
+			<xs:element name="EnumValue" type="EnumValueType"
+				maxOccurs="unbounded" />
+			<!-- <xs:element ref="Constant" minOccurs="0" maxOccurs="unbounded" /> -->
+		</xs:sequence>
+		<xs:attribute name="attributeId" type="NonEmptyStringType"
+			use="required" />
+		<xs:attribute name="operator" type="EnumOperatorType"
+			use="required" />
+	</xs:complexType>
+
+	<xs:simpleType name="EnumOperatorType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="and" />
+			<xs:enumeration value="or" />
+			<xs:enumeration value="not" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="EnumValueType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="attributeName" type="NonEmptyStringType"
+					use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="InequalitiesType">
+		<xs:sequence>
+			<xs:element name="Inequality" type="InequalityType"
+				minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="NotEqual" type="NotEqualType"
+                minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="InequalityType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="publicKey" type="xs:anyURI" use="required" />
+				<xs:attribute name="operator" type="InequalityOperatorType"
+					use="required" />
+				<xs:attribute name="secondArgument" type="NonEmptyStringType"
+					use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+  
+    <xs:complexType name="NotEqualType">
+        <xs:simpleContent>
+            <xs:extension base="NonEmptyStringType">
+                <xs:attribute name="secondArgument" type="NonEmptyStringType" use="required" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+	<xs:simpleType name="InequalityOperatorType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="gt"></xs:enumeration>
+			<xs:enumeration value="geq"></xs:enumeration>
+			<xs:enumeration value="leq"></xs:enumeration>
+			<xs:enumeration value="lt"></xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="BigIntegerType">
+		<xs:restriction base="xs:string">
+			<xs:whiteSpace value="collapse" />
+			<xs:pattern value="-?[0-9]+" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="CommitmentsType">
+		<xs:sequence>
+			<xs:element name="Commitment" type="CommitmentType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="CommitmentType">
+		<xs:sequence>
+			<xs:element name="Exponent" type="CommitmentExponentType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+		<xs:attribute name="name" type="NonEmptyStringType" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="CommitmentExponentType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="index" type="xs:nonNegativeInteger"
+					use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="RepresentationsType">
+		<xs:sequence>
+			<xs:element name="Representation" type="RepresentationType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="RepresentationType">
+		<xs:sequence>
+			<xs:element name="Exponent" type="RepresentationExponentType"
+				minOccurs="0" maxOccurs="unbounded" />
+			<!-- <xs:element ref="Constant" minOccurs="0" maxOccurs="unbounded" /> -->
+		</xs:sequence>
+		<xs:attribute name="name" type="NonEmptyStringType" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="RepresentationExponentType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="index" type="xs:nonNegativeInteger"
+					use="required" />
+				<xs:attribute name="base" type="BigIntegerType" use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="PseudonymsType">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="Pseudonym" type="PseudonymType" />
+			<xs:element name="DomainPseudonym" type="DomainPseudonymType" />
+		</xs:choice>
+        <xs:attribute name="groupParameters" type="NonEmptyStringType" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="PseudonymType">
+		<xs:attribute name="name" type="NonEmptyStringType" use="required"/>
+        <xs:attribute name="secretName" type="NonEmptyStringType" use="required"/>
+	</xs:complexType>
+  
+    <xs:complexType name="DomainPseudonymType">
+        <xs:attribute name="name" type="NonEmptyStringType" use="required"/>
+        <xs:attribute name="scope" type="NonEmptyUriType" use="required"/>
+        <xs:attribute name="secretName" type="NonEmptyStringType" use="required"/>
+    </xs:complexType>
+
+	<xs:complexType name="VerifiableEncryptionsType">
+		<xs:sequence>
+			<xs:element name="VerifiableEncryption" type="VerifiableEncryptionType"
+				minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="VerifiableEncryptionType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="name" type="NonEmptyStringType"
+					use="required" />
+				<xs:attribute name="publicKey" type="xs:anyURI" use="required" />
+				<xs:attribute name="label" type="NonEmptyStringType"
+					use="required" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="MessagesType">
+		<xs:sequence>
+			<xs:element name="Message" type="MessageType" minOccurs="0"
+				maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+  
+    <xs:complexType name="AccumulatorsType">
+        <xs:sequence>
+            <xs:element name="Accumulator" type="AccumulatorType" minOccurs="0"
+                maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="AccumulatorType">
+      <xs:simpleContent>
+        <xs:extension base="NonEmptyStringType">
+          <xs:attribute name="name" type="NonEmptyStringType" use="required"/>
+          <xs:attribute name="publicKey" type="NonEmptyStringType" use="required"/>
+          <xs:attribute name="epoch" type="xs:integer" use="required"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+
+	<xs:complexType name="MessageType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" type="NonEmptyStringType" />
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+</xs:schema>

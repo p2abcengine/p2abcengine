@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StoredPseudonym 
+  xmlns="http://www.zurich.ibm.com/security/idemix" 
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../../idemix/Pseudonym.xsd">
+  <smartcardUid>theUltimateSmartcard</smartcardUid>
+  <GroupParameters>http://www.zurich.ibm.com/security/idmx/v2/gp.xml</GroupParameters>
+  <randomizer>12345678900987654321</randomizer>
+</StoredPseudonym>

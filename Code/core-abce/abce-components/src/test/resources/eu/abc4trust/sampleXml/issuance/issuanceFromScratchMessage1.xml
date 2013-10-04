@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+	<!--
+		This is a sample ABC4Trust 1st Issuance Message for an Issuance from scratch
+		(User requests issuing a passport)
+	-->
+
+<abc:IssuanceMessage xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Context="PasspostIssuance324234234"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    <abc:TestApplicationData>
+        <abc:Data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">
+        Swiss Passport Issuance Request
+        </abc:Data>
+    </abc:TestApplicationData>
+</abc:IssuanceMessage>

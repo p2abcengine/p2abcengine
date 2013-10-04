@@ -1,0 +1,66 @@
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
+//* eu.abc4trust.pabce.1.0                                            *
+//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
+//* US Government Users Restricted Rights - Use, duplication or       *
+//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
+//*/**/****************************************************************
+
+package eu.abce4trust.ri.test.tools;
+
+import javax.ws.rs.core.MediaType;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.WebResource.Builder;
+
+import eu.abc4trust.guice.ProductionModule.CryptoEngine;
+import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.ObjectFactory;
+import eu.abc4trust.xml.util.XmlUtils;
+
+public class IssuerServiceProxy extends ServiceProxy {
+
+    private final ObjectFactory of = new ObjectFactory();
+    private final Client client = Client.create();
+    private final String issuerUrl;
+
+    public IssuerServiceProxy(String issuerUrl) {
+        this.issuerUrl = issuerUrl;
+    }
+
+    public IssuanceMessage issuanceStart(String serverMethod, String issuanceKey)
+            throws Exception {
+        String urlStr = this.issuerUrl + "/issue/" + serverMethod + "/"
+                + issuanceKey;
+        Builder issueStartResource = this.client.resource(urlStr)
+                .type(MediaType.APPLICATION_XML).accept(MediaType.TEXT_XML);
+
+        IssuanceMessage server_im = null;
+        server_im = this.postMessage(urlStr, issueStartResource,
+                IssuanceMessage.class);
+
+        System.out.println(" - initial message - server : " + server_im);
+        System.out.println(" - initial message - server : \n"
+                + XmlUtils.toXml(this.of.createIssuanceMessage(server_im)));
+        return server_im;
+    }
+
+    public IssuanceMessage issuanceStep(IssuanceMessage user_im,
+            CryptoEngine engine) throws Exception {
+        String urlStr = this.issuerUrl + "/issue/step/?UserCryptoEngine="
+                + engine.toString();
+        Builder issueStepResource = this.client.resource(urlStr)
+                .type(MediaType.APPLICATION_XML).accept(MediaType.TEXT_XML);
+
+        IssuanceMessage server_im = this.postMessage(urlStr, issueStepResource,
+                IssuanceMessage.class, this.of.createIssuanceMessage(user_im));
+
+        System.out.println(" - initial message - server : \n"
+                + XmlUtils.toXml(this.of.createIssuanceMessage(server_im)));
+        return server_im;
+    }
+
+}

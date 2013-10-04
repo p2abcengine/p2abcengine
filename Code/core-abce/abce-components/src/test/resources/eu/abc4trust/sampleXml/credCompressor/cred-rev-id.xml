@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:Credential xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <abc:CredentialDescription>
+        <abc:CredentialUID>IdmxCredential/19z821nhqenbes0w</abc:CredentialUID>
+        <abc:FriendlyCredentialName lang="en">ID Card</abc:FriendlyCredentialName>
+        <abc:FriendlyCredentialName lang="da">ID-Kort</abc:FriendlyCredentialName>
+        <abc:ImageReference>http://my.country/identitycard/specification/img</abc:ImageReference>
+        <abc:CredentialSpecificationUID>http://my.country/identitycard/specification</abc:CredentialSpecificationUID>
+        <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:SecretReference>secret://sample-1234</abc:SecretReference>
+        <abc:Attribute>
+            <abc:AttributeUID>IdmxCredential/19z821nhqenbes0w:http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle</abc:AttributeUID>
+            <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned"/>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:integer">52601923114131579362443379208806903220321983074320198264885594866751417799781</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>IdmxCredential/19z821nhqenbes0w:Firstname</abc:AttributeUID>
+            <abc:AttributeDescription Type="Firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                <abc:FriendlyAttributeName lang="en">Name</abc:FriendlyAttributeName>
+                <abc:FriendlyAttributeName lang="da">Fornavn</abc:FriendlyAttributeName>
+            </abc:AttributeDescription>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>IdmxCredential/19z821nhqenbes0w:Lastname</abc:AttributeUID>
+            <abc:AttributeDescription Type="Lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                <abc:FriendlyAttributeName lang="en">Lastname</abc:FriendlyAttributeName>
+                <abc:FriendlyAttributeName lang="da">Efternavn</abc:FriendlyAttributeName>
+            </abc:AttributeDescription>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Dow</abc:AttributeValue>
+        </abc:Attribute>
+        <abc:Attribute>
+            <abc:AttributeUID>IdmxCredential/19z821nhqenbes0w:Birthday</abc:AttributeUID>
+            <abc:AttributeDescription Type="Birthday" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed">
+                <abc:FriendlyAttributeName lang="en">Birthday</abc:FriendlyAttributeName>
+                <abc:FriendlyAttributeName lang="da">Fødselsdato</abc:FriendlyAttributeName>
+            </abc:AttributeDescription>
+            <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">1995-05-05Z</abc:AttributeValue>
+        </abc:Attribute>
+    </abc:CredentialDescription>
+    <abc:NonRevocationEvidenceUID>urn:abc4trust:1.0:nonrevocation:evidence/3w3dlh1zg9k4hnw1</abc:NonRevocationEvidenceUID>
+    <abc:CryptoParams>
+        <Credential:Credential xmlns:Credential="http://www.zurich.ibm.com/security/idemix" xmlns="http://www.zurich.ibm.com/security/idemix" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../xsd/Credential.xsd">
+            <SmartcardUid>secret://sample-1234</SmartcardUid>
+            <CredentialUidOnSmartcard>IdmxCredential/19z821nhqenbes0w</CredentialUidOnSmartcard>
+            <References>
+                <IssuerPublicKey>http://my.country/identitycard/issuancekey_v1.0</IssuerPublicKey>
+                <CredentialStructure>http://my.country/identitycard/specification</CredentialStructure>
+            </References>
+            <Attributes>
+                <Attribute name="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle">
+                    <Value>52601923114131579362443379208806903220321983074320198264885594866751417799781</Value>
+                </Attribute>
+                <Attribute name="Firstname">
+                    <Value>76355713903561865866741292988746191972523015098789458240077478826513114743258</Value>
+                </Attribute>
+                <Attribute name="Lastname">
+                    <Value>17841280224196840921355752237746742912327410346603472576229689886295444939021</Value>
+                </Attribute>
+                <Attribute name="Birthday">
+                    <Value>340282366920938463463374607431768220711</Value>
+                </Attribute>
+            </Attributes>
+            <Signature>
+                <A>82309855446570143316398150342516954113496296594917953346601529477677226162158059570824409401162670924956672621298667576055877723551772067084079203001935207921655380515921071300328545371737506411786294218569458483598105212281419634774301228527350374016156457011866383116593988057777145480510491173207321309602</A>
+                <e>259344723055062059907025491480697571938277889515152306249728583105665800713306759149981690559193987143012367913206299323899696942213235956742930039523066645711274811257856084041951</e>
+                <v>41587439705039852003325777247180191073022553825854529384629085585546150184442755902382536199019132868570842269849487662768831532926987260974783740912687071547512106783337064225639810747702666067311830856461407211332991529941007560387363662850515574240095785762716138430619904627612093154883834568727773096608902141266243328995166511567778816505683747349898335961276727623967964291858865202829862555079984700287661631405359165263906724285437336965970831012023556527977874933962827544296155004665755154231470333178053338957522671734403015270127956904208083056294209256335350098602518560158264846181570895397906966031313</v>
+            </Signature>
+            <Features/>
+        </Credential:Credential>
+        <abc:NonRevocationEvidence>
+            <abc:NonRevocationEvidenceUID>urn:abc4trust:1.0:nonrevocation:evidence/3w3dlh1zg9k4hnw1</abc:NonRevocationEvidenceUID>
+            <abc:RevocationAuthorityParametersUID>revocationUID1</abc:RevocationAuthorityParametersUID>
+            <abc:CredentialUID>IdmxCredential/19z821nhqenbes0w</abc:CredentialUID>
+            <abc:Created>2012-10-29T14:01:27.302Z</abc:Created>
+            <abc:Expires>2012-10-30T14:01:27.302Z</abc:Expires>
+            <abc:Epoch>0</abc:Epoch>
+            <abc:Attribute>
+                <abc:AttributeUID>IdmxCredential/19z821nhqenbes0w:http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle</abc:AttributeUID>
+                <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned"/>
+                <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:integer">52601923114131579362443379208806903220321983074320198264885594866751417799781</abc:AttributeValue>
+            </abc:Attribute>
+            <abc:CryptoParams>
+                <AccumulatorWitness:AccumulatorWitness xmlns:AccumulatorWitness="http://www.zurich.ibm.com/security/idemix" xmlns="http://www.zurich.ibm.com/security/idemix" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../xsd/AccumulatorWitness.xsd">
+                    <publicKey>revocationUID1</publicKey>
+                    <epoch>0</epoch>
+                    <accumulator>19354125227838660477979552148702123871825764315204020792705294717304459533671471769372977358019018166788178220814596751439465556326256337729816171704139337519532784551240463923962691205075763638377847181534340710135495406801914452737557838808662115387060818100579237582132146508213447276721948539022994043763</accumulator>
+                    <value>52601923114131579362443379208806903220321983074320198264885594866751417799781</value>
+                    <witness>82983007518105581976772236330851432119303387880971306696204324578461858295789775717820632952522722910350745121588785208642884075670597316215872261930444222854544462063845945826339349909576890156858886405977855039149282217776768288629601062377254803452977534200979055872012972616882495907742803454688956467637</witness>
+                    <date>2012-10-29T14:01:27.302Z</date>
+                </AccumulatorWitness:AccumulatorWitness>
+            </abc:CryptoParams>
+        </abc:NonRevocationEvidence>
+    </abc:CryptoParams>
+</abc:Credential>

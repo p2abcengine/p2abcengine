@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.zurich.ibm.com/security/idemix"
+	xmlns="http://www.zurich.ibm.com/security/idemix"
+	elementFormDefault="qualified">
+  
+  <xs:element name="IssuerPublicKey">
+  	<xs:complexType>
+  		<xs:all>
+  			<xs:element name="References" type="ReferencesType" />
+  			<xs:element name="Elements" type="ElementsType" />
+  			<xs:element name="Features" type="FeaturesType" />
+  		</xs:all>
+  	</xs:complexType>
+  </xs:element>
+  
+  <xs:complexType name="ReferencesType">
+  	<xs:all>
+  		<xs:element name="GroupParameters" type="xs:anyURI" />
+  	</xs:all>
+  </xs:complexType>
+  
+  <xs:complexType name="ElementsType">
+  	<xs:all>
+  		<xs:element name="S" type="BigIntegerType" />
+  		<xs:element name="Z" type="BigIntegerType" />
+  		<xs:element name="n" type="BigIntegerType" />
+  		<xs:element name="Bases" type="BasesType" />
+  	</xs:all>
+  </xs:complexType>
+
+  <xs:simpleType name="BigIntegerType">
+  	<xs:restriction base="xs:string">
+  		<xs:whiteSpace value="collapse" />
+  		<xs:pattern value="-?[0-9]+" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:complexType name="BasesType">
+  	<xs:sequence>
+  		<xs:element name="Base" type="BigIntegerType" maxOccurs="unbounded" />
+  	</xs:sequence>
+  	<xs:attribute name="num" type="xs:nonNegativeInteger" use="required" />
+  </xs:complexType>
+  
+  <xs:complexType name="FeaturesType">
+  	<xs:sequence>
+  		<xs:element name="Epoch" type="EpochType" />
+  	</xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="EpochType">
+  	<xs:attribute name="length" type="xs:nonNegativeInteger" use="required" />
+  </xs:complexType>
+</xs:schema>

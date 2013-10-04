@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.zurich.ibm.com/security/idemix"
+	xmlns="http://www.zurich.ibm.com/security/idemix"
+	elementFormDefault="qualified">
+  
+  <xs:element name="VerifiableEncryptionPrivateKey">
+  	<xs:complexType>
+  		<xs:all>
+  			<xs:element name="References" type="ReferencesType" />
+  			<xs:element name="Elements" type="ElementsType" />
+  		</xs:all>
+  	</xs:complexType>
+  </xs:element>
+  
+  <xs:complexType name="ReferencesType">
+  	<xs:all>
+  		<xs:element name="VerifiableEncryptionPublicKey" type="xs:anyURI" />
+  	</xs:all>
+  </xs:complexType>
+  
+  <xs:complexType name="ElementsType">
+  	<xs:all>
+  		<xs:element name="orderN" type="BigInteger" />
+  		<xs:element name="x1" type="BigInteger" />
+  		<xs:element name="x2" type="BigInteger" />
+  		<xs:element name="x3" type="BigInteger" />
+  	</xs:all>
+  </xs:complexType>
+
+  <xs:simpleType name="BigInteger">
+  	<xs:restriction base="xs:string">
+  		<xs:whiteSpace value="collapse" />
+  		<xs:pattern value="[0-9]+" />  	
+    </xs:restriction>
+  </xs:simpleType>
+  
+</xs:schema>

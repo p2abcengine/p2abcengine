@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust presentation token description with commitments -->
+
+<abc:PresentationTokenDescription PolicyUID="mypolicy"  TokenUID="mytoken" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    <abc:Credential Alias="#student">
+      <abc:CredentialSpecUID>urn:patras:studentcredspec</abc:CredentialSpecUID>
+      <abc:IssuerParametersUID>urn:patras:studentissuer-uprove</abc:IssuerParametersUID>
+      <abc:DisclosedAttribute AttributeType="urn:patras:study"/>
+    </abc:Credential>
+    <abc:Credential Alias="#course">
+      <abc:CredentialSpecUID>urn:patras:coursecredspec</abc:CredentialSpecUID>
+      <abc:IssuerParametersUID>urn:patras:courseissuer-idemix</abc:IssuerParametersUID>
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+      <abc:Attribute CredentialAlias="#student" AttributeType="urn:patras:matriculation"/>
+      <abc:Attribute CredentialAlias="#course" AttributeType="urn:patras:matriculation"/>
+    </abc:AttributePredicate>
+</abc:PresentationTokenDescription>

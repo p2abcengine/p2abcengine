@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is the issuance policy for issuance of the Soderhamn Guardian credential. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:issuance">
+        <abc:Message>
+            <abc:FriendlyPolicyName lang="en">Policy: Authorized Users only</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyDescription lang="en">This policy will request the pupil to present the established scope-exclusive Pseudonym with the scope "urn:soderhamn:registration".No Privacy ABCs are required for this step.</abc:FriendlyPolicyDescription>
+        </abc:Message>
+        <abc:Pseudonym Exclusive="true" Scope="urn:soderhamn:registration" Established="true" Alias="#nym"/>
+    </abc:PresentationPolicy>
+    <abc:CredentialTemplate SameKeyBindingAs="#nym">
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credGuardian</abc:CredentialSpecUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credGuardian</abc:IssuerParametersUID>
+    </abc:CredentialTemplate>
+</abc:IssuancePolicy>

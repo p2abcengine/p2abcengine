@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:restrictedarea:english:pseudon">
+    <abc:Message>
+      <abc:Nonce>bkQydHBQWDR4TUZzbXJKYUphdVM=</abc:Nonce>
+      <abc:FriendlyPolicyName lang="sv">Åtkomstregel för att logga in i systemet</abc:FriendlyPolicyName>
+    </abc:Message>
+    <abc:Pseudonym Scope="urn:soderhamn:restrictedarea:english" Established="true"/>
+  </abc:PresentationPolicy>
+  <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:restrictedarea:english:anon">
+    <abc:Message>
+      <abc:Nonce>bkQydHBQWDR4TUZzbXJKYUphdVM=</abc:Nonce>
+    </abc:Message>
+    <abc:Pseudonym Scope="urn:soderhamn:restrictedarea:english" Alias="#nym"/>
+    <abc:Credential SameKeyBindingAs="#nym" Alias="#schoolcred">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool:idemix</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool:uprove</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+<!--
+      <abc:DisclosedAttribute AttributeType="urn:soderhamn:credspec:credSchool:civicnr">
+        <abc:InspectorAlternatives>
+          <abc:InspectorPublicKeyUID>urn:soderhamn:inspectorpk</abc:InspectorPublicKeyUID>
+        </abc:InspectorAlternatives>
+        <abc:InspectionGrounds>
+          Description of circumstances and process under which token may be inspected.
+        </abc:InspectionGrounds>
+      </abc:DisclosedAttribute>
+  -->
+    </abc:Credential>
+    <abc:Credential SameKeyBindingAs="#nym" Alias="#subjectcred">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSubject</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSubject</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSubject:idemix</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSubject:uprove</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:boolean-equal">
+      <abc:Attribute CredentialAlias="#subjectcred" AttributeType="urn:soderhamn:credspec:credSubject:English"/>
+      <abc:ConstantValue>true</abc:ConstantValue>
+    </abc:AttributePredicate>
+  </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

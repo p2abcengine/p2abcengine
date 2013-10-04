@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.zurich.ibm.com/security/idemix" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:idemix="http://www.zurich.ibm.com/security/idemix">
+  <xs:element name="IssuerUpdateInformation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:Location"/>
+        <xs:element ref="idemix:Values"/>
+        <xs:element ref="idemix:Q"/>
+        <xs:element ref="idemix:vPrimePrime"/>
+        <xs:element ref="idemix:Nonce"/>
+        <xs:element ref="idemix:Context"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Location">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="idemix:IssuerPublicKey"/>
+        <xs:element ref="idemix:CredentialStructure"/>
+        <xs:element ref="idemix:Update"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="IssuerPublicKey" type="xs:anyURI"/>
+  <xs:element name="CredentialStructure" type="xs:anyURI"/>
+  <xs:element name="Update" type="xs:anyURI"/>
+  <xs:element name="Values">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="idemix:Value"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Value">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:integer">
+          <xs:attribute name="name" use="required" type="xs:NCName"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Q" type="xs:integer"/>
+  <xs:element name="vPrimePrime" type="xs:string"/>
+  <xs:element name="Nonce" type="xs:integer"/>
+  <xs:element name="Context" type="xs:string"/>
+</xs:schema>

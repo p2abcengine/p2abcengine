@@ -1,0 +1,1 @@
+The terms and conditions of the ABC4Trust Consortium Agreement dated October 2010, govern your use of these Microsoft files.  Such terms include, without limitation, Sections 9.2.2 (Controlled Licenses) and 11.3 (No Implied License).

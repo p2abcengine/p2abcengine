@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is the issuance policy for issuance of the PATRAS University credential. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="http://patras/university/issuance/policy">
+    <abc:Pseudonym Exclusive="true" Scope="urn:patras:evaluation" Established="true" Alias="#studentPseudonym"/>
+  </abc:PresentationPolicy>
+  <abc:CredentialTemplate SameKeyBindingAs="#studentPseudonym">
+    <abc:CredentialSpecUID>http://patras/university/specification</abc:CredentialSpecUID>
+    <abc:IssuerParametersUID>http://patras/university/issuancekey_v1.0</abc:IssuerParametersUID>
+    <abc:UnknownAttributes/>
+  </abc:CredentialTemplate>
+</abc:IssuancePolicy>

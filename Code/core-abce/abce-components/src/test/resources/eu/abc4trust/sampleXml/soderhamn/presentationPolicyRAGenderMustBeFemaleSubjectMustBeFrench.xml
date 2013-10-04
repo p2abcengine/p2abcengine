@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:area129p0">
+    <abc:Message>
+      <abc:Nonce>8vJps/Q43SA=</abc:Nonce>
+      <abc:FriendlyPolicyName lang="sv">Åtkomstregel för att logga in i systemet</abc:FriendlyPolicyName>
+    </abc:Message>
+    <abc:Credential Alias="credSchoolcredSchoolcredSchoolcredSchoolcredSchoolcredSchool">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool:idemix</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool:uprove</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:Credential Alias="credSubjectcredSubjectcredSubjectcredSubjectcredSubjectcredSubject">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSubject</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSubject:idemix</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSubject:uprove</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSubject</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+      <abc:ConstantValue>female</abc:ConstantValue>
+      <abc:Attribute CredentialAlias="credSchoolcredSchoolcredSchoolcredSchoolcredSchoolcredSchool" AttributeType="urn:soderhamn:credspec:credSchool:gender" />
+    </abc:AttributePredicate>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:boolean-equal">
+      <abc:ConstantValue>true</abc:ConstantValue>
+      <abc:Attribute CredentialAlias="credSubjectcredSubjectcredSubjectcredSubjectcredSubjectcredSubject" AttributeType="urn:soderhamn:credspec:credSubject:French" />
+    </abc:AttributePredicate>
+    <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+    <abc:Attribute CredentialAlias="credSchoolcredSchoolcredSchoolcredSchoolcredSchoolcredSchool" AttributeType="urn:soderhamn:credspec:credSchool:birthdate"/>
+    <abc:ConstantValue>1999-06-10Z</abc:ConstantValue>
+    </abc:AttributePredicate>
+  </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>
+  

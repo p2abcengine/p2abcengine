@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ProofSpecification xmlns="http://www.zurich.ibm.com/security/idemix"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.zurich.ibm.com/security/idemix ../../idemix/ProofSpecification.xsd">
+
+	<Declaration>
+		<AttributeId name="id1" proofMode="unrevealed" type="int" />
+		<AttributeId name="id2" proofMode="unrevealed" type="int" />
+		<AttributeId name="id3" proofMode="unrevealed" type="int" />
+		<AttributeId name="id4" proofMode="unrevealed" type="int" />
+		<AttributeId name="id5" proofMode="unrevealed" type="int" />
+		<AttributeId name="id6" proofMode="unrevealed" type="int" />
+	</Declaration>
+
+	<Specification>
+		<Credentials>
+			<Credential issuerPublicKey="http://www.issuer.com/ipk.xml"
+				credStruct="http://www.ngo.org/CredStruct2.xml" name="someRandomNameMatchingTheOneInTheProofSpec">
+				<Attribute name="attr1">id4</Attribute>
+				<Attribute name="attr2">id3</Attribute>
+				<Attribute name="attr3">id2</Attribute>
+				<Attribute name="attr4">id1</Attribute>
+				<Attribute name="attr5">id5</Attribute>
+				<Attribute name="attr6">id6</Attribute>
+			</Credential>
+			<Credential issuerPublicKey="http://www.issuer.com/ipk.xml"
+				credStruct="http://www.ngo.org/CredStruct3.xml" name="someRandomNameMatchingTheOneInTheProofSpec">
+				<Attribute name="attr1">id2</Attribute>
+				<Attribute name="attr2">id5</Attribute>
+				<Attribute name="attr3">id1</Attribute>
+			</Credential>
+		</Credentials>
+
+		<EnumAttributes />
+
+		<Inequalities />
+
+		<Commitments />
+
+		<Representations>
+			<Representation name="randomRepName1">
+				<Exponent index="0"
+					base="337">id2</Exponent>
+				<Exponent index="1"
+					base="1009">id3</Exponent>
+				<Exponent index="2"
+					base="743">id5</Exponent>
+			</Representation>
+		</Representations>
+
+		<Pseudonyms />
+
+		<VerifiableEncryptions />
+
+		<Messages />
+		
+		<Accumulators />
+
+	</Specification>
+
+</ProofSpecification>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is a sample ABC4Trust presentation policy for... -->
+
+<abc:PresentationPolicyAlternatives
+  xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  Version="1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy
+    PolicyUID="http://MyFavoriteSoccerTeam/policies/match/842/vip">
+    <abc:Message>
+      <abc:ApplicationData>
+        MyFavoriteSoccerTeam vs. OtherTeam
+      </abc:ApplicationData>
+    </abc:Message>
+    <abc:Credential Alias="#ticket">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://MyFavoriteSoccerTeam/tickets/vip</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>http://ticketcompany/MyFavoriteSoccerTeam/issuance:idemix</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+     <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-equal">
+      <abc:Attribute CredentialAlias="#ticket" AttributeType="Matchday" />
+      <abc:ConstantValue>2013-08-07Z</abc:ConstantValue>
+    </abc:AttributePredicate>
+  </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

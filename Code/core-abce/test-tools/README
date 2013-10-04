@@ -1,0 +1,23 @@
+
+Test Tool
+=============
+This project contains a number of tools useful for tests.
+
+
+Verifiaction Debugger
+-------------
+The verification debugger is a barebone tool for verifying a
+presentation token against a presentation policy.
+
+The tool works by creating test cases for a pair of token and 
+policy. Using tests compared to a command line utility is that
+we ensure that any bugs found by an invalid pair of token and 
+policy does not creep back into the code base.
+
+The tool works by specifying three parameters:
+* presentationPolicyFile - path to the policy file
+* presentationTokenFile - path to the token file
+* debuggerResourceFolder - path to a directory containing 
+    credential specifications and issuer parameters
+
+The debuggerResourceFolder should be unique for each test case.

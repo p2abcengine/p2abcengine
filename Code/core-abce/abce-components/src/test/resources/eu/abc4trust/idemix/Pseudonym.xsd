@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<xs:schema xmlns="http://www.zurich.ibm.com/security/idemix"
+    xmlns:idxcs="http://www.zurich.ibm.com/security/idemix/credentialStructure"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.zurich.ibm.com/security/idemix"
+    elementFormDefault="qualified">
+
+    <xs:import
+        namespace="http://www.zurich.ibm.com/security/idemix/credentialStructure"
+        schemaLocation="CredentialStructure.xsd" />
+
+    <xs:element name="StoredPseudonym">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="smartcardUid" type="NonEmptyUriType" />
+                <xs:element name="GroupParameters" type="NonEmptyUriType" />
+                <xs:element name="randomizer" type="idxcs:BigIntegerType" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    
+   <xs:element name="StoredDomainPseudonym">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="scope" type="NonEmptyUriType" />
+                <xs:element name="smartcardUid" type="NonEmptyUriType" />
+                <xs:element name="GroupParameters" type="xs:anyURI" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="NonEmptyStringType">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1" />
+            <xs:whiteSpace value="collapse" />
+        </xs:restriction>
+    </xs:simpleType>
+  
+    <xs:simpleType name="NonEmptyUriType">
+        <xs:restriction base="xs:anyURI">
+            <xs:minLength value="1" />
+            <xs:whiteSpace value="collapse" />
+        </xs:restriction>
+    </xs:simpleType>
+
+
+
+</xs:schema>

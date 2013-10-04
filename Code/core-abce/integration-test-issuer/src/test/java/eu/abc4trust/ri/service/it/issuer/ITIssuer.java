@@ -1,0 +1,178 @@
+//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Alexandra Instituttet A/S                                         *
+//* eu.abc4trust.pabce.1.0                                            *
+//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//* Rights Reserved.                                                  *
+//* US Government Users Restricted Rights - Use, duplication or       *
+//* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
+//*/**/****************************************************************
+
+package eu.abc4trust.ri.service.it.issuer;
+
+import javax.ws.rs.core.MediaType;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.WebResource.Builder;
+
+import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
+import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
+import eu.abc4trust.ri.servicehelper.user.UserHelper;
+import eu.abc4trust.xml.Credential;
+import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.util.XmlUtils;
+
+public class ITIssuer extends AbstractIT {
+
+
+
+    public ITIssuer() {
+        System.out.println("ITIssuer");
+    }
+
+    // @Test
+    public void testIssuanceIdcard_Alice_IdemixOnly() throws Exception {
+        System.out.println("---- testIssuanceIdcard_Alice Idemix----");
+        initIssuer(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX);
+        // UserHelper.resetInstance();
+
+        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "alice");
+        this.runIssuance("start", "idcard?user=alice");
+    }
+
+    // @Test
+    public void testIssuanceIdcard_Alice_UProveOnly() throws Exception {
+        System.out.println("---- testIssuanceIdcard_Alice UProve----");
+        initIssuer(CryptoEngine.UPROVE, CryptoEngine.UPROVE);
+        // UserHelper.resetInstance();
+
+        initHelper(CryptoEngine.UPROVE, CryptoEngine.UPROVE, "alice");
+        this.runIssuance("start", "idcard?user=alice");
+    }
+
+    // @Test
+    public void testIssuanceIdcard_Alice_Bridged() throws Exception {
+        System.out.println("---- testIssuanceIdcard_Alice ----");
+        initIssuer(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX);
+        // UserHelper.resetInstance();
+
+        initHelper(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, "alice");
+        this.runIssuance("start", "idcard?user=alice");
+    }
+
+    // @Test
+    public void testIssuanceIdcard_Stewart() throws Exception {
+        System.out.println("---- testIssuanceIdcard_Stewart ----");
+        // UserHelper.resetInstance();
+        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "stewart");
+        this.runIssuance("start", "idcard?user=stewart");
+    }
+
+
+    // @Test
+    public void testHotelCredentials_NotStudent() throws Exception {
+        System.out.println("---- testHotelCredentials_NotStudent ----");
+        UserHelper.resetInstance();
+        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "hotel_alice");
+
+        // idcard
+        this.runIssuance("start", "idcard?user=alice");
+        // passport ch
+        this.runIssuance("start", "passport?variant=ch&user=alice");
+        // creditcards
+        this.runIssuance("start", "creditcard?variant=visa&user=alice");
+        this.runIssuance("start", "creditcard?variant=amex&user=alice");
+    }
+
+    // @Test
+    public void testHotelCredentials_Student() throws Exception {
+        System.out.println("---- testHotelCredentials_Student ----");
+        UserHelper.resetInstance();
+        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "hotel_stewart");
+
+        // idcard
+        this.runIssuance("start", "idcard?user=stewart");
+        // passport ch
+        this.runIssuance("start", "passport?variant=ch&user=stewart");
+        // creditcards
+        this.runIssuance("start", "creditcard?variant=visa&user=stewart");
+        this.runIssuance("start", "creditcard?variant=amex&user=stewart");
+        // studentcard
+        this.runIssuance("start", "studentcard?user=stewart");
+    }
+
+
+    
+    // TODO: User abstract method
+    @SuppressWarnings("unused")
+	private void runIssuance(String issuanceKey) throws Exception {
+
+        System.out.println("- run issuance with key : " + issuanceKey);
+
+        Client client = Client.create();
+        // client.addFilter(new LoggingFilter());
+
+        Builder issueStartResource =
+                client.resource(baseUrl + "/issue/start/" + issuanceKey)
+                .type(MediaType.APPLICATION_XML).accept(MediaType.TEXT_XML);
+
+        IssuanceMessage server_im = issueStartResource.post(IssuanceMessage.class);
+        System.out.println(" - initial message - server : " + server_im);
+        System.out.println(" - initial message - server : "
+                + XmlUtils.toXml(of.createIssuanceMessage(server_im), false));
+
+        System.out.println("\nENGINE : " + UserHelper.getInstance().getEngine());
+        
+        IssuMsgOrCredDesc user_im =
+                UserHelper.getInstance().getEngine().issuanceProtocolStep(server_im);
+        System.out.println(" - initial message - client - created");
+        System.out.println(" - initial message - client : "
+                + XmlUtils.toXml(of.createIssuanceMessage(user_im.im), true));
+
+        int stepCount = 1;
+        boolean lastmessage = false;
+        while (!lastmessage) {
+            Builder issueStepResource =
+                    client.resource(baseUrl + "/issue/step").type(MediaType.APPLICATION_XML)
+                    .accept(MediaType.TEXT_XML);
+
+            // send to server and receive new im
+            System.out.println(" - contact server");
+            server_im =
+                    issueStepResource.post(IssuanceMessage.class, of.createIssuanceMessage(user_im.im));
+            System.out.println(" - got response");
+            System.out.println(" - step message - server : " + stepCount + " : "
+                    + XmlUtils.toXml(of.createIssuanceMessage(server_im), false));
+
+            // process im
+            user_im = UserHelper.getInstance().getEngine().issuanceProtocolStep(server_im);
+            System.out.println(" - step message - client :" + stepCount);
+
+            lastmessage = (user_im.cd != null);
+            if (!lastmessage) {
+                System.out.println(" - initial message - step : " + stepCount + " : "
+                        + XmlUtils.toXml(of.createIssuanceMessage(user_im.im), false));
+            }
+        }
+        System.out.println(" - done...");
+        System.out.println(" - done : credentialDescription : "
+                + XmlUtils.toXml(of.createCredentialDescription(user_im.cd), false));
+
+        System.out.println("Show Credential");
+        System.out.println("Show Credential : credentialDescription UID : "
+                + user_im.cd.getCredentialUID());
+
+        Credential cred =
+                UserHelper.getInstance().credentialManager.getCredential(user_im.cd.getCredentialUID());
+        System.out.println("Show Credential " + cred);
+        System.out.println("Show Credential " + cred.getCredentialDescription().getSecretReference());
+
+
+        CredentialManager credentialManager = UserHelper.getInstance().credentialManager;
+        System.out.println("Show Credential Manager : " + credentialManager);
+
+    }
+
+}
