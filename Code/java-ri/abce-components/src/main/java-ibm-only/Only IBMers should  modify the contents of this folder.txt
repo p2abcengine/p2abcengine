@@ -1,4 +1,0 @@
-If you are not an IBMer, then please don't modify anything in this folder.
-
-The reason is that if non-IBM'ers make changes to our part of the code and we later
-open-source the modified code, then we're in copyright violation.

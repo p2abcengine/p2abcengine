@@ -1,7 +1,0 @@
-[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\abc4trust.se]
-@=""
-
-[HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap\EscDomains\abc4trust.se\idm]
-"http"=dword:00000002
-
-

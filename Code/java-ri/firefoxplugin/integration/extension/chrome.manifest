@@ -1,8 +1,0 @@
-content	sampleapp	content/
-overlay	chrome://browser/content/browser.xul	chrome://sampleapp/content/overlay.xul
-
-locale	sampleapp	en-US	locale/en-US/
-
-skin	sampleapp	classic/1.0	skin/
-style	chrome://global/content/customizeToolbar.xul	chrome://sampleapp/skin/overlay.css
-resource sampleapp	modules/

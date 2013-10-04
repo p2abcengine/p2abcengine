@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<abc:Attribute xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
-  <abc:AttributeUID>sample-uri</abc:AttributeUID>
-  <abc:AttributeDescription DataType="xs:anyURI" Encoding="urn:abc4trust:1.0:encoding:anyUri:sha-256"
-    Type="test-type" />
-  <abc:AttributeValue>Hello/world</abc:AttributeValue>
-</abc:Attribute>
