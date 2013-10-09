@@ -6,6 +6,10 @@ This directory contains the source code to build the ABCE generic services. Whic
 HOW TO BUILD THE ABCE GENERIC SERVICES
 =======================
 
+Make sure you have built the core-abce. You can do this by running the following command from the core-abce folder:
+    
+    mvn clean install -DskipTests
+
 Run the command:
 
   ./compileServices.sh
@@ -17,27 +21,29 @@ This will create 10 war files in the target directory, two for each of the issua
 HOW TO USE THE ABCE GENERIC SERVICES
 =======================
 
-This section will present a small tuturial which will show you the most commonly used parts of the interface provided by the ABCE generic services. The tutorial expect you to familiar with privacy-abc technology and the architecture of the ABCE (as described in H2.2 - ABC4Trust Architecture for Developers, see https://abc4trust.eu/index.php/pub).
+This section will present a small tuturial which will show you the most commonly used parts of the interface provided by the ABCE generic services. The tutorial expect you to be familiar with privacy-abc technology and the architecture of the ABCE (as described in H2.2 - ABC4Trust Architecture for Developers, see https://abc4trust.eu/index.php/pub).
 
-The tutorial is based on a scenario with an issuer of tickets (the issuer), a number of users, and a verifier (e.g. a theather or a sporting venue)
+The tutorial is based on a scenario with an issuer of tickets (the issuer), a user, and a verifier (e.g. a theater or a sporting venue)
 
-
-
-The tutorial consists of the following steps:
+The tutorial currently consists of the following steps:
 
  1) Setup system parameters
  2) Setup issuance parameters
  3) Issue ticket (credential)
  4) Present ticket (generates a presentation token)
 
+As future work, we may extend the tutorial with the following steps:
+ 
  5) Inspect VIP number (which is stored in the presentation token )
  6) Revoke ticket
  7) Retry presentation, which will fail because the ticket has been revoked
-Remark (step 5, 6, and 7 are not documenteret here)
+ 
 
-First create a temporary directory with subdirectories for each of the issuer, user, verifier, revocation, and inspection service. Also copy the directory with the tutorial resources.
+Setup the tutorial directory structure by running the following command
 
-The layout should look like this:
+  ./setupTutorial.sh
+  
+This will create a temporary directory tmp with subdirectories for each of the issuer, user, verifier, revocation, and inspection service. The tutorial resources are also copied into this temporary directory. The layout of tmp then looks like this:
 
 tmp/
   issuer/
@@ -46,12 +52,13 @@ tmp/
   inspector/
   revocation/
   tutorial-resources/
+  tutorial.sh
 
-Copy each of the selfcontained jars to the relevant directory. 
+Each of the selfcontained jar files for issuer, user, verifer, inspector, and revocation is now placed in the relevant directory.
 
-Make sure you have 6 terminal windows running.
+Start 6 separate terminal windows.
 
-Run each of the 5 services in a terminal window positioned in the relevant directory per above. The last window will used below. Make sure it is positioned in the tmp/ directory.
+Run each of the 5 services in a terminal window positioned in the corresponding subdirectory.
 
   java -jar selfcontained-issuance-service.war 9100
 
@@ -65,168 +72,13 @@ Run each of the 5 services in a terminal window positioned in the relevant direc
 
 The arguments refer to the port number. The default port number is 9500.
 
-Please note that on Windows, you have to start the ABC4Trust-UProve.exe manually. The issuer service tries to load the .exe from a hardcoded location.
+Please note that on Windows, you have to start the ABC4Trust-UProve.exe manually before going trough the tutorial. On Unix systems (or if you use a Unix-like shell on Windows), the issuer tries to load this .exe automatically from a hardcoded location.
+
+The sixth terminal window is used to run the tutorial commands. Make sure it is positioned in the tmp/ directory. The tutorial commands are collected in the file tutorial.sh. Run them manually one by one to understand the scenario better (recommended). Alternatively, you can run the commands automatically with the following command:
+
+     ./tutorial.sh
+  
 
 --- To debug a running service ---
 
   java -Xdebug -Xrunjdwp:transport=dt_socket,address=4000,server=y,suspend=n -jar target/selfcontained-user-service.war 9200
-
-
-
---- Setup System Parameters ---
-
-
-Run the following command:
-
-  curl -X POST --header 'Content-Type: text/xml' 'http://localhost:9100/issuer/setupSystemParameters/?securityLevel=80&cryptoMechanism=urn:abc4trust:1.0:algorithm:idemix' > systemparameters.xml
-  
-This may take more than 15 seconds.
-
-
---- Store credential specification at issuer ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @tutorial-resources/credentialSpecificationVIPSoccerTicket.xml 'http://localhost:9100/issuer/storeCredentialSpecification/http%3A%2F%2FMyFavoriteSoccerTeam%2Ftickets%2Fvip' > storeCredentialResponce.xml
-
-
---- Store credential specification at user ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @tutorial-resources/credentialSpecificationVIPSoccerTicket.xml 'http://localhost:9200/user/storeCredentialSpecification/http%3A%2F%2FMyFavoriteSoccerTeam%2Ftickets%2Fvip' > storeCredentialSpecificationAtUserResponce.xml
-
-
---- Store credential specification at verifier ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @tutorial-resources/credentialSpecificationVIPSoccerTicket.xml 'http://localhost:9300/verification/storeCredentialSpecification/http%3A%2F%2FMyFavoriteSoccerTeam%2Ftickets%2Fvip' > storeCredentialSpecificationAtVerifierResponce.xml
-
-
---- Store System parameters at Revocation Authority ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @systemparameters.xml 'http://localhost:9500/revocation/storeSystemParameters/' > storeSystemParametersResponceAtRevocationAutority.xml
-
-
---- Store System parameters at User ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @systemparameters.xml 'http://localhost:9200/user/storeSystemParameters/' > storeSystemParametersResponceAtUser.xml
-
-
---- Store System parameters at verifier ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @systemparameters.xml 'http://localhost:9300/verification/storeSystemParameters/' > storeSystemParametersResponceAtVerifier.xml
-
-
---- Setup Revocation Authority Parameters ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @tutorial-resources/revocationReferences.xml 'http://localhost:9500/revocation/setupRevocationAuthorityParameters?keyLength=1024&cryptoMechanism=urn:abc4trust:1.0:algorithm:idemix&uid=http%3A%2F%2Fticketcompany%2Frevocation' > revocationAuthorityParameters.xml
-
-
---- Store Revocation Authority Parameters at issuer ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @revocationAuthorityParameters.xml 'http://localhost:9100/issuer/storeRevocationAuthorityParameters/http%3A%2F%2Fticketcompany%2Frevocation'  > storeRevocationAuthorityParameters.xml
-
---- Store Revocation Authority Parameters at user ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @revocationAuthorityParameters.xml 'http://localhost:9200/user/storeRevocationAuthorityParameters/http%3A%2F%2Fticketcompany%2Frevocation'  > storeRevocationAuthorityParametersAtUserResponce.xml
-
---- Store Revocation Authority Parameters at verifier ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @revocationAuthorityParameters.xml 'http://localhost:9300/verification/storeRevocationAuthorityParameters/http%3A%2F%2Fticketcompany%2Frevocation'  > storeRevocationAuthorityParametersAtVerifierResponce.xml
-
---- Setup issuer parameters ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @tutorial-resources/issuerParametersInput.xml 'http://localhost:9100/issuer/setupIssuerParameters/' > issuerParameters.xml
-
-
---- Store Issuer Parameters at user ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @issuerParameters.xml 'http://localhost:9200/user/storeIssuerParameters/http%3A%2F%2Fticketcompany%2FMyFavoriteSoccerTeam%2Fissuance%3Aidemix'  > storeIssuerParametersAtUser.xml
-
-
---- Store Issuer Parameters at verifier ---
-
-  curl -X PUT --header 'Content-Type: text/xml' -d @issuerParameters.xml 'http://localhost:9300/verification/storeIssuerParameters/http%3A%2F%2Fticketcompany%2FMyFavoriteSoccerTeam%2Fissuance%3Aidemix'  > storeIssuerParametersAtVerifier.xml
-
-
---- Create smartcard at user ---
-
-  curl -X POST --header 'Content-Type: text/xml' 'http://localhost:9200/user/createSmartcard/http%3A%2F%2Fticketcompany%2FMyFavoriteSoccerTeam%2Fissuance%3Aidemix'
-
-
---- Init issuance protocol ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @tutorial-resources/issuancePolicyAndAttributes.xml 'http://localhost:9100/issuer/initIssuanceProtocol/' > issuanceMessageAndBoolean.xml
-
-
---- Extract issuance message ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @issuanceMessageAndBoolean.xml 'http://localhost:9200/user/extractIssuanceMessage/' > issuanceMessage.xml
-
-
---- First issuance protocol step (first step for the user) ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @issuanceMessage.xml 'http://localhost:9200/user/issuanceProtocolStep/' > issuanceReturn.xml
-
-
---- Setup uiIssuanceReturn.xml ---
-
-  UiContext=`cat issuanceReturn.xml | sed 's/^.*<uiContext>//' | sed 's/<\/uiContext>.*//'`
-  cat tutorial-resources/uiIssuanceReturn.xml | sed "s#REPLACE-THIS-CONTEXT#${UiContext}#" > uiIssuanceReturn.xml
-
-
---- First issuance protocol step - UI (first step for the user) ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @uiIssuanceReturn.xml 'http://localhost:9200/user/issuanceProtocolStepUi/' > secondIssuanceMessage.xml
-
-
---- Second issuance protocol step (second step for the issuer) ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @secondIssuanceMessage.xml 'http://localhost:9100/issuer/issuanceProtocolStep/' > thirdIssuanceMessageAndBoolean.xml
-
---- Extract issuance message ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @thirdIssuanceMessageAndBoolean.xml 'http://localhost:9200/user/extractIssuanceMessage/' > thirdIssuanceMessage.xml
-
---- Third issuance protocol step (second step for the user) ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @thirdIssuanceMessage.xml 'http://localhost:9200/user/issuanceProtocolStep/' > fourthIssuanceMessageAndBoolean.xml
-
-
---- Create presentation policy alternatives ---
-
-  curl -X GET --header 'Content-Type: text/xml' -d @tutorial-resources/presentationPolicyAlternatives.xml 'http://localhost:9300/verification/createPresentationPolicy/' > presentationPolicyAlternatives.xml
-
---- Create presentation UI return ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @presentationPolicyAlternatives.xml 'http://localhost:9200/user/createPresentationToken/' > presentationReturn.xml
-
-
---- Setup uiPresentationReturn.xml ---
-
-  UiContext=`cat presentationReturn.xml | sed 's/^.*<uiContext>//' | sed 's/<\/uiContext>.*//'`
-  cat tutorial-resources/uiPresentationReturn.xml | sed "s#REPLACE-THIS-CONTEXT#${UiContext}#" > uiPresentationReturn.xml
-
-  
---- Create presentation token ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @uiPresentationReturn.xml 'http://localhost:9200/user/createPresentationTokenUi/' > presentationToken.xml
- 
-
---- Setup presentationPolicyAlternativesAndPresentationToken.xml ---
-
-  presentationPolicyAlternatives=`cat presentationPolicyAlternatives.xml | sed 's/^.*<PresentationPolicyAlternatives xmlns="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" Version="1.0">//' | sed 's/<\/PresentationPolicyAlternatives>.*//'`
-  presentationToken=`cat presentationToken.xml | sed 's/^.*<PresentationToken xmlns="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" Version="1.0">//' | sed 's/<\/PresentationToken>.*//'`
-  # echo "${presentationPolicyAlternatives}"
-  # echo "${presentationToken}"
-  echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' > presentationPolicyAlternativesAndPresentationToken.xml
-  echo '<PresentationPolicyAlternativesAndPresentationToken xmlns="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"> <PresentationPolicyAlternatives>' >> presentationPolicyAlternativesAndPresentationToken.xml
-  echo "${presentationPolicyAlternatives}" >> presentationPolicyAlternativesAndPresentationToken.xml
-  echo '</PresentationPolicyAlternatives>' >> presentationPolicyAlternativesAndPresentationToken.xml
-  echo '<PresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
-  echo "${presentationToken}" >> presentationPolicyAlternativesAndPresentationToken.xml
-  echo '</PresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
-  echo '</PresentationPolicyAlternativesAndPresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
-  
-
---- Verify presentation token against presentation policy ---
-
-  curl -X POST --header 'Content-Type: text/xml' -d @presentationPolicyAlternativesAndPresentationToken.xml 'http://localhost:9300/verification/verifyTokenAgainstPolicy/' > presentationTokenDescription.xml
-
-
