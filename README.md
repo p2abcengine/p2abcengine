@@ -78,7 +78,7 @@ The following components are required for building the project:
     
 2.  Change directory:
 
-    ```cd Code/java-ri```
+    ```cd Code/core-abce```
 
 6.  Build the code with the command
    
