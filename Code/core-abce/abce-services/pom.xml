@@ -13,7 +13,7 @@
   <properties>
     <jersey.version>1.10</jersey.version>
     <jetty.version>6.1.26</jetty.version>
-    <jetty.package.version>0.1</jetty.package.version>
+    <jetty.package.version>${project.version}</jetty.package.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
@@ -55,8 +55,8 @@
         <version>${jetty.version}</version>
     </dependency>
     <dependency>
-        <groupId>eu.abc4trust.demo</groupId>
-        <artifactId>jetty-package</artifactId>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>abce-jetty-package</artifactId>
         <version>${jetty.package.version}</version>
     </dependency>
      <!-- Jersey -->
@@ -227,8 +227,8 @@
             <packagingExcludes>WEB-INF/lib/jetty-*,**/InspectService.*,**/UserService.*,**/InspectService$1.class,**/RevocationService$1.class,**/RevocationService.class,**/VerificationService$1.class,**/VerificationService.class</packagingExcludes>
             <overlays>
               <overlay>
-                <groupId>eu.abc4trust.demo</groupId>
-                <artifactId>jetty-package</artifactId>
+                <groupId>eu.abc4trust.ri</groupId>
+                <artifactId>abce-jetty-package</artifactId>
                 <type>jar</type>
               </overlay>
               <overlay>
@@ -300,8 +300,8 @@
             <packagingExcludes>WEB-INF/lib/jetty-*,**/InspectService.*,**/InspectService$1.class,**/IssuanceService.*,**/RevocationService$1.class,**/RevocationService.class,**/VerificationService$1.class,**/VerificationService.class</packagingExcludes>
             <overlays>
               <overlay>
-                <groupId>eu.abc4trust.demo</groupId>
-                <artifactId>jetty-package</artifactId>
+                <groupId>eu.abc4trust.ri</groupId>
+                <artifactId>abce-jetty-package</artifactId>
                 <type>jar</type>
               </overlay>
               <overlay>
@@ -373,8 +373,8 @@
             <packagingExcludes>WEB-INF/lib/jetty-*,**/InspectService.*,**/UserService.*,**/InspectService$1.class,**/RevocationService$1.class,**/RevocationService.class,**/UserStorageManager.class,**/IssuanceService.class</packagingExcludes>
             <overlays>
               <overlay>
-                <groupId>eu.abc4trust.demo</groupId>
-                <artifactId>jetty-package</artifactId>
+                <groupId>eu.abc4trust.ri</groupId>
+                <artifactId>abce-jetty-package</artifactId>
                 <type>jar</type>
               </overlay>
               <overlay>
@@ -446,8 +446,8 @@
             <packagingExcludes>WEB-INF/lib/jetty-*,**/IssuanceService.*,**/UserService.*,**/RevocationService$1.class,**/RevocationService.class,**/UserStorageManager.class,**/VerificationService$1.class,**/VerificationService.class</packagingExcludes>
             <overlays>
               <overlay>
-                <groupId>eu.abc4trust.demo</groupId>
-                <artifactId>jetty-package</artifactId>
+                <groupId>eu.abc4trust.ri</groupId>
+                <artifactId>abce-jetty-package</artifactId>
                 <type>jar</type>
               </overlay>
               <overlay>
@@ -519,8 +519,8 @@
             <packagingExcludes>WEB-INF/lib/jetty-*,**/InspectService.*,**/IssuanceService.*,**/UserService.*,**/InspectService$1.class,**/VerificationService$1.class,**/VerificationService.class</packagingExcludes>
             <overlays>
               <overlay>
-                <groupId>eu.abc4trust.demo</groupId>
-                <artifactId>jetty-package</artifactId>
+                <groupId>eu.abc4trust.ri</groupId>
+                <artifactId>abce-jetty-package</artifactId>
                 <type>jar</type>
               </overlay>
               <overlay>
