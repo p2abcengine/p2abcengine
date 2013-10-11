@@ -67,3 +67,6 @@ uprove/.settings/
 uprove/UProveWSDLService/ABC4Trust-UProve/bin/Release/uprove-timeprofile-log.log
 uprove/ABC4TrustSmartCard/ABC4TrustSmartCard/bin
 uprove/ABC4TrustSmartCard/ABC4TrustSmartCard/obj
+abce-services/tmp/
+jetty-package/.classpath
+jetty-package/.project
