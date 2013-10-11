@@ -58,7 +58,6 @@ curl -X PUT --header 'Content-Type: text/xml' -d @revocationAuthorityParameters.
 echo "Setup issuer parameters"
 curl -X POST --header 'Content-Type: text/xml' -d @tutorial-resources/issuerParametersInput.xml 'http://localhost:9100/issuer/setupIssuerParameters/' > issuerParameters.xml
 
-# FRP: <FriendlyIssuerDescription> in issuerParameters.xml empty, although it is specified in issuerParametersInput.xml: is this intentional?
 
 # Store Issuer Parameters at user.
 # This method is not specified in H2.2.
@@ -88,7 +87,7 @@ curl -X POST --header 'Content-Type: text/xml' -d @firstIssuanceMessage.xml 'htt
 
 # Setup uiIssuanceReturn.xml.
 UiContext=`cat issuanceReturn.xml | sed 's/^.*<uiContext>//' | sed 's/<\/uiContext>.*//'`
-echo ${UiContext}
+# echo ${UiContext}
 cat tutorial-resources/uiIssuanceReturn.xml | sed "s#REPLACE-THIS-CONTEXT#${UiContext}#" > uiIssuanceReturn.xml
 
 # First issuance protocol step - UI (first step for the user).
@@ -127,13 +126,13 @@ echo "Create presentation token"
 curl -X POST --header 'Content-Type: text/xml' -d @uiPresentationReturn.xml 'http://localhost:9200/user/createPresentationTokenUi/' > presentationToken.xml
 
 # Setup presentationPolicyAlternativesAndPresentationToken.xml.
-presentationPolicyAlternatives=`cat presentationPolicyAlternatives.xml | sed 's/^.*<PresentationPolicyAlternatives xmlns="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" Version="1.0">//' | sed 's/<\/PresentationPolicyAlternatives>.*//'`
+presentationPolicy=`cat presentationPolicyAlternatives.xml | sed 's/^.*<PresentationPolicyAlternatives xmlns="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" Version="1.0">//' | sed 's/<\/PresentationPolicyAlternatives>.*//'`
 presentationToken=`cat presentationToken.xml | sed 's/^.*<PresentationToken xmlns="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" Version="1.0">//' | sed 's/<\/PresentationToken>.*//'`
-# echo "${presentationPolicyAlternatives}"
+# echo "${presentationPolicy}"
 # echo "${presentationToken}"
 echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' > presentationPolicyAlternativesAndPresentationToken.xml
 echo '<PresentationPolicyAlternativesAndPresentationToken xmlns="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"> <PresentationPolicyAlternatives>' >> presentationPolicyAlternativesAndPresentationToken.xml
-echo "${presentationPolicyAlternatives}" >> presentationPolicyAlternativesAndPresentationToken.xml
+echo "${presentationPolicy}" >> presentationPolicyAlternativesAndPresentationToken.xml
 echo '</PresentationPolicyAlternatives>' >> presentationPolicyAlternativesAndPresentationToken.xml
 echo '<PresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
 echo "${presentationToken}" >> presentationPolicyAlternativesAndPresentationToken.xml
