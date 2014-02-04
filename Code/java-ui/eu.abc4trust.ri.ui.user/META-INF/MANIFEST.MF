@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: eu.abc4trust.ri.ui.user
 Bundle-SymbolicName: eu.abc4trust.ri.ui.user;singleton:=true
-Bundle-Version: 1.0.4.qualifier
+Bundle-Version: 1.1.0.qualifier
 Bundle-Activator: eu.abc4trust.ri.ui.user.Activator
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

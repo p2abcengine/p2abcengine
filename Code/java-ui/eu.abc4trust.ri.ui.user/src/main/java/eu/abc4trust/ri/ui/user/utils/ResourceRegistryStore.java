@@ -41,12 +41,15 @@ public class ResourceRegistryStore {
 	public static final String IMG_DELETE                                       = "delete"; //$NON-NLS-1$
 	public static final String IMG_CREDENTIAL_DELETE_16x16                      = "credential_delete_16x16"; //$NON-NLS-1$
 	public static final String IMG_CREDENTIAL_DELETE_64x64                      = "credential_delete_64x64"; //$NON-NLS-1$
+	public static final String IMG_CHECKBOX_SELECTED                            = "checkbox_selected"; //$NON-NLS-1$
+	public static final String IMG_CHECKBOX_UNSELECTED                          = "checkbox_unselected"; //$NON-NLS-1$
 	
 	// Color constants
 	public static final String COL_GREY											= "col190190190"; //$NON-NLS-1$
 	public static final String COL_BLUE001										= "blue001"; //$NON-NLS-1$
 	public static final String COL_BLUE002										= "blue002"; //$NON-NLS-1$
-	
+	public static final String COL_RED001                                       = "red001"; //$NON-NLS-1$
+	public static final String COL_GREEN001                                     = "green001"; //$NON-NLS-1$
 	
 	// Registries
 	private final ImageRegistry imageRegistry;
@@ -67,12 +70,16 @@ public class ResourceRegistryStore {
 		imageRegistry.put(IMG_DELETE, getImageDescriptorFromPlugin("org.eclipse.rap.ui", "icons/full/etool16/delete.gif")); //$NON-NLS-1$ //$NON-NLS-2$
 		imageRegistry.put(IMG_CREDENTIAL_DELETE_64x64, getImageDescriptorFromPlugin("icons/credential_delete_64x64.png")); //$NON-NLS-1$ //$NON-NLS-2$
 		imageRegistry.put(IMG_CREDENTIAL_DELETE_16x16, getImageDescriptorFromPlugin("icons/credential_delete_16x16.png")); //$NON-NLS-1$ //$NON-NLS-2$
+		imageRegistry.put(IMG_CHECKBOX_SELECTED, getImageDescriptorFromPlugin("org.eclipse.rap.rwt", "resource/widget/rap/button/check-selected.png")); //$NON-NLS-1$ //$NON-NLS-2$
+		imageRegistry.put(IMG_CHECKBOX_UNSELECTED, getImageDescriptorFromPlugin("org.eclipse.rap.rwt", "resource/widget/rap/button/check-unselected.png")); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 	
 	private void initializeColors() {
 		colorRegistry.put(COL_GREY, Display.getDefault().getSystemColor(SWT.COLOR_GRAY).getRGB());
 		colorRegistry.put(COL_BLUE001, new RGB(167, 211, 233));
 		colorRegistry.put(COL_BLUE002, new RGB(167, 211, 233));
+		colorRegistry.put(COL_RED001, new RGB(220, 0, 0));
+		colorRegistry.put(COL_GREEN001, new RGB(160, 255, 160));
 	}
 	
 	private static ImageDescriptor getImageDescriptorFromPlugin(String imageFilePath) {

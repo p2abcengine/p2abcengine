@@ -27,8 +27,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -36,7 +34,6 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -47,13 +44,14 @@ import org.eclipse.ui.part.ViewPart;
 
 import eu.abc4trust.returnTypes.ui.CredentialInUi;
 import eu.abc4trust.ri.ui.user.utils.Messages;
+import eu.abc4trust.ri.ui.user.utils.ResourceRegistryStore;
 import eu.abc4trust.ri.ui.user.utils.UIUtil;
 import eu.abc4trust.xml.Attribute;
 
 public class CredentialAttributesView extends ViewPart implements ISelectionListener {
 	
 	public static final String ID = "eu.abc4trust.ui.user.view.credentialattributes"; //$NON-NLS-1$
-	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy");
+	public static final String DATE_FORMAT = "dd-MM-yyyy";
 	
 	private CredentialInUi currentCredential;
 	private Set<Image> imagesToDispose = new HashSet<Image>();
@@ -145,7 +143,7 @@ public class CredentialAttributesView extends ViewPart implements ISelectionList
 	}
 	
 	private Composite createContent(Composite parent) {
-	    int firstColumWidth = 300; // TODO calculate dynamically by the wides column
+	    int firstColumWidth = 300; // TODO calculate dynamically by the widest column
 	    
 		ScrolledComposite scrolledContent = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
 		
@@ -214,32 +212,26 @@ public class CredentialAttributesView extends ViewPart implements ISelectionList
 		formData.top = new FormAttachment(typeText);
 		issuerText.setLayoutData(formData);
 		
-        Text revocationLabel = new Text(content, SWT.SINGLE | SWT.READ_ONLY);
-        revocationLabel.setText(Messages.get().CredentialAttributesView_revokedByIssuer+":"); //$NON-NLS-1$
-        final boolean state = currentCredential.desc.isRevokedByIssuer();
-        Button revocationCheckbox = new Button(content, SWT.CHECK);
-        revocationCheckbox.setSelection(state);
-        revocationCheckbox.setBackground(revocationLabel.getBackground());
-        revocationCheckbox.addSelectionListener(new SelectionAdapter() {
-            private static final long serialVersionUID = -888303224583643138L;
-            // This is a workaround as "valueControl.setEnabled(false)" results
-            // in a very light grey checkbox that is almost invisible.
-            @Override          
-            public void widgetSelected(SelectionEvent e) {
-                // e.doit = false; // does not work...
-                Button checkBox = ((Button) e.widget);
-                checkBox.setSelection(state);
-            }
-        });
-        
+		Text revocationLabel = new Text(content, SWT.SINGLE | SWT.READ_ONLY);
+		revocationLabel.setText(Messages.get().CredentialAttributesView_revokedByIssuer+":"); //$NON-NLS-1$
+		Label revocationCheckboxOrText = new Label(content, SWT.NONE);
+        if (currentCredential.spec.spec.isRevocable()) {
+            // Show checkbox if the credential is revocable
+            final boolean state = currentCredential.desc.isRevokedByIssuer();
+            revocationCheckboxOrText.setImage(ResourceRegistryStore.getImage(state?ResourceRegistryStore.IMG_CHECKBOX_SELECTED:ResourceRegistryStore.IMG_CHECKBOX_UNSELECTED)); // This is a workaround as disabled checkboxes are very light grey and almost invisible.
+        } else {
+            // Inform the user that the credential is not revocable
+            revocationCheckboxOrText.setText(Messages.get().CredentialAttributesView_msg_notRevocable);
+        }
         formData = new FormData(firstColumWidth, SWT.DEFAULT); // width: 180
         formData.left = new FormAttachment(0);
-        formData.top = new FormAttachment(revocationCheckbox, 0, SWT.CENTER);
+        formData.top = new FormAttachment(revocationCheckboxOrText, 0, SWT.CENTER);
         revocationLabel.setLayoutData(formData);
         formData = new FormData(SWT.DEFAULT, SWT.DEFAULT);
         formData.left = new FormAttachment(revocationLabel, 9);
         formData.top = new FormAttachment(issuerText);
-        revocationCheckbox.setLayoutData(formData);
+        revocationCheckboxOrText.setLayoutData(formData);
+
 		
 		
 		// Create a label and appropriate further controls (text field, date element,
@@ -250,8 +242,15 @@ public class CredentialAttributesView extends ViewPart implements ISelectionList
 			
 			//////////////////////////////////////////////
 			// Label showing the attribute name
+			String attributeType = attribute.getAttributeDescription().getType().toString();
+			String fallback;
+			if (attributeType.equals("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle")) { //$NON-NLS-1$
+			    fallback = Messages.get().CredentialAttributesView_revocationHandle;
+			} else {
+			    fallback = attributeType;
+			}
 			Text label = new Text(content, SWT.SINGLE | SWT.READ_ONLY);
-			label.setText(UIUtil.getHumanReadable(attribute.getAttributeDescription().getFriendlyAttributeName(), attribute.getAttributeUID().toString()) + ":"); //$NON-NLS-1$ // TODO is the friendly name always filled?
+			label.setText(UIUtil.getHumanReadable(attribute.getAttributeDescription().getFriendlyAttributeName(), fallback) + ":"); //$NON-NLS-1$
 			
 			//////////////////////////////////////////////
 			// Control (text field, date element, checkbox, etc.) showing the attribute value
@@ -304,7 +303,7 @@ public class CredentialAttributesView extends ViewPart implements ISelectionList
 				String attributeDataType = attribute.getAttributeDescription().getDataType().toString().substring(3);
 				if (attributeDataType.equals(DatatypeConstants.DATE.getLocalPart())) {
 				    Calendar c = DatatypeConverter.parseDate(attribute.getAttributeValue().toString());
-				    textValue = DATE_FORMAT.format(c.getTime());
+				    textValue = new SimpleDateFormat(DATE_FORMAT).format(c.getTime());
 				} else {
 				    textValue = attribute.getAttributeValue().toString();
 				}
@@ -323,7 +322,7 @@ public class CredentialAttributesView extends ViewPart implements ISelectionList
 			formData = new FormData();
 			formData.left = new FormAttachment(label);
 			if (valueControls.isEmpty()) {
-				formData.top = new FormAttachment(revocationCheckbox);
+				formData.top = new FormAttachment(revocationLabel);
 			} else {
 				// Attach the top of the valueControl to the bottom of the one above
 				formData.top = new FormAttachment(valueControls.get(valueControls.size()-1));

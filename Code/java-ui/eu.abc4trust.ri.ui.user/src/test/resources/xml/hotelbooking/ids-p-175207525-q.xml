@@ -116,7 +116,7 @@
                 <desc>
                     <abc:CredentialUID>IdmxCredential/2go7r0u5spm9w6yn</abc:CredentialUID>
                     <abc:FriendlyCredentialName lang="en">Passport</abc:FriendlyCredentialName>
-                    <abc:ImageReference>file:////C:/Users/frp/AppData/Local/Temp/9f43ae05-b4a1-4d67-bcaa-955eefaed527.jpg</abc:ImageReference>
+                    <abc:ImageReference>http://hdwallsize.com/wp-content/uploads/2013/03/Landscape-Nature-for-Wallpaper-Dekstop-.jpg</abc:ImageReference>
                     <abc:CredentialSpecificationUID>http://admin.ch/passport/specification</abc:CredentialSpecificationUID>
                     <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
                     <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
@@ -165,7 +165,7 @@
                     <abc:CredentialUID>IdmxCredential/2locm909by41g7e4</abc:CredentialUID>
                     <abc:FriendlyCredentialName lang="en">Visa Credit Card</abc:FriendlyCredentialName>
                     <abc:FriendlyCredentialName lang="da">Visa Kreditkort</abc:FriendlyCredentialName>
-                    <abc:ImageReference>file:////C:/Users/frp/AppData/Local/Temp/6748aabc-c3fe-4c0e-a7be-0734b4471aa7.png</abc:ImageReference>
+                    <abc:ImageReference>http://www.switchcommerce.com/wp-content/uploads/2012/10/visa-credit-card-security.jpg</abc:ImageReference>
                     <abc:CredentialSpecificationUID>http://visa.com/creditcard/specification</abc:CredentialSpecificationUID>
                     <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
                     <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
@@ -310,7 +310,7 @@
                     <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
                     <abc:FriendlyPolicyName lang="en">Policy: Standard Booking</abc:FriendlyPolicyName>
                     <abc:FriendlyPolicyName lang="da">Policy: Standard Booking</abc:FriendlyPolicyName>
-                    <abc:FriendlyPolicyDescription lang="en">Booking of Hotel Room.</abc:FriendlyPolicyDescription>
+                    <abc:FriendlyPolicyDescription lang="en">Booking of Hotel Room: This is an example policy to book a room in a hotel.</abc:FriendlyPolicyDescription>
                     <abc:FriendlyPolicyDescription lang="da">Bookning af hotelvaerelse.</abc:FriendlyPolicyDescription>
                     <abc:ApplicationData>
         <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
@@ -333,6 +333,8 @@
                         <abc:IssuerParametersUID RevocationInformationUID="http://governo.it/passport/revocation/parameters">http://governo.it/id/chiave2048</abc:IssuerParametersUID>
                         <abc:IssuerParametersUID RevocationInformationUID="http://bundesregierung.de/passport/revocation/parameters">http://bundesregierung.de/idkarte/schluessel</abc:IssuerParametersUID>
                     </abc:IssuerAlternatives>
+                    <DisclosedAttribute AttributeType="PassportNumber" />
+                    <DisclosedAttribute AttributeType="Name" />
                 </abc:Credential>
                 <abc:Credential Alias="CreditCard">
                     <abc:CredentialSpecAlternatives>
@@ -348,7 +350,7 @@
                             <abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
                             <abc:InspectorPublicKeyUID>http://admin.ch/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
                         </abc:InspectorAlternatives>
-                        <abc:InspectionGrounds>In case of no free cancellation and no show the credit card number will be disclosed to the hotel.</abc:InspectionGrounds>
+                        <abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
                     </abc:DisclosedAttribute>
                 </abc:Credential>
                 <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
@@ -389,7 +391,7 @@
                             <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
                             <abc:DisclosedAttribute AttributeType="CardNumber" DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
 <abc:InspectorPublicKeyUID></abc:InspectorPublicKeyUID>
-<abc:InspectionGrounds>In case of no free cancellation and no show the credit card number will be disclosed to the hotel.</abc:InspectionGrounds>
+<abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
                             </abc:DisclosedAttribute>
                         </abc:Credential>
                         <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
@@ -425,13 +427,24 @@
                             </descriptions>
                         </revealedFact>
                     </revealedFacts>
-                    <revealedAttributeValues/>
+                    <revealedAttributeValues>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute 'PassportNumber' from your Passport is 895749</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute 'LastName' from your Passport is Doe</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                    </revealedAttributeValues>
                     <inspectableAttributes>
                         <inspectableAttribute>
                             <credential ref="IdmxCredential/2locm909by41g7e4"/>
                             <attributeType>CardNumber</attributeType>
                             <dataHandlingPolicy>http://www.sweetdreamsuites.com/policies/creditcards</dataHandlingPolicy>
-                            <inspectionGrounds>In case of no free cancellation and no show the credit card number will be disclosed to the hotel.</inspectionGrounds>
+                            <inspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</inspectionGrounds>
                             <inspectorAlternatives>
 <inspectorAlternative ref="http://thebestbank.com/inspector/pub_key_v1"/>
 <inspectorAlternative ref="http://admin.ch/inspector/pub_key_v1"/>
@@ -445,10 +458,10 @@
             <policy PolicyUID="http://www.sweetdreamsuites.com/policies/booking/studentcardoffer">
                 <abc:Message>
                     <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
-                    <abc:FriendlyPolicyName lang="en">Policy: Special Offer for Students</abc:FriendlyPolicyName>
-                    <abc:FriendlyPolicyName lang="da">Policy: Special Offer for Students</abc:FriendlyPolicyName>
-                    <abc:FriendlyPolicyDescription lang="en">studentcardoffer Booking of Hotel Room .</abc:FriendlyPolicyDescription>
-                    <abc:FriendlyPolicyDescription lang="da">studentcardoffer Bookning af hotelvaerelse.</abc:FriendlyPolicyDescription>
+                    <abc:FriendlyPolicyName lang="en"/>
+                    <abc:FriendlyPolicyName lang="da"/>
+                    <abc:FriendlyPolicyDescription lang="en"/>
+                    <abc:FriendlyPolicyDescription lang="da"/>
                     <abc:ApplicationData>
         <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
         <Bedsize xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">King</Bedsize>
@@ -470,6 +483,8 @@
                         <abc:IssuerParametersUID RevocationInformationUID="http://governo.it/passport/revocation/parameters">http://governo.it/id/chiave2048</abc:IssuerParametersUID>
                         <abc:IssuerParametersUID RevocationInformationUID="http://bundesregierung.de/passport/revocation/parameters">http://bundesregierung.de/idkarte/schluessel</abc:IssuerParametersUID>
                     </abc:IssuerAlternatives>
+                    <DisclosedAttribute AttributeType="PassportNumber" />
+                    <DisclosedAttribute AttributeType="Name" />
                 </abc:Credential>
                 <abc:Credential Alias="CreditCard">
                     <abc:CredentialSpecAlternatives>
@@ -482,7 +497,7 @@
                         <abc:InspectorAlternatives>
                             <abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
                         </abc:InspectorAlternatives>
-                        <abc:InspectionGrounds>In case of no free cancellation and no show, the credit card number will be disclosed to the hotel.</abc:InspectionGrounds>
+                        <abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
                     </abc:DisclosedAttribute>
                 </abc:Credential>
                 <abc:Credential Alias="StudentID">
@@ -511,10 +526,10 @@
                     <tokenDescription PolicyUID="http://www.sweetdreamsuites.com/policies/booking/studentcardoffer" TokenUID="abc4t://token/17ru1c5qxq0221uh">
                         <abc:Message>
                             <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
-                            <abc:FriendlyPolicyName lang="en">Policy: Special Offer for Students</abc:FriendlyPolicyName>
-                            <abc:FriendlyPolicyName lang="da">Policy: Special Offer for Students</abc:FriendlyPolicyName>
-                            <abc:FriendlyPolicyDescription lang="en">studentcardoffer Booking of Hotel Room .</abc:FriendlyPolicyDescription>
-                            <abc:FriendlyPolicyDescription lang="da">studentcardoffer Bookning af hotelvaerelse.</abc:FriendlyPolicyDescription>
+                            <abc:FriendlyPolicyName lang="en"/>
+                            <abc:FriendlyPolicyName lang="da"/>
+                            <abc:FriendlyPolicyDescription lang="en"/>
+                            <abc:FriendlyPolicyDescription lang="da"/>
                             <abc:ApplicationData>
         <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
         <Bedsize xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">King</Bedsize>
@@ -535,7 +550,7 @@
                             <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
                             <abc:DisclosedAttribute AttributeType="CardNumber" DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
 <abc:InspectorPublicKeyUID></abc:InspectorPublicKeyUID>
-<abc:InspectionGrounds>In case of no free cancellation and no show, the credit card number will be disclosed to the hotel.</abc:InspectionGrounds>
+<abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
                             </abc:DisclosedAttribute>
                         </abc:Credential>
                         <abc:Credential Alias="StudentID">
@@ -577,13 +592,24 @@
                             </descriptions>
                         </revealedFact>
                     </revealedFacts>
-                    <revealedAttributeValues/>
+                    <revealedAttributeValues>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute 'PassportNumber' from your Passport is 895749</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute 'LastName' from your Passport is Doe</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                    </revealedAttributeValues>
                     <inspectableAttributes>
                         <inspectableAttribute>
                             <credential ref="IdmxCredential/2locm909by41g7e4"/>
                             <attributeType>CardNumber</attributeType>
                             <dataHandlingPolicy>http://www.sweetdreamsuites.com/policies/creditcards</dataHandlingPolicy>
-                            <inspectionGrounds>In case of no free cancellation and no show, the credit card number will be disclosed to the hotel.</inspectionGrounds>
+                            <inspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</inspectionGrounds>
                             <inspectorAlternatives>
 <inspectorAlternative ref="http://thebestbank.com/inspector/pub_key_v1"/>
                             </inspectorAlternatives>

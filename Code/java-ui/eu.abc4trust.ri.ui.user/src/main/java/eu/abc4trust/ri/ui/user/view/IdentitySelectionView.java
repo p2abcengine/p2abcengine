@@ -21,6 +21,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.MediaType;
 
+import org.eclipse.rwt.RWT;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -60,6 +61,7 @@ import eu.abc4trust.returnTypes.ui.CredentialInUi;
 import eu.abc4trust.returnTypes.ui.CredentialSpecInUi;
 import eu.abc4trust.returnTypes.ui.InspectableAttribute;
 import eu.abc4trust.returnTypes.ui.InspectorInUi;
+import eu.abc4trust.returnTypes.ui.IssuerInUi;
 import eu.abc4trust.returnTypes.ui.PseudonymInUi;
 import eu.abc4trust.returnTypes.ui.PseudonymListCandidate;
 import eu.abc4trust.returnTypes.ui.RevealedAttributeValue;
@@ -71,17 +73,23 @@ import eu.abc4trust.ri.ui.user.XmlUtils;
 import eu.abc4trust.ri.ui.user.utils.ApplicationParameters;
 import eu.abc4trust.ri.ui.user.utils.Messages;
 import eu.abc4trust.ri.ui.user.utils.ResourceRegistryStore;
+import eu.abc4trust.ri.ui.user.utils.UIMode;
 import eu.abc4trust.ri.ui.user.utils.UIProperties;
 import eu.abc4trust.ri.ui.user.utils.UIUtil;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.AttributeDescription;
+import eu.abc4trust.xml.CarriedOverAttribute;
 import eu.abc4trust.xml.CredentialInPolicy;
+import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.FriendlyDescription;
+import eu.abc4trust.xml.JointlyRandomAttribute;
 import eu.abc4trust.xml.PresentationPolicy;
 import eu.abc4trust.xml.Pseudonym;
 import eu.abc4trust.xml.PseudonymInPolicy;
+import eu.abc4trust.xml.PseudonymInToken;
 import eu.abc4trust.xml.PseudonymMetadata;
+import eu.abc4trust.xml.UnknownAttributes;
 
 public class IdentitySelectionView extends ViewPart {
 	
@@ -95,8 +103,10 @@ public class IdentitySelectionView extends ViewPart {
 	private PresentationPolicy selectedPolicy = null;
 	private Composite content;
 	private ScrolledComposite scrolledContent;
+	private Text generalInfoText;
 	private Label arrowLabel = null;
 	private Group revealedInfoSummaryGroup;
+	private Group newCredentialPropertiesGroup;
 	private Button submitButton;
 	private Control focusElement;
 	
@@ -107,6 +117,7 @@ public class IdentitySelectionView extends ViewPart {
 	private Map<PresentationPolicy, Map<PseudonymInPolicy, Control>> policyToNymVarToControl = new LinkedHashMap<PresentationPolicy, Map<PseudonymInPolicy, Control>>();
 	private Map<Control, PresentationPolicy> selectableControlToPolicy = new LinkedHashMap<Control, PresentationPolicy>();
 	private Map<URI, CredentialSpecification> credentialSpecifications = new LinkedHashMap<URI, CredentialSpecification>();
+	private Map<String, IssuerInUi> issuerParameters = new LinkedHashMap<String, IssuerInUi>();
 	
 	public void createPartControl(Composite parent) {
 	    
@@ -142,6 +153,19 @@ public class IdentitySelectionView extends ViewPart {
 				for (CredentialSpecInUi credSpec : uipa.data.credentialSpecifications) {
 				    credentialSpecifications.put(credSpec.spec.getSpecificationUID(), credSpec.spec);
 				}
+				for (IssuerInUi issuerParam : uipa.data.issuers) {
+				    issuerParameters.put(issuerParam.uri, issuerParam);
+				}
+
+		        // Check for malformed policy
+		        for (PresentationPolicy policy : policyToTokenCandidates.keySet()) {
+		            boolean policyRequestsNoCredentials = policy.getCredential().isEmpty();
+		            boolean policyRequestsNoPseudonyms = policy.getPseudonym().isEmpty();
+		            if (policyRequestsNoPseudonyms && policyRequestsNoCredentials) {
+		                focusElement = UIUtil.createMessageContent(parent, MessageFormat.format(Messages.get().IdentitySelectionView_error_malformedPolicy, policy.getPolicyUID()));
+		                return;
+		            }
+		        }
 				break;
 				
 			case ISSUANCE:
@@ -160,16 +184,6 @@ public class IdentitySelectionView extends ViewPart {
                 }
 				break;
 		}
-		
-		// Check for malformed policy
-		for (PresentationPolicy policy : policyToTokenCandidates.keySet()) {
-			boolean policyRequestsNoCredentials = policy.getCredential().isEmpty();
-			boolean policyRequestsNoPseudonyms = policy.getPseudonym().isEmpty();
-			if (policyRequestsNoPseudonyms && policyRequestsNoCredentials) {
-				focusElement = UIUtil.createMessageContent(parent, MessageFormat.format(Messages.get().IdentitySelectionView_error_malformedPolicy, policy.getPolicyUID()));
-				return;
-			}
-		}	
 		
 		// Create UI content for the given policy/policies
 		createContentForPolicies(parent);
@@ -201,8 +215,11 @@ public class IdentitySelectionView extends ViewPart {
     
     private UiIssuanceArguments getUiIssuanceArguments() throws Exception {
         String HOTELBOOKING_ISSUING                         = "/xml/hotelbooking/ids-i-132727255-q.xml"; //$NON-NLS-1$
+        //String HOTELBOOKING_ISSUING_NOCREDS_NONYMS          = "/xml/hotelbooking/ids-i-132727256-q.xml"; //$NON-NLS-1$
         //String HOTELBOOKING_ISSUING                         = "/xml/hotelbooking/ids-i-370430331-q.xml"; //$NON-NLS-1$
         //String HOTELBOOKING_ISSUING                         = "/xml/hotelbooking/ids-i-977961710-q.xml"; //$NON-NLS-1$
+        //String PATRAS_ISSUING                               = "/xml/patras/ids-i-548210088-q.xml"; //$NON-NLS-1$
+        //String PATRAS_ISSUING                               = "/xml/patras/ids-i-79726575-q.xml"; //$NON-NLS-1$
         
         if (ApplicationParameters.getSessionSingletonInstance().isDemo()) {
             if (uiia == null) {
@@ -264,6 +281,8 @@ public class IdentitySelectionView extends ViewPart {
 		scrolledContent.setExpandVertical(false);
 		scrolledContent.setExpandHorizontal(false);
 		
+		createGeneralInfoText(content);
+		
 		List<Label> policySeparationlabels = new ArrayList<Label>();
 
 		Iterator<PresentationPolicy> policyIterator = policyToTokenCandidates.keySet().iterator();
@@ -278,7 +297,7 @@ public class IdentitySelectionView extends ViewPart {
 			FormData formData = new FormData();
 			formData.left = new FormAttachment(0);
 			if (policySeparationlabels.isEmpty()) {
-				formData.top = new FormAttachment(0);
+				formData.top = new FormAttachment(generalInfoText);
 			} else {
 				// Attach the top of the group to the bottom of the one above
 				formData.top = new FormAttachment(policySeparationlabels.get(policySeparationlabels.size()-1));
@@ -289,20 +308,7 @@ public class IdentitySelectionView extends ViewPart {
 			if (policyIterator.hasNext()) {
 				Label policySeparationlabel = new Label(content, SWT.NONE);
 				//policySeparationlabel.setText("...or this policy...");
-				FontData[] fontData = policySeparationlabel.getFont().getFontData();
-				for(int i = 0; i < fontData.length; ++i) {
-					fontData[i].setHeight(fontData[i].getHeight()+1);
-					fontData[i].setStyle(SWT.BOLD);
-				}
-				final Font biggerBoldLabelFont = new Font(Display.getCurrent(), fontData);
-				policySeparationlabel.setFont(biggerBoldLabelFont);
-				policySeparationlabel.addDisposeListener(new DisposeListener() {
-					private static final long serialVersionUID = 1L;
-					@Override
-					public void widgetDisposed(DisposeEvent event) {
-						biggerBoldLabelFont.dispose();
-					}
-				});
+				//changeFont(policySeparationlabel, SWT.BOLD, +1);
 				policySeparationlabels.add(policySeparationlabel);
 				
 				FormData formDataLabel = new FormData();
@@ -316,6 +322,34 @@ public class IdentitySelectionView extends ViewPart {
 		// Make the scrollbars work
 		updateScrolledContentMinSize();
 	}
+	
+//	@SuppressWarnings("incomplete-switch") // the switch is not reached in MANAGEMENT mode
+    private void createGeneralInfoText(Composite parent) {
+//	    // Build string to discplay as general info
+//        StringBuilder generalInfo = new StringBuilder();
+//        switch (sessionParams.getUIMode()) {
+//            case PRESENTATION:
+//                generalInfo.append("To log in, you need to disclose information about yourself."); // TODO internationalize
+//                break;
+//                
+//            case ISSUANCE:             
+//                String credSpecName = uiia.policy.getCredentialTemplate().getCredentialSpecUID().toString(); // TODO immediate: resolve URI to name // TODO ensure this credSpac is included in data
+//                String issuerName = uiia.policy.getCredentialTemplate().getIssuerParametersUID().toString(); // TODO immediate: resolve URI to name // TODO ensure these issuerParams is included in data
+//                generalInfo.append("To obtain a new "+credSpecName+" from "+issuerName+", you need to disclose information about yourself."); // TODO internationalize
+//                // # {0} is about to issue you a new {1}.
+//               
+//                break;
+//        }
+        
+        // Create UI widget and lay it out
+        generalInfoText = new Text(parent, SWT.READ_ONLY | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL);
+        generalInfoText.setText(" "); // generalInfo.toString()
+        FormData formData = new FormData();
+        formData.left = new FormAttachment(0);
+        formData.right = new FormAttachment(100);
+        formData.top = new FormAttachment(0);
+        generalInfoText.setLayoutData(formData);
+    }
 	
 	private Composite createContentForPolicy(PresentationPolicy policy, List<TokenCandidate> tokenCandidates) {
 		Composite credRefGroupsComposite = new Composite(content, SWT.NONE);
@@ -333,15 +367,32 @@ public class IdentitySelectionView extends ViewPart {
 		formLayout.spacing = 0;
 		policyGroup.setLayout(formLayout);
 		
-		Text policyDescriptionText = new Text(policyGroup, SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
-		policyDescriptionText.setText(UIUtil.getHumanReadable(policy.getMessage()!=null ? policy.getMessage().getFriendlyPolicyDescription() : null, "")); //$NON-NLS-1$
+		String humanReadablePolicyDescription = UIUtil.getHumanReadable(policy.getMessage()!=null ? policy.getMessage().getFriendlyPolicyDescription() : null, Messages.get().CredentialAttributesView_msg_policyWithoutDescription);
+		boolean showHumanReadablePolicyDescription = false;
+		if (humanReadablePolicyDescription!=null &&
+		    !humanReadablePolicyDescription.equals(Messages.get().CredentialAttributesView_msg_policyWithoutDescription) &&
+		    !humanReadablePolicyDescription.trim().equals("")) //$NON-NLS-1$
+		{
+		    // proper human readable description provided in the policy (-> human readable description != fallback message)
+		    showHumanReadablePolicyDescription = true;
+		}
+		if (policy.getPseudonym().isEmpty() && policy.getCredential().isEmpty()) {
+		    // simple issuance scenario where the issuance policy neither asks for credentials nor for pseudonyms
+		    showHumanReadablePolicyDescription = true;
+		}		
 		
-		// Layout of the policy description
-        FormData formData = new FormData();
-        formData.left = new FormAttachment(0);
-        formData.top = new FormAttachment(0);
-        formData.width = Math.min(policyDescriptionText.computeSize(SWT.DEFAULT, SWT.DEFAULT).x, 400);
-        policyDescriptionText.setLayoutData(formData);
+		Text policyDescriptionText = null;
+		if (showHumanReadablePolicyDescription) {
+    		policyDescriptionText = new Text(policyGroup, SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
+    		policyDescriptionText.setText(humanReadablePolicyDescription);
+    		
+    		// Layout of the policy description
+            FormData formData = new FormData();
+            formData.left = new FormAttachment(0);
+            formData.top = new FormAttachment(0);
+            formData.width = Math.min(policyDescriptionText.computeSize(SWT.DEFAULT, SWT.DEFAULT).x, 400);
+            policyDescriptionText.setLayoutData(formData);
+		}
 		
 		List<Group> policyContentGroups = new ArrayList<Group>();
 		/////////////////////////////////////////////////////////////////////
@@ -353,10 +404,14 @@ public class IdentitySelectionView extends ViewPart {
 			policyContentGroups.add(pseudonymsGroup); // Remember the group for proper alignment of possible further groups
 			
 			// Layout of the group
-			formData = new FormData();
+			FormData formData = new FormData();
 			formData.left = new FormAttachment(0);
 			formData.right = new FormAttachment(100);
-			formData.top = new FormAttachment(policyDescriptionText, -5);
+			if (showHumanReadablePolicyDescription) {
+			    formData.top = new FormAttachment(policyDescriptionText, -7);
+			} else {
+			    formData.top = new FormAttachment(0);
+			}
 			pseudonymsGroup.setLayoutData(formData);
 			
 			// Layout for the group's children
@@ -452,20 +507,7 @@ public class IdentitySelectionView extends ViewPart {
 				if (pseudonymInPolicy.isExclusive()) {
 					Label pseudonymLabel = new Label(pseudonymsGroup, SWT.NONE);
 					pseudonymLabel.setText(Messages.get().IdentitySelectionView_scope+": "+(pseudonymInPolicy.getScope() != null ? pseudonymInPolicy.getScope(): Messages.get().IdentitySelectionView_error_missingScope));  //$NON-NLS-1$
-					FontData[] fontData = pseudonymLabel.getFont().getFontData();
-					for(int i = 0; i < fontData.length; ++i) {
-						fontData[i].setHeight(fontData[i].getHeight()-3);
-						//fontData[i].setStyle(SWT.BOLD);
-					}
-					final Font biggerBoldLabelFont = new Font(Display.getCurrent(), fontData);
-					pseudonymLabel.setFont(biggerBoldLabelFont);
-					pseudonymLabel.addDisposeListener(new DisposeListener() {
-						private static final long serialVersionUID = 1L;
-						@Override
-						public void widgetDisposed(DisposeEvent event) {
-							biggerBoldLabelFont.dispose();
-						}
-					});
+					changeFont(pseudonymLabel, SWT.NORMAL, -3);
 					// Layout for the label
 					formData = new FormData();
 					formData.left = new FormAttachment(pseudonymControl);
@@ -539,11 +581,15 @@ public class IdentitySelectionView extends ViewPart {
 			policyContentGroups.add(credRefGroup); // Remember the group for proper alignment of possible further groups
 			
 			// Layout of the group
-			formData = new FormData();
+			FormData formData = new FormData();
 			formData.left = new FormAttachment(0);
 			formData.right = new FormAttachment(100);
 			if (policyContentGroups.size()==1) {
-				formData.top = new FormAttachment(0);
+			    if (showHumanReadablePolicyDescription) {
+			        formData.top = new FormAttachment(policyDescriptionText, -7);
+			    } else {
+			        formData.top = new FormAttachment(0);
+			    }
 			} else {
 				// Attach the top of the group to the bottom of the one above
 				formData.top = new FormAttachment(policyContentGroups.get(policyContentGroups.size()-2));
@@ -606,7 +652,6 @@ public class IdentitySelectionView extends ViewPart {
 			}
 			
 			// Remember the buttons for this reference
-//			policyToButtons.put(tcpp, credButtons);
 			credVarToButtons.put(cip, credButtons);
 		}
 		policyToCredVarToButtons.put(policy, credVarToButtons);
@@ -619,9 +664,12 @@ public class IdentitySelectionView extends ViewPart {
 	 * Subsequently determines the token description for the current selection and shows the corresponding information that would be revealed.
 	 */
 	private void updateRevealedInfoContent() {
+        final List<Combo> inspectorCombos = new ArrayList<Combo>();
+	    
 		// Dispose the previous disclosure info
 		if (arrowLabel!=null && !arrowLabel.isDisposed()) arrowLabel.dispose(); 
 		if (revealedInfoSummaryGroup!=null && !revealedInfoSummaryGroup.isDisposed()) revealedInfoSummaryGroup.dispose();
+		if (newCredentialPropertiesGroup!=null && !newCredentialPropertiesGroup.isDisposed()) newCredentialPropertiesGroup.dispose();
 		if (submitButton!=null && !submitButton.isDisposed()) submitButton.dispose();
 		
 		// Determine whether for the the current selection the token/pseudonym candidates are unambiguous 
@@ -637,6 +685,11 @@ public class IdentitySelectionView extends ViewPart {
 		}
 		
 		Composite selectedPolicyComposite = policyToComposite.get(selectedPolicy);
+		
+        // ##########################################################
+        // ##########################################################
+        // ##########################################################
+		// Arrow
 		arrowLabel = new Label(content, SWT.NONE);
 		arrowLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
 		arrowLabel.setImage(ResourceRegistryStore.getImage(ResourceRegistryStore.IMG_ARROW));
@@ -645,354 +698,487 @@ public class IdentitySelectionView extends ViewPart {
 		formData.top = new FormAttachment(selectedPolicyComposite, 0, SWT.CENTER);
 		arrowLabel.setLayoutData(formData);
 		
-		revealedInfoSummaryGroup = new Group(content, SWT.NONE);
-		revealedInfoSummaryGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-//		revealedInfoSummaryGroup.setText("Information that you are about to reveal");
-		// Layout of the group
+        // ##########################################################
+        // ##########################################################
+        // ##########################################################
+		// Composite for revealed info and properties of new credential
+		Composite revealInfoAndNewCredPropertiesComposite = new Composite(content, SWT.NONE);
 		formData = new FormData();
-		formData.left = new FormAttachment(arrowLabel);
-		formData.top = new FormAttachment(selectedPolicyComposite, 0, SWT.TOP); // , 0, SWT.CENTER
-		revealedInfoSummaryGroup.setLayoutData(formData);
-		// Layout for the group's children
+        formData.left = new FormAttachment(arrowLabel);
+        formData.top = new FormAttachment(selectedPolicyComposite, 0, SWT.TOP); // , 0, SWT.CENTER
+        revealInfoAndNewCredPropertiesComposite.setLayoutData(formData);
 		FormLayout formLayout = new FormLayout();
-		formLayout.marginHeight = 0;
-		formLayout.marginWidth = 0;
-		formLayout.spacing = 0;
-		revealedInfoSummaryGroup.setLayout(formLayout);
+        formLayout.spacing = 5;
+        revealInfoAndNewCredPropertiesComposite.setLayout(formLayout);
+        
+        final boolean isInformationDisclosed;
+        if (selectedPolicy.getPseudonym().size()>0 ||
+            selectedPolicy.getCredential().size()>0 ||
+            selectedCandidates.getTokenCandidate().revealedAttributeValues.size()>0 ||
+            selectedCandidates.getTokenCandidate().revealedFacts.size()>0 ||
+            selectedCandidates.getTokenCandidate().inspectableAttributes.size()>0)
+        {
+            isInformationDisclosed = true;
+        } else {
+            isInformationDisclosed = false;
+        }
+        
+        if (isInformationDisclosed) {
+    		// Summary of which information is revealed
+    		revealedInfoSummaryGroup = new Group(revealInfoAndNewCredPropertiesComposite, SWT.NONE);
+    		revealedInfoSummaryGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    		// Layout of the group
+    		formData = new FormData();
+    		formData.left = new FormAttachment(0);
+    		formData.right = new FormAttachment(100);
+    		formData.top = new FormAttachment(0);
+    		revealedInfoSummaryGroup.setLayoutData(formData);
+    		// Layout for the group's children
+    		formLayout = new FormLayout();
+    		formLayout.marginHeight = 0;
+    		formLayout.marginWidth = 0;
+    		formLayout.spacing = 0;
+    		revealedInfoSummaryGroup.setLayout(formLayout);
+    		
+            Label headingInfoToBeDisclosedLabel = new Label(revealedInfoSummaryGroup, SWT.NONE);
+            headingInfoToBeDisclosedLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+            headingInfoToBeDisclosedLabel.setText(Messages.get().IdentitySelectionView_heading_adaptedCard);
+            changeFont(headingInfoToBeDisclosedLabel, SWT.BOLD, +3);
+    		
+    		//////////////////////////////////////////////////////////////
+    		//////////////////////////////////////////////////////////////
+    		// Ownership notes ///////////////////////////////////////////
+    		Group proofOfOwnershipGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
+    		proofOfOwnershipGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    		proofOfOwnershipGroup.setText(Messages.get().IdentitySelectionView_heading_ownershipGroup);
+    		
+    		// Layout of the group
+    		formData = new FormData();
+    		formData.left = new FormAttachment(0);
+    		formData.right = new FormAttachment(100);
+    		formData.top = new FormAttachment(headingInfoToBeDisclosedLabel, -4);
+    		proofOfOwnershipGroup.setLayoutData(formData);
+    		// Layout for the group's children
+    		formLayout = new FormLayout();
+    		formLayout.marginHeight = 0;
+    		formLayout.marginWidth = 0;
+    		formLayout.spacing = 2;
+    		proofOfOwnershipGroup.setLayout(formLayout);
+    		
+    		formData = new FormData();
+    		formData.left = new FormAttachment(proofOfOwnershipGroup, 0, SWT.CENTER);
+    		formData.top = new FormAttachment(0);
+    		headingInfoToBeDisclosedLabel.setLayoutData(formData);
+    		
+    		List<Label> revealedInfoLabels = new ArrayList<Label>();
+    		// Ownership notes for pseudonyms
+    		for (int i=0; i < selectedPolicy.getPseudonym().size(); i++) {
+    			PseudonymInPolicy pip = selectedPolicy.getPseudonym().get(i);
+    			Control c = policyToNymVarToControl.get(selectedPolicy).get(pip);
+    			PseudonymInUi piui = selectedCandidates.getPseudonymCandidate().pseudonyms.get(i);
+    			
+    			Label revealedInfoLabel = new Label(proofOfOwnershipGroup, SWT.NONE);
+    			revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    			String pseudonymName = c instanceof Text ? ((Text) c).getText() : ((Combo) c).getText();
+    			if (isNewPseudonym(piui.pseudonym)) {
+    				revealedInfoLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_newPseudonym, pseudonymName));
+    			} else {
+    				revealedInfoLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_existingPseudonym, pseudonymName));
+    			}
+    			revealedInfoLabels.add(revealedInfoLabel);
+    			
+    			// Layout for the label
+    			formData = new FormData();
+    			if (revealedInfoLabels.size()>1) {
+    				formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
+    			}
+    			revealedInfoLabel.setLayoutData(formData);
+    		}
+    		// Ownership notes for credentials
+    		for (int i=0; i < selectedPolicy.getCredential().size(); i++) {
+    			CredentialInUi ciui = selectedCandidates.getTokenCandidate().credentials.get(i);
+    			String credSpecName = UIUtil.getHumanReadable(ciui.spec.spec.getFriendlyCredentialName(), ciui.spec.spec.getSpecificationUID().toString());
+    			String credIssuer = UIUtil.getHumanReadable(ciui.issuer.description, ciui.desc.getIssuerParametersUID().toString());
+    			
+    			Label revealedInfoLabel = new Label(proofOfOwnershipGroup, SWT.NONE);
+    			revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    			revealedInfoLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_ownership, credSpecName, credIssuer));
+    			revealedInfoLabels.add(revealedInfoLabel);
+    			
+    			// Layout for the label
+    			formData = new FormData();
+    			if (revealedInfoLabels.size()>1) {
+    				formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
+    			}
+    			revealedInfoLabel.setLayoutData(formData);
+    		}
+    		Group previousGroupInUi = proofOfOwnershipGroup;
+    		
+    		//////////////////////////////////////////////////////////////
+    		//////////////////////////////////////////////////////////////
+    		// Explicitly revealed attributes ////////////////////////////
+    		if ( ! selectedCandidates.getTokenCandidate().revealedAttributeValues.isEmpty()) {
+    			final Group revealedValuesGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
+    			revealedValuesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    			revealedValuesGroup.setText(Messages.get().IdentitySelectionView_heading_attributesGroup);
+    			
+    			// Layout of the group
+    			formData = new FormData();
+    			formData.left = new FormAttachment(0);
+    			formData.right = new FormAttachment(100);
+    			formData.top = new FormAttachment(previousGroupInUi);
+    			revealedValuesGroup.setLayoutData(formData);
+    			// Layout for the group's children
+    			formLayout = new FormLayout();
+    			formLayout.marginHeight = 0;
+    			formLayout.marginWidth = 0;
+    			formLayout.spacing = 2;
+    			revealedValuesGroup.setLayout(formLayout);
+    			
+    			revealedInfoLabels = new ArrayList<Label>();
+    			for (RevealedAttributeValue revealedAttr :  selectedCandidates.getTokenCandidate().revealedAttributeValues) {
+    				Label revealedInfoLabel = new Label(revealedValuesGroup, SWT.NONE);
+    				revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    				revealedInfoLabel.setText(Messages.BULLET + UIUtil.getHumanReadable(revealedAttr.descriptions)+". "); //$NON-NLS-1$
+    				revealedInfoLabels.add(revealedInfoLabel);
+    				
+    				// Layout for the button
+    				formData = new FormData();
+    				if (revealedInfoLabels.size()>1) {
+    					formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
+    				}
+    				revealedInfoLabel.setLayoutData(formData);
+    			}
+    			previousGroupInUi = revealedValuesGroup;
+    		}
+    		
+    		//////////////////////////////////////////////////////////////
+    		//////////////////////////////////////////////////////////////
+    		// Predicates ////////////////////////////////////////////////
+    		if ( ! selectedCandidates.getTokenCandidate().revealedFacts.isEmpty()) {
+    			final Group revealedPredicatesGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
+    			revealedPredicatesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    			revealedPredicatesGroup.setText(Messages.get().IdentitySelectionView_heading_factsGroup);
+    			
+    			// Layout of the group
+    			formData = new FormData();
+    			formData.left = new FormAttachment(0);
+    			formData.right = new FormAttachment(100);
+    			formData.top = new FormAttachment(previousGroupInUi);
+    			revealedPredicatesGroup.setLayoutData(formData);
+    			revealedPredicatesGroup.setLayout(new FormLayout());
+    			// Layout for the group's children
+    			formLayout = new FormLayout();
+    			formLayout.marginHeight = 0;
+    			formLayout.marginWidth = 0;
+    			formLayout.spacing = 2;
+    			revealedPredicatesGroup.setLayout(formLayout);
+    			
+    			revealedInfoLabels = new ArrayList<Label>();
+    			for (RevealedFact revealedFact :  selectedCandidates.getTokenCandidate().revealedFacts) {
+    				Label revealedInfoLabel = new Label(revealedPredicatesGroup, SWT.NONE);
+    				revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    				revealedInfoLabel.setText(Messages.BULLET+UIUtil.getHumanReadable(revealedFact.descriptions)+". "); //$NON-NLS-1$
+    				revealedInfoLabels.add(revealedInfoLabel);
+    				
+    				// Layout for the label
+    				formData = new FormData();
+    				if (revealedInfoLabels.size()>1) {
+    					formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
+    				}
+    				revealedInfoLabel.setLayoutData(formData);
+    			}
+    			previousGroupInUi = revealedPredicatesGroup;
+    			
+    			// TODO report key-binding between pseudonyms and credentials as revealed facts?
+    		}
+    		
+    		
+    		//////////////////////////////////////////////////////////////
+    		//////////////////////////////////////////////////////////////
+    		// Inspectable Attributes ////////////////////////////////////
+    		if ( ! selectedCandidates.getTokenCandidate().inspectableAttributes.isEmpty()) {
+    			final Group inspectableAttributesGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
+    			inspectableAttributesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    			inspectableAttributesGroup.setText(Messages.get().IdentitySelectionView_heading_inspectionGroup);
+    			
+    			// Layout of the group
+    			formData = new FormData();
+    			formData.left = new FormAttachment(0);
+    			formData.right = new FormAttachment(100);
+    			formData.top = new FormAttachment(previousGroupInUi);
+    			inspectableAttributesGroup.setLayoutData(formData);
+    			inspectableAttributesGroup.setLayout(new FormLayout());
+    			// Layout for the group's children
+    			formLayout = new FormLayout();
+    			formLayout.marginHeight = 0;
+    			formLayout.marginWidth = 0;
+    			formLayout.spacing = 2;
+    			inspectableAttributesGroup.setLayout(formLayout);
+    			
+    			List<Control> inspectableAttributesInfoCLabels = new ArrayList<Control>();
+    			for (InspectableAttribute inspectableAttribute : selectedCandidates.getTokenCandidate().inspectableAttributes) {
+    				// Determine human readable attribute type
+    				String humanReadableAttrType = inspectableAttribute.attributeType.toString();
+    				for (AttributeDescription ad : inspectableAttribute.credential.spec.spec.getAttributeDescriptions().getAttributeDescription()) {
+    					if (ad.getType().equals(inspectableAttribute.attributeType)) {
+    						humanReadableAttrType = UIUtil.getHumanReadable(ad.getFriendlyAttributeName(), inspectableAttribute.attributeType.toString());
+    						break;
+    					}
+    				}
+    				// Determine human readable credential name
+    				String humanReadableCredName = UIUtil.getHumanReadable(inspectableAttribute.credential.desc.getFriendlyCredentialName(), inspectableAttribute.credential.uri);
+    				// Determine attribute value
+    				String attrValue = null;
+    				for (Attribute attribute : inspectableAttribute.credential.desc.getAttribute()) {
+    					if (attribute.getAttributeDescription().getType().equals(inspectableAttribute.attributeType)) {
+    						attrValue = attribute.getAttributeValue().toString(); // TODO obtain value as prepared by maria to avoid formatting issues
+    						break;
+    					}
+    				}
+    				
+    				CLabel revealedInfoLabel = new CLabel(inspectableAttributesGroup, SWT.NONE);
+    				revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    				revealedInfoLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_inspectableAttribute, humanReadableAttrType, humanReadableCredName, attrValue));
+    				revealedInfoLabel.setImage(ResourceRegistryStore.getImage(ResourceRegistryStore.IMG_LOCK_SMALL));
+    				revealedInfoLabel.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
+    				inspectableAttributesInfoCLabels.add(revealedInfoLabel);
+    				// Layout for the label
+    				formData = new FormData();
+    				if (inspectableAttributesInfoCLabels.size()>1) {
+    					formData.top = new FormAttachment(inspectableAttributesInfoCLabels.get(inspectableAttributesInfoCLabels.size()-2));
+    				}
+    				revealedInfoLabel.setLayoutData(formData);
+    				
+    				Label inspectionGroundsCLabel = new Label(inspectableAttributesGroup, SWT.NONE);
+    				inspectionGroundsCLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    				inspectionGroundsCLabel.setText("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + MessageFormat.format(Messages.get().IdentitySelectionView_msg_inspectionGrounds, inspectableAttribute.inspectionGrounds)); //$NON-NLS-1$
+    				inspectionGroundsCLabel.setData(RWT.MARKUP_ENABLED, Boolean.TRUE);
+    				inspectionGroundsCLabel.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
+    				inspectableAttributesInfoCLabels.add(inspectionGroundsCLabel);
+    				// Layout for the label
+    				formData = new FormData();
+    				if (inspectableAttributesInfoCLabels.size()>1) {
+    					formData.top = new FormAttachment(inspectableAttributesInfoCLabels.get(inspectableAttributesInfoCLabels.size()-2), -4);
+    				}
+    				inspectionGroundsCLabel.setLayoutData(formData);
+    				
+    				// Combo box to allow the user to select the inspector for the inspectable attribute
+    				Combo inspectorCombo = new Combo(inspectableAttributesGroup, SWT.BORDER | SWT.DROP_DOWN | SWT.READ_ONLY);
+    				inspectorCombo.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    				inspectorCombo.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
+    				for (InspectorInUi inspector : inspectableAttribute.inspectorAlternatives) {
+    					inspectorCombo.setData(Integer.toString(inspectorCombo.getItemCount()), inspector);
+    					if (inspector!=null) {
+    						inspectorCombo.add(UIUtil.getHumanReadable(inspector.description, inspector.uri)); 
+    					} else {
+    						inspectorCombo.add("<"+Messages.get().IdentitySelectionView_error_missingInspectorInfo+">"); //$NON-NLS-1$ //$NON-NLS-2$
+    					}
+    				}
+    				inspectorCombo.select(0);
+    				inspectorCombos.add(inspectorCombo);
+    				
+    				// Layout for the combo
+    				formData = new FormData();
+    				formData.left = new FormAttachment(revealedInfoLabel);
+    				formData.top = new FormAttachment(revealedInfoLabel, 0, SWT.CENTER);
+    				formData.width = 250;
+    				formData.height = 20;
+    				inspectorCombo.setLayoutData(formData);
+    			}
+    			previousGroupInUi = inspectableAttributesGroup;
+    		}
+    		
+    		// TODO Consent section that shows the message to be signed given in the <ApplicationData> element (and extend calculation of isInformationDisclosed flag accordingly)
 		
-		Label adaptedCardLabel = new Label(revealedInfoSummaryGroup, SWT.NONE);
-		adaptedCardLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-		adaptedCardLabel.setText(Messages.get().IdentitySelectionView_heading_adaptedCard);
-		FontData[] fontData = adaptedCardLabel.getFont().getFontData();
-		for(int i = 0; i < fontData.length; ++i) {
-			fontData[i].setHeight(fontData[i].getHeight()+5);
-			fontData[i].setStyle(SWT.BOLD);
-		}
-		final Font biggerBoldLabelFont = new Font(Display.getCurrent(), fontData);
-		adaptedCardLabel.setFont(biggerBoldLabelFont);
-		adaptedCardLabel.addDisposeListener(new DisposeListener() {
-			private static final long serialVersionUID = -2937275480456180279L;
+        }
 
-			@Override
-			public void widgetDisposed(DisposeEvent event) {
-				biggerBoldLabelFont.dispose();
-			}
-		});
-		
-		//////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////
-		// Ownership notes ///////////////////////////////////////////
-		Group proofOfOwnershipGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
-		proofOfOwnershipGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-		proofOfOwnershipGroup.setText(Messages.get().IdentitySelectionView_heading_ownershipGroup);
-//		fontData = proofOfOwnershipGroup.getFont().getFontData();
-//		for(int i = 0; i < fontData.length; ++i) {
-//			fontData[i].setStyle(SWT.BOLD);
-//		}
-//		final Font biggerBoldOwnershipGFont = new Font(Display.getCurrent(), fontData);
-//		proofOfOwnershipGroup.setFont(biggerBoldOwnershipGFont);
-//		proofOfOwnershipGroup.addDisposeListener(new DisposeListener() {
-//			@Override
-//			public void widgetDisposed(DisposeEvent event) {
-//				biggerBoldOwnershipGFont.dispose();
-//			}
-//		});
-		// Layout of the group
-		formData = new FormData();
-		formData.left = new FormAttachment(0);
-		formData.right = new FormAttachment(100);
-		formData.top = new FormAttachment(adaptedCardLabel);
-		proofOfOwnershipGroup.setLayoutData(formData);
-		// Layout for the group's children
-		formLayout = new FormLayout();
-		formLayout.marginHeight = 5;
-		formLayout.marginWidth = 5;
-		formLayout.spacing = 5;
-		proofOfOwnershipGroup.setLayout(formLayout);
-		
-		formData = new FormData();
-		formData.left = new FormAttachment(proofOfOwnershipGroup, 0, SWT.CENTER);
-		formData.top = new FormAttachment(0);
-		adaptedCardLabel.setLayoutData(formData);
-		
-		List<Label> revealedInfoLabels = new ArrayList<Label>();
-		// Ownership notes for pseudonyms
-		for (int i=0; i < selectedPolicy.getPseudonym().size(); i++) {
-			PseudonymInPolicy pip = selectedPolicy.getPseudonym().get(i);
-			Control c = policyToNymVarToControl.get(selectedPolicy).get(pip);
-			PseudonymInUi piui = selectedCandidates.getPseudonymCandidate().pseudonyms.get(i);
-			
-			Label revealedInfoLabel = new Label(proofOfOwnershipGroup, SWT.NONE);
-			revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-			String pseudonymName = c instanceof Text ? ((Text) c).getText() : ((Combo) c).getText();
-			if (isNewPseudonym(piui.pseudonym)) {
-				revealedInfoLabel.setText("\u2022 " + MessageFormat.format(Messages.get().IdentitySelectionView_msg_newPseudonym, pseudonymName)); //$NON-NLS-1$
-			} else {
-				revealedInfoLabel.setText("\u2022 " + MessageFormat.format(Messages.get().IdentitySelectionView_msg_existingPseudonym, pseudonymName)); //$NON-NLS-1$
-			}
-			revealedInfoLabels.add(revealedInfoLabel);
-			
-			// Layout for the label
-			formData = new FormData();
-			if (revealedInfoLabels.size()>1) {
-				formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
-			}
-			revealedInfoLabel.setLayoutData(formData);
-		}
-		// Ownership notes for credentials
-		for (int i=0; i < selectedPolicy.getCredential().size(); i++) {
-			CredentialInUi ciui = selectedCandidates.getTokenCandidate().credentials.get(i);
-			String credSpecName = UIUtil.getHumanReadable(ciui.spec.spec.getFriendlyCredentialName(), ciui.spec.spec.getSpecificationUID().toString());
-			String credIssuer = UIUtil.getHumanReadable(ciui.issuer.description, ciui.desc.getIssuerParametersUID().toString());
-			
-			Label revealedInfoLabel = new Label(proofOfOwnershipGroup, SWT.NONE);
-			revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-			revealedInfoLabel.setText("\u2022 " + MessageFormat.format(Messages.get().IdentitySelectionView_msg_ownership, credSpecName, credIssuer));  //$NON-NLS-1$
-			revealedInfoLabels.add(revealedInfoLabel);
-			
-			// Layout for the label
-			formData = new FormData();
-			if (revealedInfoLabels.size()>1) {
-				formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
-			}
-			revealedInfoLabel.setLayoutData(formData);
-		}
-		Group previousGroupInUi = proofOfOwnershipGroup;
-		
-		//////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////
-		// Explicitly revealed attributes ////////////////////////////
-//		Group revealedValuesGroup = null;
-		if ( ! selectedCandidates.tokenCandidate.revealedAttributeValues.isEmpty()) {
-			final Group revealedValuesGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
-			revealedValuesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-			revealedValuesGroup.setText(Messages.get().IdentitySelectionView_heading_attributesGroup);
-//			fontData = revealedValuesGroup.getFont().getFontData();
-//			for(int i = 0; i < fontData.length; ++i) {
-//				fontData[i].setStyle(SWT.BOLD);
-//			}
-//			final Font biggerBoldRevealedValuesGFont = new Font(Display.getCurrent(), fontData);
-//			revealedValuesGroup.setFont(biggerBoldRevealedValuesGFont);
-//			revealedValuesGroup.addDisposeListener(new DisposeListener() {
-//				@Override
-//				public void widgetDisposed(DisposeEvent event) {
-//					biggerBoldRevealedValuesGFont.dispose();
-//				}
-//			});
-			// Layout of the group
-			formData = new FormData();
-			formData.left = new FormAttachment(0);
-			formData.right = new FormAttachment(100);
-			formData.top = new FormAttachment(previousGroupInUi);
-			revealedValuesGroup.setLayoutData(formData);
-			// Layout for the group's children
-			formLayout = new FormLayout();
-			formLayout.marginHeight = 5;
-			formLayout.marginWidth = 5;
-			formLayout.spacing = 5;
-			revealedValuesGroup.setLayout(formLayout);
-			
-			revealedInfoLabels = new ArrayList<Label>();
-			for (RevealedAttributeValue revealedAttr :  selectedCandidates.tokenCandidate.revealedAttributeValues) {
-				Label revealedInfoLabel = new Label(revealedValuesGroup, SWT.NONE);
-				revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-				revealedInfoLabel.setText("\u2022 "+UIUtil.getHumanReadable(revealedAttr.descriptions)+". "); //$NON-NLS-1$ //$NON-NLS-2$
-				revealedInfoLabels.add(revealedInfoLabel);
-				
-				// Layout for the button
-				formData = new FormData();
-				if (revealedInfoLabels.size()>1) {
-					formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
-				}
-				revealedInfoLabel.setLayoutData(formData);
-			}
-			previousGroupInUi = revealedValuesGroup;
-		}
-		
-		//////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////
-		// Predicates ////////////////////////////////////////////////
-		if ( ! selectedCandidates.tokenCandidate.revealedFacts.isEmpty()) {
-			final Group revealedPredicatesGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
-			revealedPredicatesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-			revealedPredicatesGroup.setText(Messages.get().IdentitySelectionView_heading_factsGroup);
-//			fontData = revealedPredicatesGroup.getFont().getFontData();
-//			for(int i = 0; i < fontData.length; ++i) {
-//				fontData[i].setStyle(SWT.BOLD);
-//			}
-//			final Font biggerBoldRevealedPredicatesGFont = new Font(Display.getCurrent(), fontData);
-//			revealedPredicatesGroup.setFont(biggerBoldRevealedPredicatesGFont);
-//			revealedPredicatesGroup.addDisposeListener(new DisposeListener() {
-//				@Override
-//				public void widgetDisposed(DisposeEvent event) {
-//					biggerBoldRevealedPredicatesGFont.dispose();
-//				}
-//			});
-			// Layout of the group
-			formData = new FormData();
-			formData.left = new FormAttachment(0);
-			formData.right = new FormAttachment(100);
-			formData.top = new FormAttachment(previousGroupInUi);
-			revealedPredicatesGroup.setLayoutData(formData);
-			revealedPredicatesGroup.setLayout(new FormLayout());
-			// Layout for the group's children
-			formLayout = new FormLayout();
-			formLayout.marginHeight = 5;
-			formLayout.marginWidth = 5;
-			formLayout.spacing = 5;
-			revealedPredicatesGroup.setLayout(formLayout);
-			
-			revealedInfoLabels = new ArrayList<Label>();
-			for (RevealedFact revealedFact :  selectedCandidates.tokenCandidate.revealedFacts) {
-				Label revealedInfoLabel = new Label(revealedPredicatesGroup, SWT.NONE);
-				revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-				revealedInfoLabel.setText("\u2022 "+UIUtil.getHumanReadable(revealedFact.descriptions)+". "); //$NON-NLS-1$ //$NON-NLS-2$
-				revealedInfoLabels.add(revealedInfoLabel);
-				
-				// Layout for the label
-				formData = new FormData();
-				if (revealedInfoLabels.size()>1) {
-					formData.top = new FormAttachment(revealedInfoLabels.get(revealedInfoLabels.size()-2));
-				}
-				revealedInfoLabel.setLayoutData(formData);
-			}
-			previousGroupInUi = revealedPredicatesGroup;
+        // ##########################################################
+        // ##########################################################
+        // ##########################################################
+        // Properties of newly issued credential
+		if (sessionParams.getUIMode().equals(UIMode.ISSUANCE)) {
+		    newCredentialPropertiesGroup = new Group(revealInfoAndNewCredPropertiesComposite, SWT.NONE);
+	        newCredentialPropertiesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	        // Layout of the group
+	        formData = new FormData();
+	        formData.left = new FormAttachment(0);
+	        formData.right = new FormAttachment(100);
+	        if (isInformationDisclosed) {
+	            formData.top = new FormAttachment(revealedInfoSummaryGroup);
+	        } else {
+	            formData.top = new FormAttachment(0);
+	        }
+	        newCredentialPropertiesGroup.setLayoutData(formData);
+	        // Layout for the group's children
+	        formLayout = new FormLayout();
+	        formLayout.marginHeight = 0;
+	        formLayout.marginWidth = 0;
+	        formLayout.spacing = 2;
+	        newCredentialPropertiesGroup.setLayout(formLayout);
+	        
+	        Label headingPropertiesOfNewCredentialLabel = new Label(newCredentialPropertiesGroup, SWT.NONE);
+	        headingPropertiesOfNewCredentialLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	        headingPropertiesOfNewCredentialLabel.setText(Messages.get().IdentitySelectionView_heading_propertiesOfNewCredential);
+	        changeFont(headingPropertiesOfNewCredentialLabel, SWT.BOLD, +3);
+	        
+	        // Credential issuer and credential type
+	        String newCredUIDString = uiia.policy.getCredentialTemplate().getIssuerParametersUID().toString();
+	        URI newCredCredSpecUIDURI = uiia.policy.getCredentialTemplate().getCredentialSpecUID();
+	        
+	        IssuerInUi newCredIssuerInUi = issuerParameters.get(newCredUIDString);
+	        CredentialSpecification newCredCredSpec = credentialSpecifications.get(newCredCredSpecUIDURI);
+
+	        String newCredIssuerName = UIUtil.getHumanReadable(newCredIssuerInUi != null ? newCredIssuerInUi.description : null, newCredUIDString);
+	        String newCredCredSpecName = UIUtil.getHumanReadable(newCredCredSpec != null ? newCredCredSpec.getFriendlyCredentialName() : null, newCredCredSpecUIDURI.toString());
+	        
+	        Label newCredIssuerAndTypeLabel = new Label(newCredentialPropertiesGroup, SWT.NONE);
+	        newCredIssuerAndTypeLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	        newCredIssuerAndTypeLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_issuerAndTypeOfNewCredential, newCredIssuerName, newCredCredSpecName));
+	        formData = new FormData();
+	        formData.top = new FormAttachment(headingPropertiesOfNewCredentialLabel, +3);
+	        formData.left = new FormAttachment(0);
+	        formData.right = new FormAttachment(100);
+	        newCredIssuerAndTypeLabel.setLayoutData(formData);
+	        
+	        formData = new FormData();
+	        formData.left = new FormAttachment(newCredIssuerAndTypeLabel, 0, SWT.CENTER);
+	        formData.top = new FormAttachment(0, -2);
+	        headingPropertiesOfNewCredentialLabel.setLayoutData(formData);
+	        
+	        Control lastControlInNewCredentialPropertiesGroup = newCredIssuerAndTypeLabel;
+	        
+	        // Key Binding
+	        URI sameKeyBindingAsAlias = uiia.policy.getCredentialTemplate().getSameKeyBindingAs();
+	        if (sameKeyBindingAsAlias != null) {
+	            Label keyBindingLabel = new Label(newCredentialPropertiesGroup, SWT.NONE);
+                keyBindingLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	            
+	            if (selectedCandidates.getAliasToPseudonym().containsKey(sameKeyBindingAsAlias)) {
+	                String humanReadableTargetPseudonymName = getHumanReadablePseudonymNameFromAlias(selectedCandidates, sameKeyBindingAsAlias);
+                    keyBindingLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_keyBindingOfNewCredentialToPseudonym, humanReadableTargetPseudonymName));
+	            } else {
+	                String humanReadableTargetCredentialName = getHumanReadableCredentialNameFromAlias(selectedCandidates, sameKeyBindingAsAlias);
+	                keyBindingLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_keyBindingOfNewCredentialToCredential, humanReadableTargetCredentialName));
+	            }
+
+                formData = new FormData();
+                formData.top = new FormAttachment(lastControlInNewCredentialPropertiesGroup);
+                keyBindingLabel.setLayoutData(formData);
+                
+                lastControlInNewCredentialPropertiesGroup = keyBindingLabel;
+	        }
+	        
+	        // Revocation status
+            if (newCredCredSpec!=null && newCredCredSpec.isRevocable()) {
+                Label newCredRevocabilityLabel = new Label(newCredentialPropertiesGroup, SWT.NONE);
+                newCredRevocabilityLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+                newCredRevocabilityLabel.setText(Messages.BULLET + Messages.get().CredentialAttributesView_msg_revocable);
+               
+                formData = new FormData();
+                formData.top = new FormAttachment(lastControlInNewCredentialPropertiesGroup);
+                newCredRevocabilityLabel.setLayoutData(formData);
+                
+                lastControlInNewCredentialPropertiesGroup = newCredRevocabilityLabel;
+            }
+
+	        UnknownAttributes unknownAttributes = uiia.policy.getCredentialTemplate().getUnknownAttributes();
+	        if (unknownAttributes != null) {
+	            List<CarriedOverAttribute> carriedOverAttributes = uiia.policy.getCredentialTemplate().getUnknownAttributes().getCarriedOverAttribute();
+	            List<JointlyRandomAttribute> jointlyRandomAttributes = uiia.policy.getCredentialTemplate().getUnknownAttributes().getJointlyRandomAttribute();
+	            
+	            if ( (! carriedOverAttributes.isEmpty()) || (! jointlyRandomAttributes.isEmpty()) ) {          
+	                //////////////////////////////////////////////////////////////
+	                //////////////////////////////////////////////////////////////
+	                // Attributes unknown to the issuer //////////////////////////
+	                List<Control> unknownAttributeLabels = new ArrayList<Control>();
+	                Group unknownAttributesGroup = new Group(newCredentialPropertiesGroup, SWT.NONE);
+	                unknownAttributesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	                unknownAttributesGroup.setText(Messages.get().IdentitySelectionView_heading_unknownAttributes);
+	                
+	                // Layout of the group
+	                formData = new FormData();
+	                formData.left = new FormAttachment(0);
+	                formData.right = new FormAttachment(100);
+	                formData.top = new FormAttachment(lastControlInNewCredentialPropertiesGroup);
+	                unknownAttributesGroup.setLayoutData(formData);
+	                // Layout for the group's children
+	                formLayout = new FormLayout();
+	                formLayout.marginHeight = 0;
+	                formLayout.marginWidth = 0;
+	                formLayout.spacing = 2;
+	                unknownAttributesGroup.setLayout(formLayout);
+	                
+	                // Carried over attributes
+	                for (CarriedOverAttribute carriedOverAttribute : carriedOverAttributes) {
+	                    URI sourceCredentialAlias = carriedOverAttribute.getSourceCredentialInfo().getAlias();
+	                    String sourceAttributeName = carriedOverAttribute.getSourceCredentialInfo().getAttributeType().toString();
+	                    String targetAttributeName = carriedOverAttribute.getTargetAttributeType().toString();
+	                    
+	                    String humanReadableSourceCredentialName = getHumanReadableCredentialNameFromAlias(selectedCandidates, sourceCredentialAlias);	                    
+	                    Label carriedOverLabel = new Label(unknownAttributesGroup, SWT.NONE);
+	                    carriedOverLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	                    if (sourceAttributeName.equals(targetAttributeName)) {
+	                        carriedOverLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_carryOverDirect, targetAttributeName, humanReadableSourceCredentialName));
+	                    } else {
+	                        carriedOverLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_carryOverIndirect, targetAttributeName, sourceAttributeName, humanReadableSourceCredentialName));
+	                    }
+	                    unknownAttributeLabels.add(carriedOverLabel);
+	                    
+	                    // Layout for the label
+	                    formData = new FormData();
+	                    if (unknownAttributeLabels.size()>1) {
+	                        formData.top = new FormAttachment(unknownAttributeLabels.get(unknownAttributeLabels.size()-2));
+	                    }
+	                    carriedOverLabel.setLayoutData(formData);
+	                }
+	                        
+	                // Jointly random generated attributes          
+	                for (JointlyRandomAttribute jointlyRandomAttribute : jointlyRandomAttributes) {
+	                    String targetAttributeName = jointlyRandomAttribute.getTargetAttributeType().toString();
+	                    
+	                    Label jointlyRandomLabel = new Label(unknownAttributesGroup, SWT.NONE);
+	                    jointlyRandomLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREEN001));
+	                    jointlyRandomLabel.setText(Messages.BULLET + MessageFormat.format(Messages.get().IdentitySelectionView_msg_jointlyRandomGenerated, targetAttributeName));
+	                    unknownAttributeLabels.add(jointlyRandomLabel);
+	                    
+	                    // Layout for the label
+	                    formData = new FormData();
+	                    if (unknownAttributeLabels.size()>1) {
+	                        formData.top = new FormAttachment(unknownAttributeLabels.get(unknownAttributeLabels.size()-2));
+	                    }
+	                    jointlyRandomLabel.setLayoutData(formData);
+	                }
+	            }
+	        }
 		}
 		
-		
-		//////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////
-		// Inspectable Attributes ////////////////////////////////////
-		final List<Combo> inspectorCombos = new ArrayList<Combo>();
-		if ( ! selectedCandidates.tokenCandidate.inspectableAttributes.isEmpty()) {
-			final Group inspectableAttributesGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
-			inspectableAttributesGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-			inspectableAttributesGroup.setText(Messages.get().IdentitySelectionView_heading_inspectionGroup);
-//			fontData = revealedPredicatesGroup.getFont().getFontData();
-//			for(int i = 0; i < fontData.length; ++i) {
-//				fontData[i].setStyle(SWT.BOLD);
-//			}
-//			final Font biggerBoldRevealedPredicatesGFont = new Font(Display.getCurrent(), fontData);
-//			revealedPredicatesGroup.setFont(biggerBoldRevealedPredicatesGFont);
-//			revealedPredicatesGroup.addDisposeListener(new DisposeListener() {
-//				@Override
-//				public void widgetDisposed(DisposeEvent event) {
-//					biggerBoldRevealedPredicatesGFont.dispose();
-//				}
-//			});
-			// Layout of the group
-			formData = new FormData();
-			formData.left = new FormAttachment(0);
-			formData.right = new FormAttachment(100);
-			formData.top = new FormAttachment(previousGroupInUi);
-			inspectableAttributesGroup.setLayoutData(formData);
-			inspectableAttributesGroup.setLayout(new FormLayout());
-			// Layout for the group's children
-			formLayout = new FormLayout();
-			formLayout.marginHeight = 5;
-			formLayout.marginWidth = 5;
-			formLayout.spacing = 5;
-			inspectableAttributesGroup.setLayout(formLayout);
-			
-			List<CLabel> inspectableAttributesInfoCLabels = new ArrayList<CLabel>();
-			for (InspectableAttribute inspectableAttribute : selectedCandidates.tokenCandidate.inspectableAttributes) {
-				// Determine human readable attribute type
-				String humanReadableAttrType = inspectableAttribute.attributeType.toString();
-				for (AttributeDescription ad : inspectableAttribute.credential.spec.spec.getAttributeDescriptions().getAttributeDescription()) {
-					if (ad.getType().equals(inspectableAttribute.attributeType)) {
-						humanReadableAttrType = UIUtil.getHumanReadable(ad.getFriendlyAttributeName(), inspectableAttribute.attributeType.toString());
-						break;
-					}
-				}
-				// Determine human readable credential name
-				String humanReadableCredSpecName = UIUtil.getHumanReadable(inspectableAttribute.credential.spec.spec.getFriendlyCredentialName(), inspectableAttribute.credential.uri);
-				// Determine attribute value
-				String attrValue = null;
-				for (Attribute attribute : inspectableAttribute.credential.desc.getAttribute()) {
-					if (attribute.getAttributeDescription().getType().equals(inspectableAttribute.attributeType)) {
-						attrValue = attribute.getAttributeValue().toString(); // TODO obtain prepared by maria to avoid formatting issues
-						break;
-					}
-				}
-				
-				CLabel revealedInfoLabel = new CLabel(inspectableAttributesGroup, SWT.NONE);
-				revealedInfoLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-				revealedInfoLabel.setText("\u2022 " + MessageFormat.format(Messages.get().IdentitySelectionView_msg_inspectableAttribute, humanReadableAttrType, humanReadableCredSpecName, attrValue)); //$NON-NLS-1$
-				revealedInfoLabel.setImage(ResourceRegistryStore.getImage(ResourceRegistryStore.IMG_LOCK_SMALL));
-				inspectableAttributesInfoCLabels.add(revealedInfoLabel);
-				// Layout for the label
-				formData = new FormData();
-				if (inspectableAttributesInfoCLabels.size()>1) {
-					formData.top = new FormAttachment(inspectableAttributesInfoCLabels.get(inspectableAttributesInfoCLabels.size()-2));
-				}
-				revealedInfoLabel.setLayoutData(formData);
-				
-				CLabel inspectionGroundsCLabel = new CLabel(inspectableAttributesGroup, SWT.NONE);
-				inspectionGroundsCLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-				inspectionGroundsCLabel.setText("         " + MessageFormat.format(Messages.get().IdentitySelectionView_msg_inspectionGrounds, inspectableAttribute.inspectionGrounds)); //$NON-NLS-1$
-				inspectableAttributesInfoCLabels.add(inspectionGroundsCLabel);
-				// Layout for the label
-				formData = new FormData();
-				if (inspectableAttributesInfoCLabels.size()>1) {
-					formData.top = new FormAttachment(inspectableAttributesInfoCLabels.get(inspectableAttributesInfoCLabels.size()-2), -10);
-				}
-				inspectionGroundsCLabel.setLayoutData(formData);
-				
-				// Combo box to allow the user to select the inspector for the inspectable attribute
-				Combo inspectorCombo = new Combo(inspectableAttributesGroup, SWT.BORDER | SWT.DROP_DOWN | SWT.READ_ONLY);
-				for (InspectorInUi inspector : inspectableAttribute.inspectorAlternatives) {
-					inspectorCombo.setData(Integer.toString(inspectorCombo.getItemCount()), inspector);
-					if (inspector!=null) {
-						inspectorCombo.add(UIUtil.getHumanReadable(inspector.description, inspector.uri)); 
-					} else {
-						inspectorCombo.add("<"+Messages.get().IdentitySelectionView_error_missingInspectorInfo+">"); //$NON-NLS-1$ //$NON-NLS-2$
-					}
-				}
-				inspectorCombo.select(0);
-				inspectorCombos.add(inspectorCombo);
-				
-				// Layout for the combo
-				formData = new FormData();
-				formData.left = new FormAttachment(revealedInfoLabel);
-				formData.top = new FormAttachment(revealedInfoLabel, 0, SWT.CENTER);
-				formData.width = 250;
-				formData.height = 20;
-				inspectorCombo.setLayoutData(formData);
-			}
-			previousGroupInUi = inspectableAttributesGroup;
-		}
-		
-		//////////////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////////////
-		// Submit Button /////////////////////////////////////////////
+        // ##########################################################
+        // ##########################################################
+        // ##########################################################
+		// Submit Button
 		submitButton = new Button(content, SWT.PUSH);
 		submitButton.setSize(new Point(100, 100));
-		submitButton.setText(Messages.get().IdentitySelectionView_caption_submitButton);
-		fontData = submitButton.getFont().getFontData();
-		for(int i = 0; i < fontData.length; ++i) {
-			fontData[i].setHeight(fontData[i].getHeight()+5);
-			fontData[i].setStyle(SWT.BOLD);
+		if (sessionParams.getUIMode().equals(UIMode.ISSUANCE)) {
+		    if (isInformationDisclosed) {
+		        submitButton.setText(Messages.get().IdentitySelectionView_caption_submitButtonAdvancedIssuance);
+		    } else {
+		        submitButton.setText(Messages.get().IdentitySelectionView_caption_submitButtonBasicIssuance);
+		    }
+		} else {
+		    submitButton.setText(Messages.get().IdentitySelectionView_caption_submitButtonPresentation);
 		}
-		final Font biggerBoldButtonFont = new Font(Display.getCurrent(), fontData);
-		submitButton.setFont(biggerBoldButtonFont);
-		submitButton.addDisposeListener(new DisposeListener() {
-			private static final long serialVersionUID = -3288660714545962234L;
-
-			@Override
-			public void widgetDisposed(DisposeEvent event) {
-				biggerBoldButtonFont.dispose();
-			}
-		});
+		changeFont(submitButton, SWT.BOLD, +2);
 		
 		formData = new FormData(SWT.DEFAULT, SWT.DEFAULT);
-		formData.top = new FormAttachment(revealedInfoSummaryGroup);
-		formData.left = new FormAttachment(revealedInfoSummaryGroup, 0, SWT.CENTER);
+		formData.top = new FormAttachment(revealInfoAndNewCredPropertiesComposite);
+		formData.left = new FormAttachment(revealInfoAndNewCredPropertiesComposite, 0, SWT.CENTER);
 		submitButton.setLayoutData(formData);
 		
 		submitButton.addSelectionListener(new SelectionAdapter() {
 			private static final long serialVersionUID = -8687765617282676685L;
 			
-			@SuppressWarnings("incomplete-switch")
+			@SuppressWarnings("incomplete-switch") // the switch is not reached in MANAGEMENT mode
             @Override
 			public void widgetSelected(SelectionEvent e) {
 				if (sessionParams.isDemo()) {
@@ -1060,6 +1246,7 @@ public class IdentitySelectionView extends ViewPart {
 
 					case PRESENTATION:
 						UiPresentationReturn uipr = new UiPresentationReturn();
+						uipr.uiContext = uipa.uiContext;
 						uipr.chosenPolicy = policyToIdentifier.get(selectedPolicy);
 						uipr.chosenPresentationToken = chosenPresentationToken;
 						uipr.chosenPseudonymList = chosenPseudonymList;
@@ -1075,6 +1262,7 @@ public class IdentitySelectionView extends ViewPart {
 						
 					case ISSUANCE:
 						UiIssuanceReturn uiir = new UiIssuanceReturn();
+						uiir.uiContext = uiia.uiContext;
 						uiir.chosenIssuanceToken = chosenPresentationToken;
 						uiir.chosenPseudonymList = chosenPseudonymList;
 						uiir.chosenInspectors = chosenInspectors;
@@ -1095,7 +1283,19 @@ public class IdentitySelectionView extends ViewPart {
 		updateScrolledContentMinSize();
 		scrolledContent.layout(true, true);
 	}
-	
+    
+//    private int getIndexOfPseudonymWithAlias(PseudonymChoiceList tokenCandidate, URI sourceNymAlias) {
+//        List<PseudonymInToken> nyms = tokenCandidate. .getPseudonym();
+//        
+//        for (int i=0; i<nyms.size(); i++) {
+//            PseudonymInToken pit = nyms.get(i);
+//            if (pit.getAlias().equals(sourceNymAlias)) {
+//                return i;
+//            }
+//        }
+//        return -1;
+//    }
+
     private void submitUiReturn(UiIssuanceReturn uiir) {
         Client client = Client.create();
         Builder setUIArguments =
@@ -1182,13 +1382,46 @@ public class IdentitySelectionView extends ViewPart {
 		}
 	}
 	
+    private String getHumanReadableCredentialNameFromAlias(final CandidatePair selectedCandidates, URI credentialAlias) {
+        CredentialInUi ciu = selectedCandidates.getAliasToCredential().get(credentialAlias);
+        return UIUtil.getHumanReadable(ciu.desc.getFriendlyCredentialName(), ciu.uri);
+    }
+    
+    private String getHumanReadablePseudonymNameFromAlias(final CandidatePair selectedCandidates, URI pseudonymAlias) {
+        PseudonymInUi piu = selectedCandidates.getAliasToPseudonym().get(pseudonymAlias);
+        return UIUtil.getHumanReadable(piu.metadata.getFriendlyPseudonymDescription(), piu.uri);
+    }
+	
 	private class CandidatePair {
 		   private final TokenCandidate tokenCandidate;
 		   private final PseudonymListCandidate pseudonymCandidate;
 		   
+		   private final Map<URI, CredentialInUi> aliasToCredential = new LinkedHashMap<URI, CredentialInUi>();
+		   private final Map<URI, PseudonymInUi> aliasToPseudonym = new LinkedHashMap<URI, PseudonymInUi>();
+		   
 		   public CandidatePair(TokenCandidate tokenCandidate, PseudonymListCandidate pseudonymCandidate) {
 			   this.tokenCandidate = tokenCandidate;
 			   this.pseudonymCandidate = pseudonymCandidate;
+			   
+			   if (tokenCandidate != null) {
+    			   // create mapping from alias to credential
+    		       List<CredentialInToken> creds = tokenCandidate.tokenDescription.getCredential();
+    		       for (int i=0; i < creds.size(); i++) {
+    		           URI alias = creds.get(i).getAlias();
+    		           CredentialInUi ciu = tokenCandidate.credentials.get(i);
+    		           aliasToCredential.put(alias, ciu);
+    		       }
+			   }
+			   
+			   if (pseudonymCandidate != null) {
+			       // create mapping from alias to pseudonym
+			       List<PseudonymInToken> nyms = tokenCandidate.tokenDescription.getPseudonym();
+                   for (int i=0; i < nyms.size(); i++) {
+                       URI alias = nyms.get(i).getAlias();
+                       PseudonymInUi piu = pseudonymCandidate.pseudonyms.get(i);
+                       aliasToPseudonym.put(alias, piu);
+                   }
+			   }
 		   }
 		   
 		   public TokenCandidate getTokenCandidate() {
@@ -1198,6 +1431,14 @@ public class IdentitySelectionView extends ViewPart {
 		   public PseudonymListCandidate getPseudonymCandidate() {
 			   return pseudonymCandidate;
 		   }
+		   
+		   public Map<URI, CredentialInUi> getAliasToCredential() {
+		       return aliasToCredential;
+	       }
+	        
+	       public Map<URI, PseudonymInUi> getAliasToPseudonym() {
+	           return aliasToPseudonym;
+	       }
 		}
 	
 	/**
@@ -1233,8 +1474,9 @@ public class IdentitySelectionView extends ViewPart {
 				return null;
 			}
 		} else {
-			// Neither pseudonyms nor credentials are requested -> this case should never happen (sanity check at UI beginning assures this)			
-			return null;
+			// Neither pseudonyms nor credentials are requested (-> this case only occurs in issuance scenarios)
+		    TokenCandidate tc = policyToTokenCandidates.get(selectedPolicy).get(0);
+		    return new CandidatePair(tc, null);
 		}
 	}
 	
@@ -1320,5 +1562,26 @@ public class IdentitySelectionView extends ViewPart {
 		updateRevealedInfoContent();
 	}
 	
-	
+	/**
+	 * @param style A bitwise combination of SWT.NORMAL, SWT.ITALIC and SWT.BOLD.
+	 * @param heightDelta The change of height of the control's current font in points. 
+	 */
+	private void changeFont(Control control, int style, int heightDelta) {
+	    FontData[] fontData = control.getFont().getFontData();
+	    
+        for(int i = 0; i < fontData.length; ++i) {
+            fontData[i].setHeight(fontData[i].getHeight()+heightDelta);
+            fontData[i].setStyle(style);
+        }
+        final Font changedFont = new Font(Display.getCurrent(), fontData);
+        control.setFont(changedFont);
+        control.addDisposeListener(new DisposeListener() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void widgetDisposed(DisposeEvent event) {
+                changedFont.dispose();
+            }
+        });
+	}
 }

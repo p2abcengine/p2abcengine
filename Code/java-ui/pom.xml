@@ -7,7 +7,7 @@
   
   <groupId>eu.abc4trust.ui</groupId>
   <artifactId>ui-project-pom</artifactId>
-  <version>1.0.4-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   
   <modules>
@@ -20,10 +20,13 @@
     <module>eu.abc4trust.ri.ui.user.feature</module>
     <module>eu.abc4trust.ri.ui.user.product</module>
     <module>user-abce-service</module>
+<!--
+    <module>uprove-redistribution</module>
+-->
   </modules>
   
   <properties>
-    <abc4trust.version>1.0.9-SNAPSHOT</abc4trust.version>
+    <abc4trust.version>1.1.13</abc4trust.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   
@@ -33,13 +36,13 @@
       <dependency>
         <groupId>eu.abc4trust.ui</groupId>
         <artifactId>idselect-user-service</artifactId>
-   	    <version>1.0.4-SNAPSHOT</version>
+   	    <version>1.1.0-SNAPSHOT</version>
         <type>war</type>
       </dependency>
       <dependency>
         <groupId>eu.abc4trust.ui</groupId>
         <artifactId>eu.abc4trust.ri.ui.user.product</artifactId>
-   	    <version>1.0.4.qualifier</version>
+   	    <version>1.1.0.qualifier</version>
         <type>war</type>
       </dependency>
 
@@ -49,6 +52,13 @@
         <artifactId>service-helper</artifactId>
         <version>${abc4trust.version}</version>
       </dependency>
+<!--
+      <dependency>
+        <groupId>eu.abc4trust.ri</groupId>
+        <artifactId>uprove</artifactId>
+        <version>${abc4trust.version}</version>
+      </dependency>
+-->
 	    <!-- for UI service -->
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
@@ -110,8 +120,9 @@
   </pluginRepositories>
   
   <scm>
-    <connection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ui/trunk</connection>
-    <developerConnection>scm:svn:https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ui/trunk</developerConnection>
+    <connection>scm:git:https://abc4trust.miracleas.dk/git/WP4_Reference_Implementation/user-client.git</connection>
+    <developerConnection>scm:git:https://abc4trust.miracleas.dk/git/WP4_Reference_Implementation/user-client.git</developerConnection>
+    <tag>HEAD</tag>
   </scm>
   
   <distributionManagement>
@@ -135,10 +146,14 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.2</version>
+          <version>2.4.1</version>
           <configuration>
-            <tagNameFormat>@{project.version}</tagNameFormat>
-            <tagBase>https://abc4trust.miracleas.dk/svn/WP4_Reference_Implementation/java/ui/tags</tagBase>
+            <pushChanges>false</pushChanges>
+            <localCheckout>true</localCheckout>
+<!--
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+-->
+            <arguments>-DskipTests</arguments>
           </configuration>
         </plugin>
         <plugin>

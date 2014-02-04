@@ -22,36 +22,67 @@ function logMessage(method, message) {
 	}
 }
 
-function checkSmartcard(elm, sessionID) {
+function checkSmartcardInserted(sessionID) {
+	logMessage("checkSmartcardInserted", "Start : " + sessionID);
 	var DEBUG = false;
 	var strbundle = document.getElementById("overlayStrings");
 
+	var result = new Object();
 	// Check if smartcard is available!
 	var abcquery = new XMLHttpRequest();
 	abcquery.open("GET",USER_ABCE_SERVICE + "/user/checkSmartcard/"+sessionID,false);
 	try {
 		abcquery.send();
+		result.status = abcquery.status;
 	} catch(connect_userabce_failed) {
+	    result.status = 400;
+	}
+
+	if(DEBUG){alert("- check smartcard done : " + result.status);}
+
+	if(result.status>=400) {
+		if(result.status == 400){
+			result.message = strbundle.getString("user_service_unavailable");
+			logMessage("checkSmartcardInserted", "Error : UserService not running! " + result.message);
+		} else if(result.status == 410){
+			result.message = strbundle.getString("smartcard_connected");
+			logMessage("checkSmartcardInserted", "Error : No card found! " + result.message);
+		} else if(result.status == 406){
+			result.message = "PIN Needed";
+			logMessage("checkSmartcardInserted", "PIN : " + result.message);
+		} else {
+			result.message = "checkSmartcardInserted - UNKNOWN ERROR STATUS CODE : " + result.status;
+			logMessage("checkSmartcardInserted", "Error : " + result.message);
+		}
+	} else {
+		result.message = "Card is present";
+		logMessage("checkSmartcardInserted", "Info : Smartcard found " + result.status + " : " + result.message);
+	}
+	return result;
+}
+
+function checkSmartcard(elm, sessionID) {
+	var DEBUG = false;
+	var strbundle = document.getElementById("overlayStrings");
+	
+	// Check if smartcard is available!
+	var result = checkSmartcardInserted(sessionID);
+	if(result.status != 406 && result.status >= 400){
 		if(DEBUG) {alert("User ABCE Not Running : " + connect_userabce_failed);};
 		if(elm!=null) {
-			elm.setAttribute("abc_return_status",400);
-			elm.setAttribute("abc_return_msg","User ABCE Service Not Running");
+			elm.setAttribute("abc_return_status",result.status);
+			elm.setAttribute("abc_return_msg",result.message);
 		}
+		alert(result.message);
 		return false;
 	}
-	
-	if(abcquery.status == 204) {
+	if(result.status == 204) {
+		//Same card as before - no actions need to be taken.
 		if(elm!=null) {
 			elm.setAttribute("abc_pin", 0);
 		}
 		return true;
-	}
-	
-	abcquery.open("GET",USER_ABCE_SERVICE + "/user/smartcardStatus",false);
-	abcquery.send();
-	if(abcquery.status<200||abcquery.status>204){
-		return false;
-	}
+	}	
 	
 	// Not available in UserABCE - ask for PIN
 	var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
@@ -76,6 +107,7 @@ function checkSmartcard(elm, sessionID) {
 		return false;
 	}
 	// post pin to User ABCE
+	var abcquery = new XMLHttpRequest();
 	abcquery.open("POST",USER_ABCE_SERVICE + "/user/unlockSmartcards/"+sessionID,false);
 	abcquery.setRequestHeader("Content-type", "text/plain");
 	abcquery.send(password.value);
@@ -92,17 +124,51 @@ function checkSmartcard(elm, sessionID) {
 			if(abcquery.status == 401){
 				//Unauthorized
 				elm.setAttribute("abc_return_msg","Smartcard Not Accepted - wrong PIN entered. Try again");
+				alert(strbundle.getString("wrong_pin_try_again"));
+				return checkSmartcard(elm, sessionID);
 			}else if(abcquery.status = 403){
-				//forbidden. Card locked
+				//forbidden. Card locked				
 				elm.setAttribute("abc_return_msg","Smartcard Not Accepted - wrong PIN entered. Your card is now locked. Unlock using your PUK code");
+				alert(strbundle.getString("wrong_pin_locked"));
 			}else{
 				elm.setAttribute("abc_return_msg","Smartcard Not Accepted - Unknown cause");
+				alert(strbundle.getString("unknown_return_code_unlock"));
 			}
 
 		}
 		return false;
 	}
 }
+
+function isSameSmartcard(elm){
+	var sessionID = "isSameSmartcard" + new Date().getTime()+""+Math.floor(Math.random()*99999);
+	logMessage("isSameSmartcard", "Info : Start " + sessionID);
+
+	elm.setAttribute("session_id", sessionID);
+    var result = checkSmartcardInserted(sessionID);
+	if(result.status>=400) {
+	    // on all errors return 400
+		elm.setAttribute("abc_return_status",400);
+		elm.setAttribute("abc_return_msg", "Missing UserService/No Card Inserted/PIN Needed");
+		return;
+	}
+	var abcquery = new XMLHttpRequest();
+	abcquery.open("GET",USER_ABCE_SERVICE + "/user/isSameSmartcard/"+sessionID,false);
+	try {
+		abcquery.send();
+		elm.setAttribute("abc_return_status",200);
+		elm.setAttribute("abc_return_msg","Same Smartcard");
+		logMessage("isSameSmartcard", "Info : isSameSmartcard" + sessionID);
+		return;
+	} catch(connect_userabce_failed) {
+		// ignore - always 410
+	}
+	elm.setAttribute("abc_return_status",410);
+	elm.setAttribute("abc_return_msg","NOT Same Smartcard");
+	logMessage("isSameSmartcard", "Info : NOT SameSmartcard" + sessionID);
+	return;
+}
+	
 
 function XXXcheckPseudonym(elm, sessionID){
 	var DEBUG = false;
@@ -242,10 +308,8 @@ function issue(elm){
 }
 
 function hasChoice_issue(elm){
-	var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].
-     	getService(Components.interfaces.nsIConsoleService);
 
-	aConsoleService.logStringMessage("abc4trust.js : hasChoice_issue");
+	logMessage("Issue-TokenSelected", "Start...");
 	
 	var DEBUG = false;
 	var enableDebug = elm.getAttribute("debug_in_extension");
@@ -265,14 +329,8 @@ function hasChoice_issue(elm){
 
 	var choice = elm.getAttribute("return");
 	var hasChoices = true;
-/*
-	var evt = document.createEvent("Events");
 
-    if(DEBUG){alert("dispatchEvent " + sessionID);}
-	evt.initEvent("ABC4TrustResultEvent", true, false);
-	elm.dispatchEvent(evt);
-*/	
-//	if(DEBUG){alert("FIREFOX PLUGIN : ISSUE : Got choice from idselect: "+choice+"\n\n"+sessionID);}
+	//	if(DEBUG){alert("FIREFOX PLUGIN : ISSUE : Got choice from idselect: "+choice+"\n\n"+sessionID);}
 	
 	// request to Issuer
 	var xmlhttp = new XMLHttpRequest();
@@ -293,15 +351,15 @@ function hasChoice_issue(elm){
 	abcquery.setRequestHeader("Content-type", "application/json");
 	abcquery.setRequestHeader("Accept", "text/xml,application/xml");
 	if(DEBUG) { alert("now sending our choice back to user abce:\n"+choice);}
-	aConsoleService.logStringMessage("now sending our choice back to user abce:\n"+choice);
+	logMessage("Issue-TokenSelected", "now sending our choice back to user abce:\n"+choice);
 	try {
 		abcquery.send(choice);
 	} catch(failed) {
-		aConsoleService.logStringMessage("- failed sending to service");
+		logMessage("Issue-TokenSelected", "- failed sending to service");
 	}
 
 	if(DEBUG) { alert(" - got response : "+abcquery.status);}
-	aConsoleService.logStringMessage(" - got response : "+abcquery.status);
+	logMessage("Issue-TokenSelected", " - got response : "+abcquery.status);
 	
 	while(true) {
 		if(abcquery.status == 200){
@@ -380,15 +438,15 @@ function reportIssuanceStatus(elm, status) {
 	}
 }
 
-
-function verify(elm){
+// NOTE : Was 'verify'
+function present(elm){
 	var DEBUG = false;
 	var enableDebug = elm.getAttribute("debug_in_extension");
 	if(enableDebug != null&&(enableDebug==true||enableDebug=='true')) {
 		DEBUG = true;
 	}
 	
-	var sessionID = "Verify" + new Date().getTime()+""+Math.floor(Math.random()*99999);
+	var sessionID = "Present" + new Date().getTime()+""+Math.floor(Math.random()*99999);
 	logMessage("Present", "Run presentation with sessionID : " + sessionID);
 
 	// Check that Smartcard is present!
@@ -398,73 +456,72 @@ function verify(elm){
 	}
 	
 	//
-	var policy_request = elm.getAttribute("policy_request");
- 	var verify_request = elm.getAttribute("verify_request");
+	var policy_request_url = elm.getAttribute("policy_request");
+
+	// first check old verify_request
+ 	var present_request_url = elm.getAttribute("verify_request");
+
+	if(present_request_url == null || present_request_url == "") {
+		// try new present_request
+ 		present_request_url = elm.getAttribute("present_request");
+		if(present_request_url == null || present_request_url == "") {
+			logMessage("Present", "ERROR - neither 'present_request' or 'verify_request' was specified on call to Firefox Extension.");
+			elm.setAttribute("abc_return_status",500);
+			elm.setAttribute("abc_return_msg","Neither 'present_request' or (old'verify_request') was specified on call to Firefox Extension");
+			return true;
+		}
+	}
+	elm.setAttribute("actual_present_request", present_request_url);
+	logMessage("Present", "Verify/Present start - session : " + sessionID + " - policy url : " + policy_request_url + " - verify/present url : " + present_request_url);
+	
     var language = elm.getAttribute("language");
 	if(language == null) {
 		language = "en";
 	}
 
-	//read parameters from dataelement
-	verify_server = elm.getAttribute("verify_server"); 
-    verify_credentials = elm.getAttribute("verify_credentials");  // MyCredentialRequest
-	policy_server = elm.getAttribute("policy_server");
-
 	elm.setAttribute("session_id", sessionID); 
 
-	if(verify_credentials == null) {
-		verify_credentials = sessionID;
-	}
-
-	
 	// Obtain the presentation policy
-	var xmlhttp = new XMLHttpRequest();
-//	var req = policy_request;
-	var req = null;
-	if(policy_request != null) {
-		req = policy_request; 
-	} else {
-		req = policy_server+"/policy/"+verify_credentials;
-	}
+	var policyRequest = new XMLHttpRequest();
 	
-	if(DEBUG){alert("policy request : "+req);}	
-	logMessage("Present", "Get Policy from : " + req);
-	xmlhttp.open("GET",req,false);
+	if(DEBUG){alert("policy request : "+policy_request_url);}	
+	logMessage("Present", "Get Policy from : " + policy_request_url);
+	policyRequest.open("GET",policy_request_url,false);
 	
-	xmlhttp.setRequestHeader("Content-type", "application/xml");
+	policyRequest.setRequestHeader("Content-type", "application/xml");
 	try {
-		xmlhttp.send(null);
+		policyRequest.send(null);
 	} catch(connect_verifier_failed) {
-		logMessage("Present", "Connect to Verifier Failed :  " + xmlhttp.status + " : " + xmlhttp.statusText);
+		logMessage("Present", "Connect to Verifier Failed :  " + policyRequest.status + " : " + policyRequest.statusText);
 		if(DEBUG) {alert("Connect to Verifier Failed : " + connect_verifier_failed);};
 		elm.setAttribute("abc_return_status",400);
 		elm.setAttribute("abc_return_msg","Could not contact verification service");
 		return true;
 	}
 	
-	if(xmlhttp.status!=200) {
-		logMessage("Present", "Status should be 200 (OK) retrieving Policy : " + xmlhttp.status + " : " + xmlhttp.statusText);
-		elm.setAttribute("abc_return_status",xmlhttp.status);
+	if(policyRequest.status!=200) {
+		logMessage("Present", "Status should be 200 (OK) retrieving Policy : " + policyRequest.status + " : " + policyRequest.statusText);
+		elm.setAttribute("abc_return_status",policyRequest.status);
 		elm.setAttribute("abc_return_msg","Failed to obtain presentation policy");
 		if(DEBUG){alert("Failed to obtain presentation policy");}
 		// return 'initialError' : true
 		return true;
 	}
 	// sanity check of policy
-	if(xmlhttp.responseText==null||xmlhttp.responseText.length==0) {
-		logMessage("Present", "ERROR : PresentationPolicy Seems to be empty! But Response From server was : (" + xmlhttp.responseText + ") - HTTP Status : " + xmlhttp.status + " : " + xmlhttp.statusText);
+	if(policyRequest.responseText==null||policyRequest.responseText.length==0) {
+		logMessage("Present", "ERROR : PresentationPolicy Seems to be empty! But Response From server was : (" + policyRequest.responseText + ") - HTTP Status : " + policyRequest.status + " : " + policyRequest.statusText);
 	} else {
-		logMessage("Present", "PresentationPolicy has content : " + xmlhttp.responseText.length);
+		logMessage("Present", "PresentationPolicy has content : " + policyRequest.responseText.length);
 	}
 	
-	if(DEBUG){alert("policy:\n"+xmlhttp.responseText);}	
+	if(DEBUG){alert("policy:\n"+policyRequest.responseText);}	
 	// Pass the presentationpolicy to the local user abce
 	var abcquery = new XMLHttpRequest();
 	abcquery.open("POST",USER_ABCE_SERVICE + "/user/createPresentationToken/"+sessionID,false);
 	abcquery.setRequestHeader("Content-type", "application/xml");
 	try {
 		logMessage("Present", "Send Policy to UserABCE...");
-		abcquery.send(xmlhttp.responseText);
+		abcquery.send(policyRequest.responseText);
 	} catch(connect_userabce_failed) {
 		logMessage("Present", "User ABCE Not Running (Verification) : " + connect_userabce_failed);
 		if(DEBUG) {alert("User ABCE Not Running (Verification) : " + connect_userabce_failed);};
@@ -506,49 +563,67 @@ function verify(elm){
 
 	logMessage("Present", "UserABCE return 200 - We got PresentationToken without ID Selector...");
 
-	var verifyquery = new XMLHttpRequest();
-	var verify_req = null;
-	if(verify_request!=null) {
-		verify_req = verify_request;
-	} else {
-		verify_req = verify_server+"/verify/"+verify_credentials;
-	}
-	verifyquery.open("POST",verify_req,false);
+	var presentRequest = new XMLHttpRequest();
+	presentRequest.open("POST",present_request_url,false);
 
-	verifyquery.setRequestHeader("Content-type", "application/xml");
-	if(DEBUG){alert("plugin sending presentationtoken to verify server : " + verify_req);}	
-	logMessage("Present", "Send PresentationToken to Verifier : " + verify_req);
-	verifyquery.send(abcquery.responseText);
-	if(verifyquery.status!=200&&verifyquery.status!=202&&verifyquery.status!=204) {
-		logMessage("Present", "Verifier REJECTED PresentationToken : " + verifyquery.status + " : " + verifyquery.statusText + " - Token From Verifier : (" + verifyquery.responseText + ")");
-		elm.setAttribute("abc_return_token",verifyquery.responseText);
-		elm.setAttribute("abc_return_status",verifyquery.status);
-		elm.setAttribute("abc_return_msg","Failed to contact verifier service");
-		if(DEBUG){alert("failed to contact verifier : " + verifyquery.status);}
+	presentRequest.setRequestHeader("Content-type", "application/xml");
+	if(DEBUG){alert("plugin sending presentationtoken to Verifier : " + present_request_url);}
+	try{
+		logMessage("Present", "Send PresentationToken to Verifier : " + present_request_url);	
+		presentRequest.send(abcquery.responseText);
+	}catch(connect_verifier_failed){
+		logMessage("Present", "Connect to Verifier Failed :  " + presentRequest.status + " : " + presentRequest.statusText);
+		if(DEBUG) {alert("Connect to Verifier Failed : " + connect_verifier_failed);};
+		elm.setAttribute("abc_return_status",400);
+		elm.setAttribute("abc_return_msg","Could not contact verification service");
+		return true;
+	}
+	
+	var responseText = presentRequest.responseText;
+	if(responseText != null && responseText.length>100) {
+		logMessage("Present", "ResponseText was too long # chars > 100");
+		responseText = "Error length > 100 - was : " + responseText.length;
+	} 
+	if(presentRequest.status!=200&&presentRequest.status!=202&&presentRequest.status!=204) {
+		logMessage("Present", "Verifier REJECTED PresentationToken : " + presentRequest.status + " : " + presentRequest.statusText + " - Token From Verifier : (" + responseText + ")");
+		if(responseText!=null) {
+			elm.setAttribute("abc_return_token",responseText);
+		}	
+		elm.setAttribute("abc_return_status",presentRequest.status);
+		elm.setAttribute("abc_return_msg","Verifier rejected PresentationToken : check status variables : abc_return_status and abc_return_token");
+		if(DEBUG){alert("failed to contact verifier");}
+
 		return;
 	} 
-	logMessage("Present", "Verifier Accepted PresentationToken : " + verifyquery.status + " : " + verifyquery.statusText + " - Token From Verifier : (" + verifyquery.responseText + ")");
-	elm.setAttribute("abc_return_token",verifyquery.responseText);
-	elm.setAttribute("abc_return_status",verifyquery.status);
+	logMessage("Present", "Verifier Accepted PresentationToken : " + presentRequest.status + " : " + presentRequest.statusText + " - Token From Verifier : (" + responseText + ") " + presentRequest.getResponseHeader('content-type'));
+	if(responseText!=null) {
+		elm.setAttribute("abc_return_token",responseText);
+	}	
+	elm.setAttribute("abc_return_status",presentRequest.status);
 	elm.setAttribute("abc_return_msg","Verfication was succesful");
+
+	logMessage("Present", "Presentation OK!");
 	return;
 }
 
-function hasChoice_verify(elm){
+function hasChoice_present(elm){
 	var DEBUG = false;
 	var enableDebug = elm.getAttribute("debug_in_extension");
 	if(enableDebug != null&&(enableDebug==true||enableDebug=='true')) {
 		DEBUG = true;
 	}
-	logMessage("Present-TokenSelected", "IDSelector Closed...");
-	
- 	var verify_request = elm.getAttribute("verify_request");
-	
-	var verify_server = elm.getAttribute("verify_server"); 
-    var verify_credentials = elm.getAttribute("verify_credentials");  // MyCredentialRequest
-//	var policy_server = elm.getAttribute("policy_server");
-	
 	var sessionID = elm.getAttribute("session_id"); 
+	
+	logMessage("Present-TokenSelected", "IDSelector Closed - continue Session : " + sessionID);
+	
+ 	var present_request_url = elm.getAttribute("actual_present_request");
+	if(present_request_url == null) {
+		logMessage("Present-TokenSelected", " - present_request_url NULL ???");
+//		present_request_url = elm.getAttribute("verify_request");
+	}
+	// logMessage("Present-TokenSelected", " - present_request_url " + present_request_url);
+	var policy_request_url = elm.getAttribute("policy_request");
+	logMessage("Present-TokenSelected", "Verify/Present continue - session : " + sessionID + " - policy url : " + policy_request_url + " - verify/present url : " + present_request_url);
 	
 	elm.setAttribute("abc_return_status","test status");
 	elm.setAttribute("abc_return_msg","test msg");
@@ -556,19 +631,21 @@ function hasChoice_verify(elm){
 	var choice = elm.getAttribute("return");
 	var hasChoices = true;
 
-/*
-	var evt = document.createEvent("Events");
-    if(DEBUG){alert("dispatchEvent " + sessionID);}
-	evt.initEvent("ABC4TrustResultEvent", true, false);
-	elm.dispatchEvent(evt);
-*/	
-	if(DEBUG){alert("FIREFOX PLUGIN: Got choice from idselect: "+choice+"\n\n"+sessionID + "\n" + verify_request);}
+	if(DEBUG){alert("FIREFOX PLUGIN: Got choice from idselect: "+choice+"\n\n"+sessionID + "\n" + present_request_url);}
 	
 	var abcquery = new XMLHttpRequest();
 	logMessage("Present-TokenSelected", "Get PresentationToken from UserABCE...");
 	abcquery.open("POST",USER_ABCE_SERVICE + "/user/createPresentationTokenIdentitySelection/"+sessionID,false);
 	abcquery.setRequestHeader("Content-type", "text/plain");
-	abcquery.send(choice);
+	try{
+		abcquery.send(choice);
+	}catch(connect_userABCE_failed){
+		logMessage("Present-TokenSelected", "Connect to User ABCE Failed :  " + abcquery.status + " : " + abcquery.statusText);
+		if(DEBUG) {alert("Connect to User ABCE Failed : " + connect_userABCE_failed);};
+		elm.setAttribute("abc_return_status",400);
+		elm.setAttribute("abc_return_msg","Could not contact user service");
+		return true;
+	}
 	if(DEBUG){alert("sent choice to local ABC engine: "+abcquery.status);}
 	
 	if(abcquery.status!=200) {
@@ -577,50 +654,51 @@ function hasChoice_verify(elm){
 		elm.setAttribute("abc_return_msg","Failed to contact local ABC engine");
 		if(DEBUG){alert("failed to contact local ABC engine, first msg");}
 		
-//		var uiWindow = elm.getAttribute("UIWindow");
-//		if(DEBUG){alert("UIWINDOW " + uiWindow);}
-//		uiWindow.close();
-		
 		return;
 	}
 	
 	logMessage("Present-TokenSelected", "User selected Credentials for PresentationToken...");
-	var verifyquery = new XMLHttpRequest();
-	var verify_req;
-	if(verify_request != null) {
-		verify_req = verify_request;
-	} else {
-		verify_req = verify_server+"/verify/"+verify_credentials;
+
+	var presentRequest = new XMLHttpRequest();
+	presentRequest.open("POST",present_request_url,false);
+
+	presentRequest.setRequestHeader("Content-type", "application/xml; charset=utf-8");
+	if(DEBUG){alert("plugin sending presentationtoken to Verifier");}
+	try{
+		logMessage("Present-TokenSelected", "Send PresentationToken to Verifier - url : " + present_request_url);
+		presentRequest.send(abcquery.responseText);
+	}catch(connect_verifier_failed){
+		logMessage("Present-TokenSelected", "Connect to Verifier Failed :  " + presentRequest.status + " : " + presentRequest.statusText);
+		if(DEBUG) {alert("Connect to Verifier Failed : " + connect_verifier_failed);};
+		elm.setAttribute("abc_return_status",400);
+		elm.setAttribute("abc_return_msg","Could not contact verification service");
+		return true;
 	}
-	verifyquery.open("POST",verify_req,false);
-
-	verifyquery.setRequestHeader("Content-type", "application/xml; charset=utf-8");
-	if(DEBUG){alert("plugin sending presentationtoken to verify server");}	
-	logMessage("Present-TokenSelected", "Send PresentationToken to Verifier : " + verify_req);
-	verifyquery.send(abcquery.responseText);
-	if(verifyquery.status!=200&&verifyquery.status!=202&&verifyquery.status!=204) {
-		logMessage("Present-TokenSelected", "Verifier REJECTED PresentationToken : " + verifyquery.status + " : " + verifyquery.statusText + " - Token From Verifier : (" + verifyquery.responseText + ")");
-
-		elm.setAttribute("abc_return_token",verifyquery.responseText);
-		elm.setAttribute("abc_return_status",verifyquery.status);
-		elm.setAttribute("abc_return_msg","Failed to contact verifier");
+	var responseText = presentRequest.responseText;
+	if(responseText != null && responseText.length>100) {
+		logMessage("Present-TokenSelected", "ResponseText was too long # chars > 100");
+		responseText = "Error length > 100 - was : " + responseText.length;
+	} 
+	if(presentRequest.status!=200&&presentRequest.status!=202&&presentRequest.status!=204) {
+		logMessage("Present-TokenSelected", "Verifier REJECTED PresentationToken : " + presentRequest.status + " : " + presentRequest.statusText + " - Token From Verifier : (" + responseText + ")");
+		if(responseText!=null) {
+			elm.setAttribute("abc_return_token",responseText);
+		}	
+		elm.setAttribute("abc_return_status",presentRequest.status);
+		elm.setAttribute("abc_return_msg","Verifier rejected PresentationToken : check status variables : abc_return_status and abc_return_token");
 		if(DEBUG){alert("failed to contact verifier");}
 
-//		var uiWindow = elm.getAttribute("UIWindow");
-//		uiWindow.close();
-		
 		return;
 	} 
-	logMessage("Present-TokenSelected", "Verifier Accepted PresentationToken : " + verifyquery.status + " : " + verifyquery.statusText + " - Token From Verifier : (" + verifyquery.responseText + ")");
-	elm.setAttribute("abc_return_token",verifyquery.responseText);
-	elm.setAttribute("abc_return_status",verifyquery.status);
+	logMessage("Present-TokenSelected", "Verifier Accepted PresentationToken : " + presentRequest.status + " : " + presentRequest.statusText + " - Token From Verifier : (" + responseText + ") " + presentRequest.getResponseHeader('content-type'));
+	if(responseText!=null) {
+		elm.setAttribute("abc_return_token",responseText);
+	}	
+	elm.setAttribute("abc_return_status",presentRequest.status);
 	elm.setAttribute("abc_return_msg","Verfication was succesful");
 
-	if(DEBUG){alert("A OK!");}
+	logMessage("Present-TokenSelected", "Presentation OK!");
     	
-//	var uiWindow = elm.getAttribute("UIWindow");
-//	uiWindow.close();
-	
 	return;
 	
 }
@@ -706,41 +784,6 @@ function loadData(elm){
 	elm.setAttribute("abc_return_msg","Failed to load data");
 	if(DEBUG){alert("Failed to store data");}
 	return;
-}
-
-function showCredentialUI() {
-	var DEBUG = false;
-	var strbundle = document.getElementById("overlayStrings");
-
-	var aConsoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
-	aConsoleService.logStringMessage("showCredentialUI Start...");
-
-	var sessionID = "CredentialUI" + new Date().getTime()+""+Math.floor(Math.random()*99999);
-
-//	var tmpDoc = document.implementation.createHTMLDocument("title");
-    var tmpElm = document.createElement("tmp");
-	aConsoleService.logStringMessage("- created tmpElement for response...");
-	if(DEBUG){alert("- check smartcard!");}
-
-	var smartcardAvailable = checkSmartcard(tmpElm, sessionID);
-	if(DEBUG){alert("- check smartcard done : " + smartcardAvailable);}
-	
-	aConsoleService.logStringMessage("- smartcardAvailable : " + smartcardAvailable);
-
-	
-	if(! smartcardAvailable) {
-		var msg = tmpElm.getAttribute("abc_return_msg");
-		aConsoleService.logStringMessage("Error : Smartcard not found " + msg);
-		alert(strbundle.getString("smartcard_server_unavailable") + msg);
-		return true;
-	}
-
-	if(DEBUG){alert("showCredentialUI");}
-	var language = "en";
-	openSelectionUI(sessionID, "management", language); //idselect.js
-
-	return;
-	
 }
 
 function doingNothing(){

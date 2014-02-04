@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
+import java.util.concurrent.Semaphore;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.Consumes;
@@ -40,8 +40,7 @@ import javax.xml.bind.JAXBElement;
 
 import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PolicyCredentialMatcherImpl;
-import eu.abc4trust.cryptoEngine.uprove.user.UProveEvidenceGenerator;
-import eu.abc4trust.guice.ProductionModule.CryptoEngine;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
 import eu.abc4trust.returnTypes.ObjectFactoryReturnTypes;
 import eu.abc4trust.returnTypes.UiIssuanceReturn;
@@ -51,17 +50,19 @@ import eu.abc4trust.returnTypes.ui.CredentialInUi;
 import eu.abc4trust.returnTypes.ui.CredentialSpecInUi;
 import eu.abc4trust.returnTypes.ui.IssuerInUi;
 import eu.abc4trust.returnTypes.ui.UiCommonArguments;
-import eu.abc4trust.ri.servicehelper.AbstractHelper;
+import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
-import eu.abc4trust.smartcard.BasicSmartcard;
 import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.smartcard.HardwareSmartcard;
 import eu.abc4trust.smartcard.InsufficientStorageException;
 import eu.abc4trust.smartcard.Smartcard;
+import eu.abc4trust.smartcard.SmartcardBackup;
 import eu.abc4trust.smartcard.SmartcardBlob;
 import eu.abc4trust.smartcard.SmartcardStatusCode;
 import eu.abc4trust.smartcard.SoftwareSmartcard;
 import eu.abc4trust.smartcard.StaticUriToIDMap;
+import eu.abc4trust.smartcard.Utils;
+import eu.abc4trust.util.TimingsLogger;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.AttributeDescription;
 import eu.abc4trust.xml.CredentialDescription;
@@ -75,15 +76,17 @@ import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.RevocationAuthorityParameters;
-import eu.abc4trust.xml.SmartcardPinRequest;
-import eu.abc4trust.xml.SmartcardPinRequests;
 import eu.abc4trust.xml.util.XmlUtils;
 
 @Path("/")
 public class UserService {
 
     public static boolean touchThisBooleanToForceStaticInit = true;
-  
+    private static final boolean useSemaphore = false;
+    private static boolean DEBUG = false;
+    private static String deploymentVersionId = "N/A";
+    public static String userServiceVersionId = "NOT RESOLVED YET";
+    
     private final ObjectFactory of = new ObjectFactory();
     private UserAbcEngine engine;
     private final CardStorage cardStorage;
@@ -95,6 +98,7 @@ public class UserService {
     static HashMap<String, IdentitySelectionUIWrapper> identitySelections;
     private static final Map<String, URI> contextMap = new HashMap<String, URI>();
     private static final Map<String, CryptoEngine> cryptoEngineMap = new HashMap<String, CryptoEngine>();
+	private static boolean userServiceBusy = false;
     static IdentitySelectionUIWrapper currentIdentitySelections;
 
     @Context
@@ -177,7 +181,7 @@ public class UserService {
         if((softwareSmartcardResource!=null) && (softwareSmartcard == null)) {
             System.out.println("Try to use SoftwareSmartcard : " + softwareSmartcardResource);
             try {
-                softwareSmartcard = AbstractHelper.loadObjectFromResource(softwareSmartcardResource);
+                softwareSmartcard = FileSystem.loadObjectFromResource(softwareSmartcardResource);
                 addDebugInfo("Try to use SoftwareSmartcard : " + softwareSmartcardResource);
             } catch(Exception e) {
                 addDebugInfo("UserSoftwareSmartcard could not be loaded from : " + softwareSmartcardResource, e);
@@ -188,12 +192,34 @@ public class UserService {
             addDebugInfo("UserSerivce Initialize ABCE to use Hardware Smartcards");
             System.out.println("UserSerivce Initialize ABCE to use Hardware Smartcards");
         }
+        logMemoryUsage();
+        
+        addDebugInfo("UserSerivce Version Numbers - deployment Id / userservice Id : " + deploymentVersionId + " / " + userServiceVersionId);
+        System.out.println("UserSerivce Version Numbers - deployment Id / userservice Id : " + deploymentVersionId + " / " + userServiceVersionId);
+        
     }
+    
+    private static String logMemoryUsage() {
+      long kb = 1024;
+      long mb = 1024 *1204;
+      long total = Runtime.getRuntime().totalMemory(); //  / mb;
+      long free = Runtime.getRuntime().freeMemory(); // / mb;
+      long max = Runtime.getRuntime().maxMemory(); // / mb;
+
+      long used = (total - free); // / mb;
+      
+//      String memUsageString.format("Memory Usage : Used + Free = Total : Max : %,2d + %,2d = %,2d : %,2d",used, free, total, max);
+      String memUsage = String.format("Memory Usage : Used + Free = Total : Max (Kilobytes) : %,2d + %,2d = %,2d : %,2d",used/kb, free/kb, total/kb, max/kb);
+//      String memUsageString.format("Memory Usage : Used + Free = Total : Max (Megabytes) : %,2d + %,2d = %,2d : %,2d",used/mb, free/mb, total/mb, max/mb);
+      System.out.println(memUsage);
+      return memUsage;
+    }
+    
     private void saveSoftwareSmartcard() {
         if(softwareSmartcard != null) {
             System.out.println("saveSoftwareSmartcard to resource " + softwareSmartcardResource);
             try {
-                AbstractHelper.storeObjectInFile(softwareSmartcard, softwareSmartcardResource);
+              FileSystem.storeObjectInFile(softwareSmartcard, softwareSmartcardResource);
             } catch(Exception e) {
                 System.err.println("WARN : Failed to store software smartcard to resource " + softwareSmartcardResource + " - error : " + e);
             }
@@ -216,6 +242,18 @@ public class UserService {
                     this.engine, this.credentialDeleterSleepTime);
             UserService.revokedCredentialDeleter = new Thread(rcd);
             UserService.revokedCredentialDeleter.start();
+            
+            //Also start the detector for smart cards. 
+            SmartcardServletContext.cardStorageReference
+            .getAndSet(this.cardStorage);
+            SmartcardServletContext.startDetector();
+            
+            try{
+            	Thread.sleep(500);
+            }catch(Exception e){
+            	//Do nothing other than note it happened, since we want to run anyways. 
+            	System.out.println("Could not sleep - was interrupted!: "+e.getMessage());
+            }
         }
 
 
@@ -251,15 +289,20 @@ public class UserService {
         } else {
             System.out.println("UserService initiating !");
             if(System.getProperty("PathToUProveExe", null)==null){
-                System.out.println("Set development path tu UProve Exe");
+                System.out.println("Set development path to UProve Exe");
                 String uprovePath = "./../../../dotNet/releases/1.0.0";
                 System.setProperty("PathToUProveExe", uprovePath);
             } else {
                 System.out.println("PathToUProveExe - already defined!");
             }
 
+            
             // if 'generic-install' resources are in a fixed place
             String issuerResources = installerEmbeddedResources != null ? installerEmbeddedResources : testCaseFilePrefix + "issuer_resources/";
+
+            
+            // load all - should only be 1
+            String systemParamsResource = issuerResources + (issuerResources.endsWith("/") ? "" : "/") + "system_params";
 
             // load all issuer params in folder
             String[] issuerParamsResourceList = findResourcesInFolder(issuerResources, "issuer_params");
@@ -284,13 +327,11 @@ public class UserService {
                 System.out.println("Issuer Parameteres are for Patras Pilot");
                 addDebugInfo("Issuer Parameteres are for Patras Pilot");
                 StaticUriToIDMap.Patras = true;
-                UProveEvidenceGenerator.DELETE_TOKEN = false;
             } else {
                 System.out.println("A7");
                 System.out.println("Issuer Parameteres are for Soderhamn Pilot");
                 addDebugInfo("Issuer Parameteres are for Soderhamn Pilot");
                 StaticUriToIDMap.Patras = false;
-                UProveEvidenceGenerator.DELETE_TOKEN = true;
             }
             // wipe storage! on every startup
             // DONOT : deletes UPROVE TOKENS! UserHelper.WIPE_STOARAGE_FILES = true;
@@ -299,9 +340,9 @@ public class UserService {
             addDebugInfo("issuer params : " + getResourceNames(issuerParamsResourceList));
             for(String ipResource : issuerParamsResourceList){
                 try {
-                    IssuerParameters ip = AbstractHelper.loadObjectFromResource(ipResource);
-                    System.out.println(" - ip : " + ip.getCredentialSpecUID() + " : " + ip.getAlgorithmID() + " : " + ip.getVersion());
-                    addDebugInfo(" - ip : " + ip.getCredentialSpecUID() + " : " + ip.getAlgorithmID() + " : " + ip.getVersion());
+                    IssuerParameters ip = FileSystem.loadObjectFromResource(ipResource);
+                    System.out.println(" - ip : " + ip.getAlgorithmID() + " : " + ip.getVersion());
+                    addDebugInfo(" - ip : " + ip.getAlgorithmID() + " : " + ip.getVersion());
                 } catch (Exception e) {
                     System.out.println("Warning : IssuerParmameter resource seems to be illegal - " + ipResource + " : " + e);
                     addDebugInfo("Warning : IssuerParmameter resource seems to be illegal - " + ipResource, e);
@@ -320,14 +361,13 @@ public class UserService {
             
             readDeploymentSpecificProperties();
 
-            UserHelper.initInstance(CryptoEngine.BRIDGED, issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, revocationAuthorityParametersResourceList);
+            UserHelper.initInstance(systemParamsResource, issuerParamsResourceList, fileStoragePrefix, credSpecResourceList, inspectorPublicKeyResourceList, revocationAuthorityParametersResourceList);
 
             presentationTokens =  new HashMap<String, PresentationToken>();
             issuanceMessages =  new HashMap<String, IssuMsgOrCredDesc>();
             identitySelections = new HashMap<String, IdentitySelectionUIWrapper>();
         }
         System.out.println("UserService init ! DONE");
-
     }
 
     private static String getResourceNames(String[] resourceList) {
@@ -353,7 +393,7 @@ public class UserService {
     		return;
     	}
 		try {
-			InputStream is = AbstractHelper.getInputStream("/deploymentspecific.properties");
+			InputStream is = FileSystem.getInputStream("/deploymentspecific.properties");
 			if(is==null) {
 				// try from system classloader... no prepended
 				is = ClassLoader.getSystemClassLoader().getResourceAsStream("deploymentspecific.properties");
@@ -366,6 +406,11 @@ public class UserService {
 				HardwareSmartcard.printInput = Boolean.parseBoolean(props.getProperty("allowPrintInputForHardwareSmartcard", "false"));
 				
 				System.out.println("Allow printing input for hardware smart card: "+HardwareSmartcard.printInput);
+				
+				DEBUG = Boolean.parseBoolean(props.getProperty("printDebugInfo", "false"));
+				System.out.println("Allow debug printing: "+DEBUG);
+				
+				deploymentVersionId = props.getProperty("deploymentVersionId", "N/A");
 			} else {
 				System.out.println("No deployment specific properties.");
 			}
@@ -473,8 +518,10 @@ public class UserService {
         isw.setUiIssuanceReturn(uiIssuanceReturn);
         return Response.noContent().build();
     }
-
-
+    
+    private final Semaphore createPresentationTokenSemaphore = new Semaphore(1, true);
+    private int presentationCallsCounter = 0;
+    
     /**
      * First call to create presentation token. Takes a presentation policy as input
      * If the policy cannot be satisfied, return 422.
@@ -490,23 +537,39 @@ public class UserService {
     @Produces({MediaType.APPLICATION_JSON,MediaType.TEXT_XML, MediaType.TEXT_PLAIN})
     public Response createPresentationToken(@PathParam ("SessionID") final String sessionId,
             final PresentationPolicyAlternatives presentationPolicy) {
-
+    	if(presentationCallsCounter > 0){
+    		System.out.println("WARNING: CreatePresentationToken called again before the last one finished. presentationCallsCounter="+presentationCallsCounter);
+    	}
+    	presentationCallsCounter++;
+    	if(useSemaphore){
+    		try {
+				createPresentationTokenSemaphore.acquire();
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Could not aquire semaphore lock - was interrupted", e);
+			}
+    	}
+    	
         System.out.println("--- createPresentationToken - session ID : " + sessionId);
+        logMemoryUsage();
+
         try{
-            System.out.println("-- -- " + XmlUtils.toXml(this.of.createPresentationPolicyAlternatives(presentationPolicy)));
+        	System.out.println("-- -- " + XmlUtils.toXml(this.of.createPresentationPolicyAlternatives(presentationPolicy)));
 
             if(!this.engine.canBeSatisfied(presentationPolicy)){
                 System.out.println("cannot satisfy policy, halting!");
+                finishPresentationCount();
                 return Response.status(422).build();
             }
             System.out.println("-- -- policy can be satisfied!");
         }catch(Exception e){
             System.out.println("engine.canBeSatisfied threw an exception:");
             e.printStackTrace();
+            finishPresentationCount();
             return Response.status(422).build();
         }catch(Throwable t) {
             System.out.println("internal error calling : engine.canBeSatisfied");
             t.printStackTrace();
+            finishPresentationCount();
             return Response.status(422).build();
         }
 
@@ -518,7 +581,8 @@ public class UserService {
         currentIdentitySelections = isw;
 
         Thread thread = new Thread(new Runnable(){
-            public void run(){
+            @SuppressWarnings("deprecation")
+			public void run(){
                 try{
                     presentationTokens.put(sessionId,UserService.this.engine.createPresentationToken(presentationPolicy, isw));
                 } catch(Exception e){
@@ -533,6 +597,7 @@ public class UserService {
         });
 
         System.out.println("--- createpresentationToken starting thread and going to sleep");
+        userServiceBusy = true;
         thread.start();
 
         try {
@@ -540,6 +605,8 @@ public class UserService {
         }catch(InterruptedException e){
             System.out.println("Interrupted while waiting for idSelectionWrapper to get choices or finish");
             if((presentationTokens.get(sessionId)==null) &&!isw.hasPresentationChoices() && !isw.done) {
+            	finishPresentationCount();
+            	userServiceBusy = false;
                 return Response.status(500).build();
             }
         }
@@ -551,14 +618,27 @@ public class UserService {
             if((isw.getException() == null) && (pt != null)) {
                 // !! saveSoftwareSmartcard
                 this.saveSoftwareSmartcard();
+                finishPresentationCount();
+                userServiceBusy = false;
                 return Response.ok(this.of.createPresentationToken(pt)).type(MediaType.TEXT_XML).build();
             }
         } else{
             System.out.println("### --- createPresentationToken has choices for ui selection");
+            finishPresentationCount();
+            userServiceBusy = false;
             return Response.status(203).entity("GO AHEAD CALL NEW UI FOR PRESENTATION").type(MediaType.TEXT_PLAIN).build();
         }
         System.out.println("### --- createpresentaitontoken - this will never be reached");
+        finishPresentationCount();
+        userServiceBusy = false;
         return Response.notAcceptable(null).build();
+    }
+    
+    private void finishPresentationCount(){
+    	presentationCallsCounter--;
+    	if(useSemaphore){
+    		createPresentationTokenSemaphore.release();
+    	}
     }
 
 
@@ -593,6 +673,7 @@ public class UserService {
 
 
         try{
+        	userServiceBusy = true;
             while(!isw.done) {
                 Thread.sleep(200);
             }
@@ -601,10 +682,10 @@ public class UserService {
                 System.out.println("idSelectionWrapper waiting for ABC engine (after choice has been made) interrupted without being done");
             }
             System.out.println("- interrupted ERROR 500");
-
+            userServiceBusy = false;
             return Response.status(500).build();
         }
-
+        userServiceBusy = false;
         //
         PresentationToken pt = presentationTokens.remove(sessionId);
         identitySelections.remove(sessionId);
@@ -639,7 +720,8 @@ public class UserService {
      * 
      * @param sessionId Current sessionId
      * @param mess IssuanceMessage as XML
-     * @return XML with status 200, JSON with status 203 or empty message with status 204 or 500
+     * @return XML with status 200, JSON with status 203 or empty message with status 204 or 500 or:
+     * 501 which means that there is not space on the card.
      */
     @POST()
     @Path("/user/issuanceProtocolStep/{SessionID}")
@@ -651,18 +733,22 @@ public class UserService {
             final IssuanceMessage mess) throws Exception {
 
         System.out.println("-- issuanceProtocolStep: "+sessionId);
-        System.out.println("-- issuanceMessage - incoming : "+XmlUtils.toXml(this.of.createIssuanceMessage(mess), false));        
+        if(DEBUG){
+        	System.out.println("-- issuanceMessage - incoming : "+XmlUtils.toXml(this.of.createIssuanceMessage(mess), false));
+        }
+        logMemoryUsage();
         
         if((startIssuanceUrl != null) && (stepIssuanceUrl != null)){
             startIssuanceUrl = URLDecoder.decode(startIssuanceUrl, "UTF-8");
             stepIssuanceUrl = URLDecoder.decode(stepIssuanceUrl, "UTF-8");
         }
-        System.out.println("-- issuanceProtocolStep - startRequest: "+startIssuanceUrl);
-        System.out.println("-- issuanceProtocolStep - stepRequest: "+stepIssuanceUrl);
+        if(DEBUG){
+        	System.out.println("-- issuanceProtocolStep - startRequest: "+startIssuanceUrl);
+        	System.out.println("-- issuanceProtocolStep - stepRequest: "+stepIssuanceUrl);
+        }
 
         CryptoEngine cryptoEngine = cryptoEngineMap.get(sessionId);
         if(cryptoEngine == null){
-            System.out.println("-- issuanceMessage - incoming : "+XmlUtils.toXml(this.of.createIssuanceMessage(mess), false));
             IssuancePolicy ip = null;
             try{ip = (IssuancePolicy) XmlUtils.unwrap(mess.getAny(), IssuancePolicy.class);}
             catch(Exception e){
@@ -707,7 +793,8 @@ public class UserService {
             public void run(){
                 try {
                     System.out.println("Starting Thread for IssanceProtocol Selection");
-                    IssuMsgOrCredDesc imOrDesc = UserService.this.engine.issuanceProtocolStep(mess, isw);
+                    @SuppressWarnings("deprecation")
+					IssuMsgOrCredDesc imOrDesc = UserService.this.engine.issuanceProtocolStep(mess, isw);
                     System.out.println("UserABCE Creaded IssuanceMessage : " + imOrDesc);
                     issuanceMessages.put(sessionId,imOrDesc); //add to include IdentitySelectionWrapper
                     System.out.println("Stored IssuanceMessage for session : " + sessionId + " : " + imOrDesc);
@@ -727,12 +814,14 @@ public class UserService {
             }
         });
         System.out.println("-- issuanceProtooclStep: starting thread and going to sleep");
+        userServiceBusy = true;
         thread.start();
         try {
             while((issuanceMessages.get(sessionId)==null) && !isw.hasIssuanceChoices() && !isw.done) {Thread.sleep(200);}
         }catch(InterruptedException e){
             System.out.println("Interrupted while waiting for idSelectionWrapper to get choices or finish");
             if((issuanceMessages.get(sessionId)==null) &&!isw.hasIssuanceChoices() && !isw.done) {
+            	userServiceBusy = false;
                 return Response.status(500).build();
             }
         }
@@ -747,31 +836,40 @@ public class UserService {
                 System.out.println("-- Error running Issuance Protocol!");
                 if(isw.getException() != null){
                 	if(isw.getException() instanceof InsufficientStorageException){
+                		userServiceBusy = false;
                 		return Response.status(501).build();
                 	}
                 }
+                userServiceBusy = false;
                 return Response.status(500).build();
             } else if (userIm.cd != null){
-                //Save information for reloading tokens if we are running UProve
-                if(cryptoEngineMap.get(sessionId) == CryptoEngine.UPROVE){
-                    if(contextMap.get(sessionId) != null){
-                        System.out.println("=====================\n\n Adding reload token info - ProtocolStep! \n\n=======================");
-                        UserHelper.getInstance().reloadTokens.addCredentialIssuer(contextMap.get(sessionId), userIm.cd, startIssuanceUrl, stepIssuanceUrl);
-                    }else{
-                        System.err.println("======== \n Reload token info should have been added, but no context was found under the session id "+sessionId);
-                    }
-                }
+// TODO : NOT IMPLEMENTED FOR PATRAS
+//                //Save information for reloading tokens if we are running UProve
+//                if(cryptoEngineMap.get(sessionId) == CryptoEngine.UPROVE){
+//                    if(contextMap.get(sessionId) != null){
+//                        System.out.println("=====================\n\n Adding reload token info - ProtocolStep! \n\n=======================");
+//                        UserHelper.getInstance().reloadTokens.addCredentialIssuer(contextMap.get(sessionId), userIm.cd, startIssuanceUrl, stepIssuanceUrl);
+//                    }else{
+//                        System.err.println("======== \n Reload token info should have been added, but no context was found under the session id "+sessionId);
+//                    }
+//                }
 
                 // !! saveSoftwareSmartcard
                 this.saveSoftwareSmartcard();
+                userServiceBusy = false;
                 return Response.status(204).build();
             }else{
-                System.out.println("-- issuanceMessage - send back to issuer (no select) : "+XmlUtils.toXml(this.of.createIssuanceMessage(mess), false));
+            	if(DEBUG){
+            		System.out.println("-- issuanceMessage - send back to issuer (no select) : "+XmlUtils.toXml(this.of.createIssuanceMessage(mess), false));
+            	}else{
+            		System.out.println("-- issuanceMessage - send back to issuer (no select) : "+mess);
+            	}
 
                 return Response.ok(this.of.createIssuanceMessage(userIm.im)).type(MediaType.TEXT_XML).build();
             }
         }else {
             System.out.println("-- wrapper has choices! ");
+            userServiceBusy = false;
             return Response.status(203).entity("GO AHEAD CALL NEW UI FOR ISSUANCE").type(MediaType.TEXT_PLAIN).build();
         }
 
@@ -794,8 +892,10 @@ public class UserService {
             startIssuanceUrl = URLDecoder.decode(startIssuanceUrl, "UTF-8");
             stepIssuanceUrl = URLDecoder.decode(stepIssuanceUrl, "UTF-8");
         }
-        System.out.println("-- issuanceProtocolStepSelect - startRequest: "+startIssuanceUrl);
-        System.out.println("-- issuanceProtocolStepSelect - stepRequest: "+stepIssuanceUrl);
+        if(DEBUG){
+	        System.out.println("-- issuanceProtocolStepSelect - startRequest: "+startIssuanceUrl);
+	        System.out.println("-- issuanceProtocolStepSelect - stepRequest: "+stepIssuanceUrl);
+        }
 
         IdentitySelectionUIWrapper isw = identitySelections.get(sessionId);
         if(isw==null){ //Invalid sessionID
@@ -808,16 +908,19 @@ public class UserService {
             //
         }
         try{
+        	userServiceBusy = true;
             while(!isw.done) {
-                System.out.println("Waiting for ISW to finish! " + isw.done);
+                System.out.println("Waiting for ISW to finish! " + isw.done);                
                 Thread.sleep(200);
             }
         } catch(InterruptedException e){
             if(!isw.done) {
                 System.out.println("idSelectionWrapper waiting for ABC engine (after choice has been made) interrupted without being done");
             }
+            userServiceBusy = false;
             return Response.status(500).build();
         }
+        userServiceBusy = false;
         IssuMsgOrCredDesc userIm = issuanceMessages.remove(sessionId);
         identitySelections.remove(sessionId);
         if(userIm == null){
@@ -825,20 +928,25 @@ public class UserService {
             return Response.status(422).build();
         }
         if (userIm.cd != null){ //The ABC Engine returned a credential description, so the protocol is done
-            //Save information for reloading tokens if we are running UProve
-            if(cryptoEngineMap.get(sessionId) == CryptoEngine.UPROVE){
-                if(contextMap.get(sessionId) != null){
-                    System.out.println("=====================\n Adding reload token info - ProtocolStepSelect! \n=======================");
-                    UserHelper.getInstance().reloadTokens.addCredentialIssuer(contextMap.get(sessionId), userIm.cd, startIssuanceUrl, stepIssuanceUrl);
-                }else{
-                    System.err.println("======== \n Reload token info should have been added, but no context was found under the session id "+sessionId);
-                }
-            }
+// TODO : NOT IMPLEMENTED FOR PATRAS
+//            //Save information for reloading tokens if we are running UProve
+//            if(cryptoEngineMap.get(sessionId) == CryptoEngine.UPROVE){
+//                if(contextMap.get(sessionId) != null){
+//                    System.out.println("=====================\n Adding reload token info - ProtocolStepSelect! \n=======================");
+//                    UserHelper.getInstance().reloadTokens.addCredentialIssuer(contextMap.get(sessionId), userIm.cd, startIssuanceUrl, stepIssuanceUrl);
+//                }else{
+//                    System.err.println("======== \n Reload token info should have been added, but no context was found under the session id "+sessionId);
+//                }
+//            }
             // !! saveSoftwareSmartcard
             this.saveSoftwareSmartcard();
             return Response.status(204).build();
         }else{ //The ABC engine returned a issuancemessage that has to be sent to the issuer
-            System.out.println("-- issuanceMessage - send back to issuer (After select) : "+XmlUtils.toXml(this.of.createIssuanceMessage(userIm.im), false));
+        	if(DEBUG){
+        		System.out.println("-- issuanceMessage - send back to issuer (After select) : "+XmlUtils.toXml(this.of.createIssuanceMessage(userIm.im), false));
+        	}else{
+        		System.out.println("-- issuanceMessage - send back to issuer (After select) : "+userIm.im);
+        	}
             return Response.ok(this.of.createIssuanceMessage(userIm.im)).build();
         }
     }
@@ -856,7 +964,9 @@ public class UserService {
         System.out.println("updateNonRevocationEvidence");
 
         try {
+        	userServiceBusy = true;
             this.engine.updateNonRevocationEvidence();
+            userServiceBusy = false;
             System.out.println(" - updateNonRevocationEvidence Done");
             return Response.ok().build();
         } catch (Exception e) {
@@ -875,6 +985,7 @@ public class UserService {
     	System.out.println("checkRevocationStatus");
     	
     	try{
+    		userServiceBusy = true;
 	        for (URI credUri : this.engine.listCredentials()) {
 	            if (this.engine.isRevoked(credUri)) {
 	                System.out.println("Deleting revoked credential: " + credUri);
@@ -884,6 +995,7 @@ public class UserService {
 	                System.out.println("Credential OK: " + credUri);
 	            }
 	        }
+	        userServiceBusy = false;
 	    	System.out.println("checkRevocationStatus - done");
 	    	return Response.ok().build();
     	}catch(Exception e){
@@ -986,7 +1098,11 @@ public class UserService {
 
 
     /**
-     * 
+     * returns whether or not the card is the same as last time we checked. 
+     * Returns: 
+     * 204 if it is the same card, or
+     * 410 if no card is currently present, or 
+     * 406 if it is not the same card, or if it is the first time it's called (thus we still need PIN).  
      */
     //static boolean smartcardAvailable = false;
     static String lastCardReference = null;
@@ -999,7 +1115,29 @@ public class UserService {
 
             return Response.noContent().build();
         } else {
-            return Response.status(Status.NOT_ACCEPTABLE).build();
+            // if software - and not 'sameCard' - card not unlocked yet...
+            if(softwareSmartcard!=null) {
+                return Response.status(Status.NOT_ACCEPTABLE).build();
+            }
+            // real card - check if card in reader...
+        	if(this.cardStorage.getClosedSmartcards().size() == 0 && this.cardStorage.getSmartcards().size() == 0) {
+        		//No card in card-reader
+        		return Response.status(Status.GONE).build();
+        	}else{
+        		return Response.status(Status.NOT_ACCEPTABLE).build();
+        	}
+        }
+    }
+
+    @GET()
+    @Path("/user/isSameSmartcard/{SessionID}")
+    public Response isSameSmartcard(@PathParam ("SessionID") final String sessionId) throws Exception {
+        boolean sameCard = this.isSameCardStorageReference();
+        System.out.println("isSameSmartcard - available and same card ? : " + sameCard); // smartcardAvailable);
+        if(sameCard) {
+            return Response.noContent().build();
+        } else {
+        	return Response.status(Status.GONE).build();
         }
     }
 
@@ -1025,34 +1163,13 @@ public class UserService {
     private boolean isSameCardStorageReference() {
         String current = this.getCurrentCardReference();
         System.out.println("isSameCardStoarageReference - last : " + lastCardReference + " - cur :  " + current);
-        if((lastCardReference!=null) && lastCardReference.equals(this.getCurrentCardReference())) {
+        if((lastCardReference!=null) && lastCardReference.equals(current)) {
             System.out.println("- still same card! " + lastCardReference);
             return true;
         } else {
             System.out.println("- card updated!");
             return false;
         }
-    }
-
-    @SuppressWarnings("unused")
-    @GET()
-    @Path("/user/smartcardStatus")
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
-    @Produces(MediaType.TEXT_XML)
-    public Response smartcardStatus()
-            throws Exception {
-        System.out.println("smartcardStatus");
-        SmartcardServletContext.cardStorageReference
-        .getAndSet(this.cardStorage);
-        SmartcardServletContext.startDetector();
-
-        List<BasicSmartcard> closedSmartcards = this.cardStorage
-                .getClosedSmartcards();
-        SmartcardPinRequests resp = new SmartcardPinRequests();
-        for (BasicSmartcard sc : closedSmartcards) {
-            resp.getSmartcardPinRequest().add(new SmartcardPinRequest());
-        }
-        return Response.ok(this.of.createSmartcardPinRequests(resp)).build();
     }
 
     /**
@@ -1089,7 +1206,7 @@ public class UserService {
         if(this.cardStorage.getSmartcards().size() == 1){
             for(URI uri : this.cardStorage.getSmartcards().keySet()){
                 try {
-                    short deviceId = this.cardStorage.getSmartcards().get(uri).getDeviceID(Integer.parseInt(pinsStr));
+                    this.cardStorage.getSmartcards().get(uri).getDeviceID(Integer.parseInt(pinsStr));
                 } catch(IllegalStateException e) {
                     // card has been removed!
                     System.out.println("Card has been removed ?? " + e);
@@ -1194,37 +1311,37 @@ public class UserService {
     @Consumes({MediaType.TEXT_PLAIN})
     public Response backupSmartcard(@PathParam ("SessionID") final String sessionId,
             final String password) throws Exception{
-        System.out.println("backupSmartcard - not enabled");
-//        if(Utils.passwordToByteArr(password) == null){
-//            //Password not valid
-//            System.err.println("Password not valid!");
-//            return Response.status(Status.NOT_ACCEPTABLE).build();
-//        }
-//        if(!this.isSameCardStorageReference()) { // smartcardAvailable){
-//            System.err.println("Smartcard not found.");
-//            return Response.status(Status.NOT_FOUND).build();
-//        }
-//        if(this.cardStorage.getSmartcards().size() != 1){
-//            System.err.println("Too many smartcards found.");
-//            return Response.status(Status.CONFLICT).build();
-//        }
-//
-//        try{
-//            for(URI uri : this.cardStorage.getSmartcards().keySet()){
-//                //We know there is only one card in this set
-//                Smartcard s = (Smartcard)this.cardStorage.getSmartcards().get(uri);
-//                int pin = this.cardStorage.getPin(uri);
-//                SmartcardBackup backup = s.backupAttendanceData(pin, password);
-//                if(backup == null){
-//                    return Response.status(Status.BAD_REQUEST).build();
-//                }
-//                File f = new File(UserService.fileStoragePrefix+"smartcard_backup_"+s.getDeviceID(pin)+".bac");
-//                backup.serialize(f);
-//            }
-//        } catch(Exception e){
-//            e.printStackTrace();
-//            return Response.status(Status.BAD_REQUEST).build();
-//        }
+        System.out.println("backupSmartcard");
+        if(Utils.passwordToByteArr(password) == null){
+            //Password not valid
+            System.err.println("Password not valid!");
+            return Response.status(Status.NOT_ACCEPTABLE).build();
+        }
+        if(!this.isSameCardStorageReference()) { // smartcardAvailable){
+            System.err.println("Smartcard not found.");
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        if(this.cardStorage.getSmartcards().size() != 1){
+            System.err.println("Too many smartcards found.");
+            return Response.status(Status.CONFLICT).build();
+        }
+
+        try{
+            for(URI uri : this.cardStorage.getSmartcards().keySet()){
+                //We know there is only one card in this set
+                Smartcard s = (Smartcard)this.cardStorage.getSmartcards().get(uri);
+                int pin = this.cardStorage.getPin(uri);
+                SmartcardBackup backup = s.backupAttendanceData(pin, password);
+                if(backup == null){
+                    return Response.status(Status.BAD_REQUEST).build();
+                }
+                File f = new File(UserService.fileStoragePrefix+"smartcard_backup_"+s.getDeviceID(pin)+".bac");
+                backup.serialize(f);
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+            return Response.status(Status.BAD_REQUEST).build();
+        }
         return Response.ok().build();
     }
 
@@ -1233,45 +1350,45 @@ public class UserService {
     @Consumes({MediaType.TEXT_PLAIN})
     public Response restoreSmartcard(@PathParam ("SessionID") final String sessionId,
             final String password) throws Exception{
-        System.out.println("restoreSmartcard - not enabled");
-//        if(Utils.passwordToByteArr(password) == null){
-//            //Password not valid
-//            return Response.status(Status.NOT_ACCEPTABLE).build();
-//        }
-//        if(!this.isSameCardStorageReference()) { // smartcardAvailable){
-//            return Response.status(Status.NOT_FOUND).build();
-//        }
-//        if(this.cardStorage.getSmartcards().size() != 1){
-//            return Response.status(Status.CONFLICT).build();
-//        }
-//        URI scURI = null;
-//        try{
-//            for(URI uri : this.cardStorage.getSmartcards().keySet()){
-//                //We know there is only one card in this set
-//                Smartcard s = (Smartcard)this.cardStorage.getSmartcards().get(uri);
-//                int pin = this.cardStorage.getPin(uri);
-//                File f = new File(UserService.fileStoragePrefix+"smartcard_backup_"+s.getDeviceID(pin)+".bac");
-//                if(!f.exists()){
-//                    System.out.println("Backup file not found.. ");
-//                    return Response.status(Status.NOT_FOUND).build();
-//                }
-//                SmartcardBackup backup = SmartcardBackup.deserialize(f);
-//                SmartcardStatusCode code = s.restoreAttendanceData(pin, password, backup);
-//                if(code != SmartcardStatusCode.OK){
-//                    System.err.println("Restoration failed: " + code);
-//                    return Response.status(Status.BAD_REQUEST).build();
-//                }
-//                scURI = uri;
-//            }
-//        } catch(Exception e){
-//            e.printStackTrace();
-//            return Response.status(Status.BAD_REQUEST).build();
-//        }
-//        boolean removed = this.cardStorage.removeSmartcard(this.cardStorage.getSmartcards().get(scURI));
-//        if(removed)
-//        {
-//            this.storeCardStorageReference(); // smartcardAvailable = false;
-//        }
+        System.out.println("restoreSmartcard");
+        if(Utils.passwordToByteArr(password) == null){
+            //Password not valid
+            return Response.status(Status.NOT_ACCEPTABLE).build();
+        }
+        if(!this.isSameCardStorageReference()) { // smartcardAvailable){
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        if(this.cardStorage.getSmartcards().size() != 1){
+            return Response.status(Status.CONFLICT).build();
+        }
+        URI scURI = null;
+        try{
+            for(URI uri : this.cardStorage.getSmartcards().keySet()){
+                //We know there is only one card in this set
+                Smartcard s = (Smartcard)this.cardStorage.getSmartcards().get(uri);
+                int pin = this.cardStorage.getPin(uri);
+                File f = new File(UserService.fileStoragePrefix+"smartcard_backup_"+s.getDeviceID(pin)+".bac");
+                if(!f.exists()){
+                    System.out.println("Backup file not found.. ");
+                    return Response.status(Status.NOT_FOUND).build();
+                }
+                SmartcardBackup backup = SmartcardBackup.deserialize(f);
+                SmartcardStatusCode code = s.restoreAttendanceData(pin, password, backup);
+                if(code != SmartcardStatusCode.OK){
+                    System.err.println("Restoration failed: " + code);
+                    return Response.status(Status.BAD_REQUEST).build();
+                }
+                scURI = uri;
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+        boolean removed = this.cardStorage.removeSmartcard(this.cardStorage.getSmartcards().get(scURI));
+        if(removed)
+        {
+            this.storeCardStorageReference(); // smartcardAvailable = false;
+        }
         return Response.ok().build();
     }
 
@@ -1375,8 +1492,8 @@ public class UserService {
             // hvordan vælger man uri
             URI soderhamnDataStoreBlobURI = URI.create("urn:datablob");
 
-            Set<URI> blobUris = s.getBlobUris(pin);
-            System.out.println("blobUris " + blobUris);
+            //Set<URI> blobUris = s.getBlobUris(pin);
+            //System.out.println("blobUris " + blobUris);
             // we now have card!
             if(storeValue!=null) {
                 // we store
@@ -1420,7 +1537,7 @@ public class UserService {
                 //
                 this.saveSoftwareSmartcard();
 
-                System.out.println("control : "+ s.getBlob(pin, soderhamnDataStoreBlobURI));
+                //System.out.println("control : "+ s.getBlob(pin, soderhamnDataStoreBlobURI));
                 System.out.println("Done storing data");
 
             } else {
@@ -1479,8 +1596,10 @@ public class UserService {
     @Consumes(MediaType.TEXT_PLAIN)
     public Response storeData(@PathParam ("SessionID") final String sessionId,
             final String value) throws Exception {
-
-        return this.handleUserDataBlob(value);
+    	userServiceBusy = true;
+    	Response resp = this.handleUserDataBlob(value);
+    	userServiceBusy = false;
+        return resp;        
     }
 
     /**
@@ -1488,10 +1607,12 @@ public class UserService {
      */
     @GET()
     @Path("/user/loadData/{SessionID}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_PLAIN + ";charset=UTF-8")
     public Response loadData(@PathParam ("SessionID") final String sessionId) throws Exception {
-
-        return this.handleUserDataBlob(null);
+    	userServiceBusy = true;
+        Response resp = this.handleUserDataBlob(null);
+        userServiceBusy = false;
+        return resp;
     }
 
 
@@ -1502,8 +1623,7 @@ public class UserService {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response getCredentialDescriptionList(@PathParam ("SessionID") final String sessionId) throws Exception {
 
-        try {
-            @SuppressWarnings("unused")
+        try {            
             ObjectFactory of = new ObjectFactory();
 
             System.out.println("getCredentialDescriptionList - " + sessionId);
@@ -1578,7 +1698,7 @@ public class UserService {
 
                 IssuerParameters ip = UserHelper.getInstance().keyManager.getIssuerParameters(cd.getIssuerParametersUID());
 
-                IssuerInUi issInUi = new IssuerInUi(ip, credSpec);
+                IssuerInUi issInUi = new IssuerInUi(ip);
                 uiCredListInfo.addIssuer(issInUi );
                 
                 boolean isRevoked = false;
@@ -1620,7 +1740,10 @@ public class UserService {
 
         System.out.println("getDebugInfo - " + sessionId);
         try {
-            return Response.ok(debugInfo.toString()).build();
+            StringBuilder sb = new StringBuilder(debugInfo);
+            sb.append("\n");
+            sb.append(logMemoryUsage());
+            return Response.ok(sb.toString()).build();
         } catch(Exception e) {
             System.out.println(" - failed");
             e.printStackTrace();
@@ -1633,9 +1756,101 @@ public class UserService {
     @Path("/alive/isAlive")
     @Produces(MediaType.TEXT_PLAIN)
     public Response isAlive() throws Exception {
-
-        System.out.println("isAlive!");
-        return Response.ok().build();
+        if(userServiceBusy){
+        	return Response.status(201).build();
+        }else{
+        	return Response.ok().build();
+        }
     }
 
+    @GET()
+    @Path("/info/deploymentVersionId")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response deploymentVersionId() throws Exception {
+
+        System.out.println("deploymentVersionId : " + deploymentVersionId);
+        System.out.println("softwareCard used?: "+ softwareSmartcard);
+        String toReturn = "";
+        if(softwareSmartcard != null){
+        	toReturn += "software ";
+        }else{
+        	toReturn += "hardware ";
+        }
+    	toReturn+=deploymentVersionId;
+        return Response.ok(toReturn).build();
+    }
+    
+    @GET()
+    @Path("/info/userServiceVersionId")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response userServiceVersionId() throws Exception {
+
+        System.out.println("userServiceVersionId : " + userServiceVersionId);
+        System.out.println("softwareCard used?: "+ softwareSmartcard);
+        String toReturn = "";
+        if(softwareSmartcard != null){
+        	toReturn += "software ";
+        }else{
+        	toReturn += "hardware ";
+        }
+    	toReturn+=userServiceVersionId;
+        return Response.ok(toReturn).build();        
+    }
+    
+    @GET()
+    @Path("/debug/timingsOnOff")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response timingsOnOff() throws Exception {
+    	//TODO: Make this actually change some static variable in abce-components.
+    	boolean on = TimingsLogger.toogleLogger();
+        System.out.println("timings are now on?: " + on);
+        if(on){
+        	return Response.ok("true").build();
+        }else{
+        	return Response.ok("false").build();
+        }
+    }
+    
+    @GET()
+    @Path("/info/getAttendanceData")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response attendanceData() throws Exception {
+    	if(!this.isSameCardStorageReference()) { // smartcardAvailable){
+            System.err.println("Smartcard not found.");
+            return Response.status(Status.NOT_FOUND).build();
+        }
+        if(this.cardStorage.getSmartcards().size() != 1){
+            System.err.println("Too many smartcards found.");
+            return Response.status(Status.CONFLICT).build();
+        }
+
+        try{
+            Smartcard s = null;
+            int pin = -1;
+            for(URI uri : this.cardStorage.getSmartcards().keySet()){
+                //We know there is only one card in this set
+                s = (Smartcard)this.cardStorage.getSmartcards().get(uri);
+                pin = this.cardStorage.getPin(uri);
+                break;
+            }
+            if(s==null) {
+                System.err.println("Smartcards disappeared.");
+                return Response.status(Status.CONFLICT).build();
+            }            
+            //Ready to do work with the card
+            int counterValue = -1;
+            try{
+            	counterValue = s.getCounterValue(pin, StaticUriToIDMap.courseIssuerUID);
+            }catch(Exception e){
+            	System.err.println("exception when getting counterValue. Sending -1 back. Exception was: ");
+            	e.printStackTrace();
+            }
+            return Response.ok(""+counterValue).build();            
+        }catch(Exception e){
+        	System.out.println("getAttendanceData - failed");
+            e.printStackTrace();
+            return Response.serverError().build();
+        }
+    }
+    
 }

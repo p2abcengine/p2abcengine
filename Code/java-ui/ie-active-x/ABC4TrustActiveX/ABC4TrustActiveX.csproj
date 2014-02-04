@@ -55,6 +55,14 @@
     <Compile Include="ChangePinForm.Designer.cs">
       <DependentUpon>ChangePinForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ComObjectCallback.cs" />
+    <Compile Include="PasswordForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PasswordForm.Designer.cs">
+      <DependentUpon>PasswordForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UserServiceCalls.cs" />
     <Compile Include="IObjectSafety.cs" />
     <Compile Include="UnlockCardForm.cs">
       <SubType>Form</SubType>
@@ -94,11 +102,23 @@
     <EmbeddedResource Include="ChangePinForm.resx">
       <DependentUpon>ChangePinForm.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="PasswordForm.da.resx">
+      <DependentUpon>PasswordForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PasswordForm.resx">
+      <DependentUpon>PasswordForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PasswordForm.sv.resx">
+      <DependentUpon>PasswordForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PinForm.da.resx">
       <DependentUpon>PinForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="PinForm.sv.resx">
       <DependentUpon>PinForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ToolsForm.da-DK.resx">
+      <DependentUpon>ToolsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ToolsForm.da.resx">
       <DependentUpon>ToolsForm.cs</DependentUpon>
@@ -123,6 +143,7 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="abc4trust.ico" />
     <Content Include="abc4trust.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

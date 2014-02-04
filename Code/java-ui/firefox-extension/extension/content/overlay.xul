@@ -19,14 +19,12 @@
       <menupopup>
         <menuitem id="abc4trust-listCredentials" label="&menu.manage;"
             oncommand="abc4trust.listCredentials();"/>
-        <menuitem id="abc4trust-checkRevocationStatus" label="&menu.revocation;"
-        	oncommand="abc4trust.checkRevocationStatus();"/>
-            <!--
+        <menuitem id="abc4trust-getAttendanceData" label="ABC4Trust : Get attendance data"
+        	oncommand="abc4trust.getAttendanceData();"/>
         <menuitem id="abc4trust-backupRestore" label="ABC4Trust : Backup Smartcard"
             oncommand="abc4trust.backupSmartcard();"/>
         <menuitem id="abc4trust-backupRestore" label="ABC4Trust : Restore Smartcard"
             oncommand="abc4trust.restoreSmartcard();"/>
-            -->
         <menuitem id="abc4trust-backupRestore" label="&menu.changepin;"
             oncommand="abc4trust.changePin();"/>
         <menuitem id="abc4trust-backupRestore" label="&menu.unlock;"

@@ -11,6 +11,10 @@
 
 package eu.abc4trust.ui.idselectservice;
 
+import java.io.InputStream;
+import java.net.URL;
+import java.util.jar.Manifest;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -21,7 +25,27 @@ import javax.servlet.ServletContextListener;
 public class InitUserABCEServletContext implements ServletContextListener {
     public void contextInitialized(ServletContextEvent event) {
 		System.out.println("## InitUserABCEServletContext contextInitialized");
+
+		String userServiceVersionId = "N/A";
+        try {
+          URL resource = event.getServletContext().getResource("/META-INF/MANIFEST.MF");
+          InputStream is = resource.openStream();
+          Manifest manifest = new Manifest(is);
+          is.close();
+
+          System.out.println("MF  : " + manifest.getMainAttributes().keySet());
+          userServiceVersionId = manifest.getMainAttributes().getValue("UserServiceVersionId");
+          if(userServiceVersionId==null) {
+            userServiceVersionId = "N/A";
+          }
+        } catch(Exception e) {
+          e.printStackTrace();
+        }
+        System.out.println("- userServiceVersionId : " + userServiceVersionId);
+
 		boolean b = UserService.touchThisBooleanToForceStaticInit;
+	    UserService.userServiceVersionId = userServiceVersionId;
+	    	
     }
     public void contextDestroyed(ServletContextEvent event) {
       // Do Nothing

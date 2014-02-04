@@ -48,7 +48,7 @@ function openSelectionUI(sessionID, mode, language)
 	    // 'spawn' thread to catch that UI Selector Window Closes...
 		logMessage("IDSelect-Open-" + mode, "UI Window Opened - enter loop to wait for close...");
     	if(mode=="presentation") {
-	   		setTimeout("checkUISelectorClosed('verify');", 0);
+	   		setTimeout("checkUISelectorClosed('present');", 0);
     	} else {
 	   		setTimeout("checkUISelectorClosed('issue');", 0);
     	}

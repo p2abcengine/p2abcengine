@@ -23,13 +23,13 @@
 <stringAttribute key="org.eclipse.rap.launch.entryPoint" value=""/>
 <stringAttribute key="org.eclipse.rap.launch.libraryVariant" value="STANDARD"/>
 <booleanAttribute key="org.eclipse.rap.launch.openBrowser" value="true"/>
-<intAttribute key="org.eclipse.rap.launch.port" value="8088"/>
+<intAttribute key="org.eclipse.rap.launch.port" value="9123"/>
 <stringAttribute key="org.eclipse.rap.launch.servletName" value="user-ui"/>
 <intAttribute key="org.eclipse.rap.launch.sessionTimeout" value="0"/>
 <booleanAttribute key="org.eclipse.rap.launch.terminatePrevious" value="true"/>
 <booleanAttribute key="org.eclipse.rap.launch.useDefaultDataLocation" value="true"/>
 <booleanAttribute key="org.eclipse.rap.launch.useManualContextPath" value="false"/>
-<booleanAttribute key="org.eclipse.rap.launch.useManualPort" value="false"/>
+<booleanAttribute key="org.eclipse.rap.launch.useManualPort" value="true"/>
 <booleanAttribute key="org.eclipse.rap.launch.useSessionTimeout" value="false"/>
 <stringAttribute key="pde.version" value="3.3"/>
 <booleanAttribute key="show_selected_only" value="false"/>

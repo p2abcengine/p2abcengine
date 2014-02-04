@@ -3,7 +3,7 @@
     <data>
         <credentialSpecifications>
             <credentialSpecification uri="http://www.admin.edu/studentid/specification">
-                <spec Version="Version 1.0" KeyBinding="true" Revocable="false">
+                <spec Version="Version 1.0" KeyBinding="true" Revocable="true">
                     <abc:SpecificationUID>http://www.admin.edu/studentid/specification</abc:SpecificationUID>
                     <abc:FriendlyCredentialName lang="en">Student ID</abc:FriendlyCredentialName>
                     <abc:DefaultImageReference>http://www.csensations.com/images/news/160.jpg</abc:DefaultImageReference>
@@ -126,16 +126,20 @@
             <revealedFacts>
                 <revealedFact>
                     <descriptions>
-                        <description lang="en">The value of NO FRIENDLY DESCRIPTION from Student ID is greater or equal than 2012-06-06Z</description>
+                        <description lang="en">The value of 'Expiration Date' from Student ID is greater or equal than 2012-06-06Z</description>
                     </descriptions>
                 </revealedFact>
             </revealedFacts>
             <revealedAttributeValues>
                 <revealedAttributeValue>
-                    <descriptions/>
+                    <descriptions>
+                       <description lang="en">The value of attribute 'PassportNumber' from your Passport is 895749</description>
+                    </descriptions>
                 </revealedAttributeValue>
                 <revealedAttributeValue>
-                    <descriptions/>
+                    <descriptions>
+                       <description lang="en">The value of attribute 'LastName' from your Passport is Doe</description>
+                    </descriptions>
                 </revealedAttributeValue>
             </revealedAttributeValues>
             <inspectableAttributes/>
@@ -154,7 +158,6 @@
             <abc:Credential Alias="#studentid">
                 <abc:CredentialSpecAlternatives>
                     <abc:CredentialSpecUID>http://ethz.ch/studentid/specification</abc:CredentialSpecUID>
-                    <abc:CredentialSpecUID>http://msu.ru/studentid/specification</abc:CredentialSpecUID>
                     <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
                 </abc:CredentialSpecAlternatives>
                 <abc:IssuerAlternatives>
@@ -183,7 +186,7 @@
             </abc:VerifierDrivenRevocation>
         </abc:PresentationPolicy>
         <abc:CredentialTemplate SameKeyBindingAs="#studentid">
-            <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+            <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
             <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
             <abc:UnknownAttributes>
                 <abc:CarriedOverAttribute TargetAttributeType="Name">
@@ -196,6 +199,7 @@
                     <abc:SourceCredentialInfo Alias="#studentid" AttributeType="Expires"/>
                 </abc:CarriedOverAttribute>
                 <abc:JointlyRandomAttribute TargetAttributeType="CardNumber"/>
+                <abc:JointlyRandomAttribute TargetAttributeType="Test"/>
             </abc:UnknownAttributes>
         </abc:CredentialTemplate>
     </policy>

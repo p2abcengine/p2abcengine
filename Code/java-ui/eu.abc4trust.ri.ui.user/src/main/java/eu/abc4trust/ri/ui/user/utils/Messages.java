@@ -11,8 +11,6 @@
 
 package eu.abc4trust.ri.ui.user.utils;
 
-import java.util.Locale;
-
 import org.eclipse.rwt.RWT;
 
 public class Messages {
@@ -20,6 +18,7 @@ public class Messages {
     // public static final Locale SWEDISH = new Locale("sv");
     
     public static final String BUNDLE_NAME = "messages"; //$NON-NLS-1$
+    public static final String BULLET      = "\u2022 ";  //$NON-NLS-1$
     
     ///////////////////////////////////////////////
     public String ApplicationWorkbenchWindowAdvisor_applicationTitle;
@@ -40,6 +39,8 @@ public class Messages {
     public String IdentitySelectionView_heading_attributesGroup;
     public String IdentitySelectionView_heading_factsGroup;
     public String IdentitySelectionView_heading_inspectionGroup;
+    public String IdentitySelectionView_heading_propertiesOfNewCredential;
+    public String IdentitySelectionView_heading_unknownAttributes;
 
     public String IdentitySelectionView_msg_applicationInMgmtMode;
     public String IdentitySelectionView_msg_defaultStatus;
@@ -48,10 +49,18 @@ public class Messages {
     public String IdentitySelectionView_msg_ownership;
     public String IdentitySelectionView_msg_inspectableAttribute;
     public String IdentitySelectionView_msg_inspectionGrounds;
+    public String IdentitySelectionView_msg_issuerAndTypeOfNewCredential;
+    public String IdentitySelectionView_msg_keyBindingOfNewCredentialToCredential;
+    public String IdentitySelectionView_msg_keyBindingOfNewCredentialToPseudonym;
+    public String IdentitySelectionView_msg_carryOverDirect;
+    public String IdentitySelectionView_msg_carryOverIndirect;
+    public String IdentitySelectionView_msg_jointlyRandomGenerated;
     public String IdentitySelectionView_msg_noCandidateAssociatedWithSelection;
     public String IdentitySelectionView_msg_demoModeSubmit;
 
-    public String IdentitySelectionView_caption_submitButton;
+    public String IdentitySelectionView_caption_submitButtonPresentation;
+    public String IdentitySelectionView_caption_submitButtonBasicIssuance;
+    public String IdentitySelectionView_caption_submitButtonAdvancedIssuance;
     
     public String IdentitySelectionView_error_invalidInput;
     public String IdentitySelectionView_error_malformedPolicy;
@@ -67,7 +76,11 @@ public class Messages {
     public String CredentialAttributesView_issuer;
     public String CredentialAttributesView_credentialType;
     public String CredentialAttributesView_revokedByIssuer;
+    public String CredentialAttributesView_revocationHandle;
+    public String CredentialAttributesView_msg_revocable;
+    public String CredentialAttributesView_msg_notRevocable;
     public String CredentialAttributesView_msg_credentialSelectionPrompt;
+    public String CredentialAttributesView_msg_policyWithoutDescription;
     
     ///////////////////////////////////////////////
     public String DeleteCredentialAction_execute;

@@ -14,8 +14,9 @@ using System.Runtime.InteropServices;
 namespace ABC4TrustActiveX
 {
     [ComVisible(true)]
-    public class ReturObject
+    public class ResultObject
     {
+        public int handle { get; set; }
         public string message { get; set; }
         public int status { get; set; }
         public string data { get; set; }

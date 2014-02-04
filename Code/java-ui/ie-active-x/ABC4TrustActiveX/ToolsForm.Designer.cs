@@ -46,6 +46,8 @@ namespace ABC4TrustActiveX
             this.btnUnlockSmartcard = new System.Windows.Forms.Button();
             this.btnDebugInfo = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.btnBackup = new System.Windows.Forms.Button();
+            this.btnRestore = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnManageCredentials
@@ -96,11 +98,29 @@ namespace ABC4TrustActiveX
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
+            // btnBackup
+            // 
+            resources.ApplyResources(this.btnBackup, "btnBackup");
+            this.btnBackup.Name = "btnBackup";
+            this.btnBackup.Tag = "2";
+            this.btnBackup.UseVisualStyleBackColor = true;
+            this.btnBackup.Click += new System.EventHandler(this.btnSelect_Click);
+            // 
+            // btnRestore
+            // 
+            resources.ApplyResources(this.btnRestore, "btnRestore");
+            this.btnRestore.Name = "btnRestore";
+            this.btnRestore.Tag = "3";
+            this.btnRestore.UseVisualStyleBackColor = true;
+            this.btnRestore.Click += new System.EventHandler(this.btnSelect_Click);
+            // 
             // ToolsForm
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
+            this.Controls.Add(this.btnRestore);
+            this.Controls.Add(this.btnBackup);
             this.Controls.Add(this.btnManageCredentials);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnDebugInfo);
@@ -124,5 +144,7 @@ namespace ABC4TrustActiveX
         private System.Windows.Forms.Button btnUnlockSmartcard;
         private System.Windows.Forms.Button btnDebugInfo;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Button btnBackup;
+        private System.Windows.Forms.Button btnRestore;
     }
 }
