@@ -1,4 +1,6 @@
-![Abc4Trust logo](https://abc4trust.eu/images/banners/abc4trust_01_2013.png)
+![abc4trust](https://abc4trust.eu/images/banners/abc4trust_01_2013.png)
+![FIware](http://forge.fi-ware.eu/plugins/mediawiki/images/Logo-Fiware-no-claim_120x95.png)
+![PrimeLife](http://primelife.ercim.eu/templates/primelife/images/primelife-logo.jpg)
 
 
 p2abcengine
