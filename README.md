@@ -1,6 +1,8 @@
-<a href="https://abc4trust.eu/" ><img src="https://abc4trust.eu/images/banners/abc4trust_01_2013.png" alt="Abc4Trust" /></a>
-<a href="http://fi-ware.eu" ><img src="http://forge.fi-ware.eu/plugins/mediawiki/images/Logo-Fiware-no-claim_120x95.png" alt="FI-Ware" /></a>
-<a href="http://primelife.ercim.eu" ><img src="http://primelife.ercim.eu/templates/primelife/images/primelife-logo.jpg" alt="PrimeLife" /></a>
+<p style="text-align: center;">
+<a href="https://abc4trust.eu/" ><img src="https://raw2.github.com/p2abcengine/p2abcengine/master/Documentation/logos/abc4trust.png" alt="Abc4Trust" /></a>
+<a href="http://fi-ware.eu" ><img src="https://raw2.github.com/p2abcengine/p2abcengine/master/Documentation/logos/fiware.png" alt="FI-Ware" /></a>
+<a href="http://primelife.ercim.eu" ><img src="https://raw2.github.com/p2abcengine/p2abcengine/master/Documentation/logos/primelife.jpeg" alt="PrimeLife" /></a>
+</p>
 
 p2abcengine
 ===========
@@ -20,109 +22,15 @@ Finally, we do not provide that cryptography that generates the cryptographic va
 
 For more details about the components and how to integrate them into an application we refer to the [Architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) page.
 
-
-How to Build
-==========
-
-### Requirements
-
-The following components are required for building the project:
-
-*   Java Development Kit (JDK) 1.6 or higher. Note that the Java Runtime Environment (JRE) is not sufficient.
-
-    Unix: `sudo apt-get install openjdk-6-jdk`
-
-*   [Maven 3.0.x](http://maven.apache.org)
-
-    Unix: `sudo apt-get install maven`
-    
-    Although we use Maven as build tool, there are two required libraries that are not available in public Maven repositories. Therefore, in the following, we provide instructions on how these libraries can be integrated with your local Maven repository.
-
-*   IBM Identity Mixer Version 2.3.43.
-  
-    [Download](https://prime.inf.tu-dresden.de/idemix/) the binary (com.ibm.zurich.idmx.2-3-43.jar) and install it into your local maven repository:
-    
-    ```
-    mvn install:install-file \
-       -DgroupId=com.ibm.zurich \
-       -DartifactId=idmx \
-       -Dpackaging=jar \
-       -Dversion=2-3-43 \
-       -Dfile=com.ibm.zurich.idmx.2-3-43.jar \
-       -DgeneratePom=true
-    ```
-
-*   PLT Utilities, which is a [component](http://drjava.sourceforge.net/components.shtml) of the [DrJava](http://drjava.sourceforge.net/) project.
-  
-    [Download](https://drjava.svn.sourceforge.net/svnroot/drjava/trunk/drjava/lib/plt.jar) the binary (plt.jar) and install it into your local maven repository:
-
-    ```
-    mvn install:install-file \
-       -DgroupId=plt \
-       -DartifactId=plt \
-       -Dpackaging=jar \
-       -Dversion=1.0 \
-       -Dfile=plt.jar \
-       -DgeneratePom=true
-    ```
-    
-*   Microsoft .NET runtime version 4 _FULL Profile_<br>__or__<br>[Mono project](http://mono-project.com/) version > 2.8
-
-    [Ubuntu](http://mono-project.com/DistroPackages/Ubuntu): `sudo apt-get install mono-complete` (Note: Ubuntu does not come with Mono installed by default any more. Also the _mono-runtime_ package is not sufficient).
-
-### Building
-
-5.  On Windows 7: start the ABC4Trust-UProve Service:
-
-    ```ABC4Trust-UProve.exe 32123```
-    
-    This executable is located in the folder `Code/uprove-java-binding/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release/`.
-
-    On Windows XP/Unix/Mono platforms, the service is started automatically.
-    
-2.  Change directory:
-
-    ```cd Code/core-abce```
-
-6.  Build the code with the command
-   
-    ```mvn clean install -DskipTests```
-    
-    If the build fails with java.lang.OutOfMemoryError Exceptions, make sure the Maven build process has enough memory:
-    * Windows: `set MAVEN_OPTS=-Xmx1024m -Xms256m -XX:MaxPermSize=512m`<br>Be aware that the 'set' command only sets the MAVEN_OPTS variable for the current console session. To have the variable set permanently (for all future console sessions), set this variable as Windows environment variable manually or via 'setx'.
-    * Unix variants: `export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'`<br>In Unix, to prevent this common error, these options are set automatically if you run `mvn` from the java-ri folder.
-
-7.  Once the code can successfully be built, you can go a step further and execute all unit tests.
-    
-    _Windows XP/Unix/Mono platforms_: First, you need to determine the absolute path to the folder containing the ABC4Trust-UProve service. For convenience, you could copy this folder's content to `/usr/lib/ABC4Trust-UProve` with the following command (on Unix):
-
-    ```
-    sudo cp -r \
-       Code/uprove-java-binding/ABC4Trust-UProve_dotNET_WebServiceServer/ABC4Trust-UProve/bin/Release \
-       /usr/lib/ABC4Trust-UProve
-    ```
-    Knowing the path to the service, you can perform (for example):
-
-    ```mvn clean test -DPathToUProveExe=/usr/lib/ABC4Trust-UProve```
-    
-    _Windows 7_: `mvn clean test`
-
-### Eclipse Import
-
-You can optionally use Maven to generate Eclipse project files (.project):
-
-```mvn eclise:eclipse```
-
-The projects are generated in the individual module folders and can be imported in Eclipse as existing projects.
-
-
 Usage
 ==========
-See the page on integration for information on how to [integrate the ABCE][wikiintegration].
+
+See the page on integration for information on how to [integrate the
+ABCE][wikiintegration]. Or the page on how to build the ABCE for information on [how to build the ABCE for development][wikihowtobuild].
 
 [wikihome]: https://github.com/p2abcengine/p2abcengine/wiki
 [wikiintegration]: https://github.com/p2abcengine/p2abcengine/wiki/Integrating%20the%20ABC-Engine
-
+[wikihowtobuild]: https://github.com/p2abcengine/p2abcengine/wiki/How-to-Build-the-ABC-Engine
 
 Acknowledgements
 ===============
