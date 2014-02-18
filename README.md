@@ -11,10 +11,19 @@ This Privacy-Preserving Attribute-Based Credential Engine enables application de
 
 An introduction to the project and links to further information is found on the [wiki][wikihome].
 
+License
+===========
+The source code of the p2abcengine is licensed under the [Apache License, Version 2.0](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSE.txt).
+
+Note, however, that the p2abcengine depends on a number of Java libraries that are licensed under other licenses.
+<br>
+For details, see the [overview of licenses of the library dependencies](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSES-OF-DEPENDENCIES.txt).
+
+
 Overview of Codebase
 ===========
 
-We here provide a number of core components for authentication with privacy-preserving attribute-based credentials. These core components deal with the policy language that specifies the authentication requirements, a user interface that allows user to select which credentials they want to use to satisfy the authentication policy and then some components to generate and verify authentication tokens.
+We provide a number of core components for authentication with privacy-preserving attribute-based credentials. These core components deal with the policy language that specifies the authentication requirements, a user interface that allows user to select which credentials they want to use to satisfy the authentication policy and then some components to generate and verify authentication tokens.
 
 Building a full-fledged authentication and authorization solution requires a number of additional components such as credential storage or key management. We provide basic implementations of such components and of example application as well. While these components could be useful as well, you might have to replace them with your own ones to integrate the core components into your application.
 
