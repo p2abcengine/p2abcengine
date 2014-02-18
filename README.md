@@ -16,7 +16,6 @@ License
 The source code of the p2abcengine is licensed under the [Apache License, Version 2.0](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSE.txt).
 
 Note, however, that the p2abcengine depends on a number of Java libraries that are licensed under other licenses.
-<br>
 For details, see the [overview of licenses of the library dependencies](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSES-OF-DEPENDENCIES.txt).
 
 
