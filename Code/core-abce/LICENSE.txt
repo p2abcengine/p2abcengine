@@ -1,5 +1,5 @@
 Licensed Materials - Property of IBM, Miracle A/S, and Alexandra Instituttet A/S
-eu.abc4trust.pabce.1.14
+eu.abc4trust
 © Copyright IBM Corp. 2012. All Rights Reserved.
 © Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.
 © Copyright Alexandra Instituttet A/S, Denmark. 2012. All Rights Reserved.
