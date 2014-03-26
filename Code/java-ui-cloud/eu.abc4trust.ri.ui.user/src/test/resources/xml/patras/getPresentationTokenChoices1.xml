@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SelectPresentationTokenDescription xmlns="http://abc4trust.eu/wp2/abcschemav1.0">
+	<PolicyDescriptions>
+		<entry>
+			<key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">urn:patras:policies:universityLoginWithCredUniv</key>
+			<value>
+				<PolicyUID>urn:patras:policies:universityLoginWithCredUniv</PolicyUID>
+				<Message>
+					<Nonce>xzCzSpEcEtzNzw==</Nonce>
+					<ApplicationData>Any application specific data should go here.</ApplicationData>
+				</Message>
+			</value>
+		</entry>
+	</PolicyDescriptions>
+	<CredentialDescriptions>
+		<entry>
+			<key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">IdmxCredential/5fmyqseknebb6q52</key>
+			<value>
+				<CredentialUID>IdmxCredential/5fmyqseknebb6q52</CredentialUID>
+				<FriendlyCredentialName lang="en">University Credential</FriendlyCredentialName>
+				<FriendlyCredentialName lang="da">Universitets Credential</FriendlyCredentialName>
+				<ImageReference>file:///C:/Users/frp/Documents/ibm/projects/ABC4Trust/WP4_Reference_Impl/java/ri/trunk/ui-user/eu.abc4trust.ri.ui.user/icons/cardformat/amex-corporate_franzstefan.png</ImageReference>
+				<CredentialSpecificationUID>urn:patras:credspec:credUniv</CredentialSpecificationUID>
+				<IssuerParametersUID>urn:patras:issuer:credUniv:idemix</IssuerParametersUID>
+				<SecretReference>secret://software-smartcard-000000042</SecretReference>
+				<Attribute>
+					<AttributeUID>5887969535210360172</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:department" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">department name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">afdelingsnavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">CTI</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>-1499039681892190873</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">last name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">efternavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Damgaard</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>362275337394484320</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:matriculationnr" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned">
+						<FriendlyAttributeName lang="en">matriculation number</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">matriculationnummer</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">1234</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>-603799731715601077</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:university" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">university name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">universitetsnavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Patras</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>-5294466697207874049</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">first name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">fornavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Kasper</AttributeValue>
+				</Attribute>
+			</value>
+		</entry>
+		<entry>
+			<key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">IdmxCredential/2fcggaq0dkwmb0e3</key>
+			<value>
+				<CredentialUID>IdmxCredential/2fcggaq0dkwmb0e3</CredentialUID>
+				<FriendlyCredentialName lang="en">University Credential</FriendlyCredentialName>
+				<FriendlyCredentialName lang="da">Universitets Credential</FriendlyCredentialName>
+				<ImageReference>file:///C:/Users/frp/Documents/ibm/projects/ABC4Trust/WP4_Reference_Impl/java/ri/trunk/ui-user/eu.abc4trust.ri.ui.user/icons/cardformat/swiss_dirverslicense_franzstefan.png</ImageReference>
+				<CredentialSpecificationUID>urn:patras:credspec:credUniv</CredentialSpecificationUID>
+				<IssuerParametersUID>urn:patras:issuer:credUniv:idemix</IssuerParametersUID>
+				<SecretReference>secret://software-smartcard-000000042</SecretReference>
+				<Attribute>
+					<AttributeUID>3926566222726981934</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:department" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">department name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">afdelingsnavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">CTI</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>4946240920506312979</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">last name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">efternavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Damgaard</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>5965576041917681073</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:matriculationnr" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned">
+						<FriendlyAttributeName lang="en">matriculation number</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">matriculationnummer</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">1234</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>5266915682793554083</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:university" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">university name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">universitetsnavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Patras</AttributeValue>
+				</Attribute>
+				<Attribute>
+					<AttributeUID>3284056094438046032</AttributeUID>
+					<AttributeDescription Type="urn:patras:credspec:credUniv:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+						<FriendlyAttributeName lang="en">first name</FriendlyAttributeName>
+						<FriendlyAttributeName lang="da">fornavn</FriendlyAttributeName>
+					</AttributeDescription>
+					<AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Kasper</AttributeValue>
+				</Attribute>
+			</value>
+		</entry>
+	</CredentialDescriptions>
+	<PseudonymDescriptions />
+	<InspectorDescriptions />
+	<CandidatePresentationTokenList>
+		<CandidatePresentationToken>
+			<Token PolicyUID="urn:patras:policies:universityLoginWithCredUniv" TokenUID="abc4t://token/1jbsv99t2q9q1hq0" />
+			<FriendlyTokenDescription lang="en">Mock FriendlyDescription</FriendlyTokenDescription>
+			<FriendlyTokenDescription lang="da">Mock Venlig Beskrivelse</FriendlyTokenDescription>
+			<CredentialUidList>
+				<CredentialUid>IdmxCredential/2fcggaq0dkwmb0e3</CredentialUid>
+			</CredentialUidList>
+			<PseudonymChoiceList>
+				<URISet />
+			</PseudonymChoiceList>
+			<InspectorChoiceList />
+		</CandidatePresentationToken>
+		<CandidatePresentationToken>
+			<Token PolicyUID="urn:patras:policies:universityLoginWithCredUniv" TokenUID="abc4t://token/3bxs7qzs5k3rif2r" />
+			<FriendlyTokenDescription lang="en">Mock FriendlyDescription</FriendlyTokenDescription>
+			<FriendlyTokenDescription lang="da">Mock Venlig Beskrivelse</FriendlyTokenDescription>
+			<CredentialUidList>
+				<CredentialUid>IdmxCredential/5fmyqseknebb6q52</CredentialUid>
+			</CredentialUidList>
+			<PseudonymChoiceList>
+				<URISet />
+			</PseudonymChoiceList>
+			<InspectorChoiceList />
+		</CandidatePresentationToken>
+	</CandidatePresentationTokenList>
+</SelectPresentationTokenDescription>

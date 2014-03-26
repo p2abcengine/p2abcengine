@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:SelectPresentationTokenDescription xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <abc:PolicyDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">urn:soderhamn:policies:inspectableCredSchool</abc:key>
+            <abc:value>
+                <abc:PolicyUID>urn:soderhamn:policies:inspectableCredSchool</abc:PolicyUID>
+                <abc:Message>
+                    <abc:Nonce>Kre6u85J38g70Q==</abc:Nonce>
+                </abc:Message>
+            </abc:value>
+        </abc:entry>
+    </abc:PolicyDescriptions>
+    <abc:CredentialDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">IdmxCredential/1jylus4j0kyp9719</abc:key>
+            <abc:value>
+                <abc:CredentialUID>IdmxCredential/1jylus4j0kyp9719</abc:CredentialUID>
+                <abc:FriendlyCredentialName lang="en">School Credential</abc:FriendlyCredentialName>
+                <abc:ImageReference>http://idm.nsn.com:8446/idmPortal/resources/css/IDM/images/IDM_logo_transparent.png</abc:ImageReference>
+                <abc:CredentialSpecificationUID>urn:soderhamn:credspec:credSchool</abc:CredentialSpecificationUID>
+                <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool:idemix</abc:IssuerParametersUID>
+                <abc:SecretReference>secret://software-smartcard-000003333</abc:SecretReference>
+                <abc:Attribute>
+                    <abc:AttributeUID>IdmxCredential/1jylus4j0kyp9719:urn:soderhamn:credspec:credSchool:firstname</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">first name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Emil</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>IdmxCredential/1jylus4j0kyp9719:urn:soderhamn:credspec:credSchool:lastname</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">last name</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">von Katthult Svensson</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>IdmxCredential/1jylus4j0kyp9719:urn:soderhamn:credspec:credSchool:civicRegistrationNumber</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:civicRegistrationNumber" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:utf-8">
+                        <abc:FriendlyAttributeName lang="en">civic registration number</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">42</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>IdmxCredential/1jylus4j0kyp9719:urn:soderhamn:credspec:credSchool:gender</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:gender" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">gender</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">M</abc:AttributeValue>
+                </abc:Attribute>
+                <abc:Attribute>
+                    <abc:AttributeUID>IdmxCredential/1jylus4j0kyp9719:urn:soderhamn:credspec:credSchool:schoolname</abc:AttributeUID>
+                    <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:schoolname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                        <abc:FriendlyAttributeName lang="en">school</abc:FriendlyAttributeName>
+                    </abc:AttributeDescription>
+                    <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Lönneberga</abc:AttributeValue>
+                </abc:Attribute>
+            </abc:value>
+        </abc:entry>
+    </abc:CredentialDescriptions>
+    <abc:PseudonymDescriptions/>
+    <abc:InspectorDescriptions>
+        <abc:entry>
+            <abc:key xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">urn:soderhamn:inspectorpk</abc:key>
+            <abc:value>
+                <abc:InspectorUID>urn:soderhamn:inspectorpk</abc:InspectorUID>
+                <abc:FriendlyInspectorDescription lang="en_US">Inspector public key</abc:FriendlyInspectorDescription>
+            </abc:value>
+        </abc:entry>
+    </abc:InspectorDescriptions>
+    <abc:CandidatePresentationTokenList>
+        <abc:CandidatePresentationToken>
+            <abc:Token PolicyUID="urn:soderhamn:policies:inspectableCredSchool" TokenUID="abc4t://token/6f65zgkxkgaoz8c"/>
+            <abc:FriendlyTokenDescription lang="en">Mock FriendlyDescription</abc:FriendlyTokenDescription>
+            <abc:FriendlyTokenDescription lang="da">Mock Venlig Beskrivelse</abc:FriendlyTokenDescription>
+            <abc:CredentialUidList>
+                <abc:CredentialUid>IdmxCredential/1jylus4j0kyp9719</abc:CredentialUid>
+            </abc:CredentialUidList>
+            <abc:PseudonymChoiceList>
+                <abc:URISet/>
+            </abc:PseudonymChoiceList>
+            <abc:InspectorChoiceList>
+                <abc:URISet>
+                    <abc:URI>urn:soderhamn:inspectorpk</abc:URI>
+                </abc:URISet>
+            </abc:InspectorChoiceList>
+        </abc:CandidatePresentationToken>
+    </abc:CandidatePresentationTokenList>
+</abc:SelectPresentationTokenDescription>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  
+  <artifactId>eu.abc4trust.ri.ui.user.product</artifactId>
+  <version>1.1.0.qualifier</version>
+  <packaging>eclipse-repository</packaging>
+
+  <parent>
+    <groupId>eu.abc4trust.ui</groupId>
+    <artifactId>eu.abc4trust.ri.ui.user.parent.parent</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+    <relativePath>../parent/parent</relativePath>
+  </parent>
+
+  <build>
+    <plugins>
+      <!-- Configure the p2 director -->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-p2-director-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <executions>
+          <execution>
+            <id>materialize-products</id>
+            <goals>
+              <goal>materialize-products</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>archive-products</id>
+            <goals>
+              <goal>archive-products</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Remove javax.servlet from the bundles.info -->
+      <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        <artifactId>maven-replacer-plugin</artifactId>
+        <version>${replacer-version}</version>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>replace</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <!--file>target/products/${project.artifactId}/win32/win32/x86/configuration/org.eclipse.equinox.simpleconfigurator/bundles.info</file-->
+		  <includes>
+			<include>target/products/${project.artifactId}/*/*/*/configuration/org.eclipse.equinox.simpleconfigurator/bundles.info</include>
+		  </includes>
+          <token>javax\.servlet.*false|org\.hamcrest.*false|org\.junit.*false</token>
+          <regexFlags>
+            <regexFlag>CASE_INSENSITIVE</regexFlag>
+            <regexFlag>UNIX_LINES</regexFlag>
+          </regexFlags>
+        </configuration>
+      </plugin>
+
+      <!-- Configure the assembly plugin to zip the war file -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${assembly-version}</version>
+        <configuration>
+          <descriptors>
+            <descriptor>assembly.xml</descriptor>
+          </descriptors>
+          <!-- Configure the war's filename -->
+          <finalName>${war-filename}</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>target/${war-filename}.war</file>
+                  <type>war</type>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+	  
+      <plugin>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>maven-jetty-plugin</artifactId>
+        <configuration>
+		  <webApp>target/${war-filename}.war</webApp>
+		  <contextPath>/</contextPath>
+          <stopKey>foo</stopKey>
+          <stopPort>9993</stopPort>
+		  <connectors>
+            <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">
+              <port>9093</port>
+			  <maxIdleTime>60000</maxIdleTime>
+            </connector>
+          </connectors>
+        </configuration>
+      </plugin>
+
+	  <plugin>
+	     <groupId>org.apache.maven.plugins</groupId>
+	     <artifactId>maven-deploy-plugin</artifactId>
+	     <version>2.4</version>
+	     <configuration>
+	       <skip>true</skip>
+	     </configuration>
+	   </plugin>
+
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:UiIssuanceArguments xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <uiContext>ui-context-i//3ssx3b17phrq1i3u</uiContext>
+    <data>
+        <credentialSpecifications>
+            <credentialSpecification uri="urn:patras:credspec:credUniv">
+                <spec Version="Version 1.0" KeyBinding="true" Revocable="false">
+                    <abc:SpecificationUID>urn:patras:credspec:credUniv</abc:SpecificationUID>
+                    <abc:FriendlyCredentialName lang="en">University Credential</abc:FriendlyCredentialName>
+                    <abc:DefaultImageReference>https://idm.cti.gr/...</abc:DefaultImageReference>
+                    <abc:AttributeDescriptions MaxLength="256">
+                        <abc:AttributeDescription Type="urn:patras:credspec:credUniv:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">first name</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="urn:patras:credspec:credUniv:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">last name</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="urn:patras:credspec:credUniv:university" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">university name</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="urn:patras:credspec:credUniv:department" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">department name</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="urn:patras:credspec:credUniv:matriculationnr" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned">
+                            <abc:FriendlyAttributeName lang="en">matriculation number</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                    </abc:AttributeDescriptions>
+                </spec>
+            </credentialSpecification>
+        </credentialSpecifications>
+        <issuers>
+            <issuer uri="urn:patras:issuer:credUniv">
+                <revocationAuthorityUri>revocationUID1</revocationAuthorityUri>
+                <description/>
+            </issuer>
+        </issuers>
+        <revocationAuthorities/>
+        <credentials/>
+        <pseudonyms>
+            <pseudonym uri="patrasdemo-idemix-uri">
+                <pseudonym Exclusive="true" Scope="urn:patras:registration" PseudonymUID="patrasdemo-idemix-uri">
+                    <abc:PseudonymValue>NsAvT/S6cVdHjL06A/vFAw9ppgI6oIbyhh9WuqYERzObKQULro/978QOj7oFx4obULCCLEnDOFesXpJsSZ4Em/F1ujk6kIvCcq2o+18D7NAKcIm6W2WDKn41oYHyOJZ+v4JqETdnCBa89E2rcgoHDpIzHGYzZfVgxYA1ugLT/AU=</abc:PseudonymValue>
+                    <abc:SecretReference>secret://software-smartcard-8332391</abc:SecretReference>
+                </pseudonym>
+                <metadata>
+                    <abc:HumanReadableData>urn:patras:registration</abc:HumanReadableData>
+                    <abc:Metadata/>
+                </metadata>
+            </pseudonym>
+        </pseudonyms>
+        <inspectors/>
+    </data>
+    <tokenCandidates>
+        <tokenCandidate candidateId="0">
+            <tokenDescription PolicyUID="urn:patras:policies:issuance:credUniv" TokenUID="abc4t://token/3vg31cfetrxyysp0">
+                <abc:Pseudonym Exclusive="true" Scope="urn:patras:registration" Alias="#nym"/>
+            </tokenDescription>
+            <credentials/>
+            <pseudonymCandidates>
+                <pseudonymCandidate candidateId="0">
+                    <pseudonyms>
+                        <pseudonym ref="patrasdemo-idemix-uri"/>
+                    </pseudonyms>
+                </pseudonymCandidate>
+            </pseudonymCandidates>
+            <revealedFacts/>
+            <revealedAttributeValues/>
+            <inspectableAttributes/>
+        </tokenCandidate>
+    </tokenCandidates>
+    <policy Version="1.0">
+        <abc:PresentationPolicy PolicyUID="urn:patras:policies:issuance:credUniv">
+            <abc:Pseudonym Exclusive="true" Scope="urn:patras:registration" Alias="#nym" Established="false"/>
+        </abc:PresentationPolicy>
+        <abc:CredentialTemplate SameKeyBindingAs="#nym">
+            <abc:CredentialSpecUID>urn:patras:credspec:credUniv</abc:CredentialSpecUID>
+            <abc:IssuerParametersUID>urn:patras:issuer:credUniv</abc:IssuerParametersUID>
+        </abc:CredentialTemplate>
+    </policy>
+</abc:UiIssuanceArguments>

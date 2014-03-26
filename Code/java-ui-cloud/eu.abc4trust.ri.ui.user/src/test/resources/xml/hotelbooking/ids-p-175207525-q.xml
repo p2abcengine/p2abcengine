@@ -1,0 +1,622 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:UiPresentationArguments xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <data>
+        <credentialSpecifications>
+            <credentialSpecification uri="http://admin.ch/passport/specification">
+                <spec Version="Version 1.0" KeyBinding="true" Revocable="false">
+                    <abc:SpecificationUID>http://admin.ch/passport/specification</abc:SpecificationUID>
+                    <abc:FriendlyCredentialName lang="en">Passport</abc:FriendlyCredentialName>
+                    <abc:DefaultImageReference>http://www.schweizerpass.admin.ch/content/pass/de/home/ausweise/_jcr_content/par/textimage/image.img.jpg/1342187028265.jpg</abc:DefaultImageReference>
+                    <abc:AttributeDescriptions MaxLength="0">
+                        <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">RH</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Name</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Last Name</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="PassportNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed">
+                            <abc:FriendlyAttributeName lang="en">Passport Number</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="Issued" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed">
+                            <abc:FriendlyAttributeName lang="en">Issuance Date</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="Expires" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed">
+                            <abc:FriendlyAttributeName lang="en">Expiration Date</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="IssuedBy" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Issued By</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                    </abc:AttributeDescriptions>
+                </spec>
+            </credentialSpecification>
+            <credentialSpecification uri="http://visa.com/creditcard/specification">
+                <spec Version="Version 1.0" KeyBinding="true" Revocable="false">
+                    <abc:SpecificationUID>http://visa.com/creditcard/specification</abc:SpecificationUID>
+                    <abc:FriendlyCredentialName lang="en">Visa Credit Card</abc:FriendlyCredentialName>
+                    <abc:FriendlyCredentialName lang="da">Visa Kreditkort</abc:FriendlyCredentialName>
+                    <abc:DefaultImageReference>http://jobs.visa.com/sites/visa/images/sp-marketing-img.png</abc:DefaultImageReference>
+                    <abc:AttributeDescriptions MaxLength="256">
+                        <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeDescription Type="CardType" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Cardtype</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Korttype</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Name</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Fornavn</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Lastname</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Efternavn</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="CardNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned">
+                            <abc:FriendlyAttributeName lang="en">Card Number</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Kortnummer</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="ExpirationDate" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed">
+                            <abc:FriendlyAttributeName lang="en">Expiration Date</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Udløbsdato</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="SecurityCode" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed">
+                            <abc:FriendlyAttributeName lang="en">Security Code</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Sikkerhedskode</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                        <abc:AttributeDescription Type="Status" DataType="xs:anyURI" Encoding="urn:abc4trust:1.0:encoding:anyUri:sha-256">
+                            <abc:FriendlyAttributeName lang="en">Status</abc:FriendlyAttributeName>
+                            <abc:FriendlyAttributeName lang="da">Status</abc:FriendlyAttributeName>
+                        </abc:AttributeDescription>
+                    </abc:AttributeDescriptions>
+                </spec>
+            </credentialSpecification>
+            <credentialSpecification uri="http://www.admin.edu/studentid/specification">
+                <spec Version="Version 1.0" KeyBinding="true" Revocable="false">
+                    <abc:SpecificationUID>http://www.admin.edu/studentid/specification</abc:SpecificationUID>
+                    <abc:FriendlyCredentialName lang="en">Student ID</abc:FriendlyCredentialName>
+                    <abc:DefaultImageReference>http://www.csensations.com/images/news/160.jpg</abc:DefaultImageReference>
+                    <abc:AttributeDescriptions MaxLength="0">
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeDescription Type="StudentNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+                        <abc:AttributeDescription Type="Issued" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeDescription Type="Expires" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeDescription Type="IssuedBy" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    </abc:AttributeDescriptions>
+                </spec>
+            </credentialSpecification>
+        </credentialSpecifications>
+        <issuers>
+            <issuer uri="http://admin.ch/passport/issuancekey_v1.0">
+                <revocationAuthorityUri>revocationUID1</revocationAuthorityUri>
+                <description>
+                    <description lang="en">Swiss Government</description>
+                </description>
+                <spec ref="http://admin.ch/passport/specification"/>
+            </issuer>
+            <issuer uri="http://thebestbank.com/cc/issuancekey_v1.0">
+                <revocationAuthorityUri>revocationUID3</revocationAuthorityUri>
+                <description>
+                    <description lang="en">The Best Bank Inc.</description>
+                </description>
+                <spec ref="http://visa.com/creditcard/specification"/>
+            </issuer>
+            <issuer uri="http://www.admin.edu/studentid/issuancekey_v1.0">
+                <revocationAuthorityUri>revocationUID2</revocationAuthorityUri>
+                <description>
+                    <description lang="en">ACME University</description>
+                </description>
+                <spec ref="http://www.admin.edu/studentid/specification"/>
+            </issuer>
+        </issuers>
+        <revocationAuthorities/>
+        <credentials>
+            <credential uri="IdmxCredential/2go7r0u5spm9w6yn">
+                <desc>
+                    <abc:CredentialUID>IdmxCredential/2go7r0u5spm9w6yn</abc:CredentialUID>
+                    <abc:FriendlyCredentialName lang="en">Passport</abc:FriendlyCredentialName>
+                    <abc:ImageReference>http://hdwallsize.com/wp-content/uploads/2013/03/Landscape-Nature-for-Wallpaper-Dekstop-.jpg</abc:ImageReference>
+                    <abc:CredentialSpecificationUID>http://admin.ch/passport/specification</abc:CredentialSpecificationUID>
+                    <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-5027215341191833961</abc:AttributeUID>
+                        <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">http://admin.ch/passport/revocation/parameters</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-2715953330829768452</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-2231744817504418815</abc:AttributeUID>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>1094971401739429448</abc:AttributeUID>
+                        <abc:AttributeDescription Type="PassportNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">895749</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>659647972493061525</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Issued" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2012-02-06Z</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-7816419347078226013</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Expires" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2022-02-06Z</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-972170378948538696</abc:AttributeUID>
+                        <abc:AttributeDescription Type="IssuedBy" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">admin.ch</abc:AttributeValue>
+                    </abc:Attribute>
+                </desc>
+                <revocationAuthority/>
+                <spec ref="http://admin.ch/passport/specification"/>
+                <issuer ref="http://admin.ch/passport/issuancekey_v1.0"/>
+            </credential>
+            <credential uri="IdmxCredential/2locm909by41g7e4">
+                <desc>
+                    <abc:CredentialUID>IdmxCredential/2locm909by41g7e4</abc:CredentialUID>
+                    <abc:FriendlyCredentialName lang="en">Visa Credit Card</abc:FriendlyCredentialName>
+                    <abc:FriendlyCredentialName lang="da">Visa Kreditkort</abc:FriendlyCredentialName>
+                    <abc:ImageReference>http://www.switchcommerce.com/wp-content/uploads/2012/10/visa-credit-card-security.jpg</abc:ImageReference>
+                    <abc:CredentialSpecificationUID>http://visa.com/creditcard/specification</abc:CredentialSpecificationUID>
+                    <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-2401538038823971644</abc:AttributeUID>
+                        <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">http://admin.ch/passport/revocation/parameters</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-4674297670788275207</abc:AttributeUID>
+                        <abc:AttributeDescription Type="CardType" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">SwissExpress</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>6595935709923066617</abc:AttributeUID>
+                        <abc:AttributeDescription Type="CardNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">555</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-906144893611626776</abc:AttributeUID>
+                        <abc:AttributeDescription Type="SecurityCode" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">42</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>8402595288590961725</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Status" DataType="xs:anyURI" Encoding="urn:abc4trust:1.0:encoding:anyUri:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">#status</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>4256990702371429804</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-8639238099347197112</abc:AttributeUID>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-6362063199769097789</abc:AttributeUID>
+                        <abc:AttributeDescription Type="ExpirationDate" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2022-02-02Z</abc:AttributeValue>
+                    </abc:Attribute>
+                </desc>
+                <revocationAuthority/>
+                <spec ref="http://visa.com/creditcard/specification"/>
+                <issuer ref="http://thebestbank.com/cc/issuancekey_v1.0"/>
+            </credential>
+            <credential uri="IdmxCredential/1ownsil0lag0kqv8">
+                <desc>
+                    <abc:CredentialUID>IdmxCredential/1ownsil0lag0kqv8</abc:CredentialUID>
+                    <abc:FriendlyCredentialName lang="en">Student ID</abc:FriendlyCredentialName>
+                    <abc:ImageReference>file:////C:/Users/frp/AppData/Local/Temp/8c7d249e-d6ae-49a6-854b-88f17a48d175.jpg</abc:ImageReference>
+                    <abc:CredentialSpecificationUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecificationUID>
+                    <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                    <abc:Attribute>
+                        <abc:AttributeUID>4256990702371429804</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-8639238099347197112</abc:AttributeUID>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-4081623809379167443</abc:AttributeUID>
+                        <abc:AttributeDescription Type="StudentNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">345</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>766428194126668440</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Issued" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2012-02-02Z</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-6362063199769097789</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Expires" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2022-02-02Z</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-1893345134847822152</abc:AttributeUID>
+                        <abc:AttributeDescription Type="IssuedBy" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">ethz.ch</abc:AttributeValue>
+                    </abc:Attribute>
+                </desc>
+                <revocationAuthority/>
+                <spec ref="http://www.admin.edu/studentid/specification"/>
+                <issuer ref="http://www.admin.edu/studentid/issuancekey_v1.0"/>
+            </credential>
+        </credentials>
+        <pseudonyms>
+            <pseudonym uri="abc4t://nym/4v77mvk5nf2krf24">
+                <pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" PseudonymUID="abc4t://nym/4v77mvk5nf2krf24">
+                    <abc:PseudonymValue>Re0fE1BhbDNx1r+157H1JjdBBkPDBkog03s3ZDbySxJFGiRtm5lCGtUPH1KOhlVylNi5P0Yp7xgj47UhIDmDPIAyP5QIfhkcvsCy4iuoMEdTN5GR6qBOSgkWHmgakoY7KwCASoOnx6Juh5lDNcSf2cmbWuHHVWU+05tJ83OxInX+fzvKANHlk2PrzON9PDuLbeGbNVklD8RhujHDpMUQWrF5K2dAr56zsgwQO2GGo4U0mFXAlPImjtMQmoKBl0JhzNbdX0KUxKTqo3ZBRINdnn9g4mrB0Jsw3hhy5Nzf7gjRBJBDMsgIhu+rnlsyXKvCuHjqkFNud3xXpP9nnhpcEw==</abc:PseudonymValue>
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                </pseudonym>
+                <metadata>
+                    <abc:FriendlyPseudonymDescription lang="el">Ψευδώνυμο 2013.01.28 18:47:25</abc:FriendlyPseudonymDescription>
+                    <abc:FriendlyPseudonymDescription lang="sv">Pseudonym 2013.01.28 18:47:25</abc:FriendlyPseudonymDescription>
+                    <abc:FriendlyPseudonymDescription lang="en">Pseudonym 2013.01.28 18:47:25</abc:FriendlyPseudonymDescription>
+                </metadata>
+            </pseudonym>
+            <pseudonym uri="abc4t://nym/xtf3b7jicnq8h9k">
+                <pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" PseudonymUID="abc4t://nym/xtf3b7jicnq8h9k">
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                </pseudonym>
+                <metadata>
+                    <abc:FriendlyPseudonymDescription lang="el">Νέο Ψευδώνυμο 2013.01.28 18:47:32</abc:FriendlyPseudonymDescription>
+                    <abc:FriendlyPseudonymDescription lang="sv">Ny Pseudonym 2013.01.28 18:47:32</abc:FriendlyPseudonymDescription>
+                    <abc:FriendlyPseudonymDescription lang="en">New Pseudonym 2013.01.28 18:47:32</abc:FriendlyPseudonymDescription>
+                </metadata>
+            </pseudonym>
+            <pseudonym uri="abc4t://nym/4w1mlb32cxo31tu4">
+                <pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" PseudonymUID="abc4t://nym/4w1mlb32cxo31tu4">
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                </pseudonym>
+                <metadata>
+                    <abc:FriendlyPseudonymDescription lang="el">Νέο Ψευδώνυμο 2013.01.28 18:47:32</abc:FriendlyPseudonymDescription>
+                    <abc:FriendlyPseudonymDescription lang="sv">Ny Pseudonym 2013.01.28 18:47:32</abc:FriendlyPseudonymDescription>
+                    <abc:FriendlyPseudonymDescription lang="en">New Pseudonym 2013.01.28 18:47:32</abc:FriendlyPseudonymDescription>
+                </metadata>
+            </pseudonym>
+        </pseudonyms>
+        <inspectors>
+            <inspector uri="http://thebestbank.com/inspector/pub_key_v1">
+                <description>
+                    <description lang="en_US">Inspector public key</description>
+                    <description lang="en">The Best Bank Inc.</description>
+                </description>
+            </inspector>
+            <inspector uri="http://admin.ch/inspector/pub_key_v1">
+                <description/>
+            </inspector>
+        </inspectors>
+    </data>
+    <tokenCandidatesPerPolicy>
+        <tokenCandidatePerPolicy policyId="0">
+            <policy PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard">
+                <abc:Message>
+                    <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
+                    <abc:FriendlyPolicyName lang="en">Policy: Standard Booking</abc:FriendlyPolicyName>
+                    <abc:FriendlyPolicyName lang="da">Policy: Standard Booking</abc:FriendlyPolicyName>
+                    <abc:FriendlyPolicyDescription lang="en">Booking of Hotel Room. This is a very long description of this policy to test whether a long text would wrap over to the next line or not. Hopefully it does otherwise I have a problem.</abc:FriendlyPolicyDescription>
+                    <abc:FriendlyPolicyDescription lang="da">Bookning af hotelvaerelse.</abc:FriendlyPolicyDescription>
+                    <abc:ApplicationData>
+        <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
+        <Bedsize xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">King</Bedsize>
+        <ArrivalDate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-04-01</ArrivalDate>
+        <NrOfNights xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2</NrOfNights>
+        <ReservationCode xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">HCJ095</ReservationCode>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+                </abc:Message>
+                <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" Alias="#mainPseudonym" Established="false"/>
+                <abc:Credential Alias="Passport">
+                    <abc:CredentialSpecAlternatives>
+                        <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://governo.it/passport</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://bundesregierung.de/passport</abc:CredentialSpecUID>
+                    </abc:CredentialSpecAlternatives>
+                    <abc:IssuerAlternatives>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://admin.ch/passport/revocation/parameters">http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://governo.it/passport/revocation/parameters">http://governo.it/id/chiave2048</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://bundesregierung.de/passport/revocation/parameters">http://bundesregierung.de/idkarte/schluessel</abc:IssuerParametersUID>
+                    </abc:IssuerAlternatives>
+                    <DisclosedAttribute AttributeType="PassportNumber" />
+                    <DisclosedAttribute AttributeType="Name" />
+                </abc:Credential>
+                <abc:Credential Alias="CreditCard">
+                    <abc:CredentialSpecAlternatives>
+                        <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://amex.com/amexcard/specification</abc:CredentialSpecUID>
+                    </abc:CredentialSpecAlternatives>
+                    <abc:IssuerAlternatives>
+                        <abc:IssuerParametersUID>http://www.amex.com/abc/isskey</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                    </abc:IssuerAlternatives>
+                    <abc:DisclosedAttribute AttributeType="CardNumber" DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
+                        <abc:InspectorAlternatives>
+                            <abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+                            <abc:InspectorPublicKeyUID>http://admin.ch/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+                        </abc:InspectorAlternatives>
+                        <abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
+                    </abc:DisclosedAttribute>
+                </abc:Credential>
+                <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+                    <abc:Attribute CredentialAlias="CreditCard" AttributeType="ExpirationDate"/>
+                    <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-01-06Z</abc:ConstantValue>
+                </abc:AttributePredicate>
+                <abc:VerifierDrivenRevocation>
+                    <abc:RevocationParametersUID>http://www.sweetdreamsuites.com/passport/revocation/parameters</abc:RevocationParametersUID>
+                    <abc:Attribute AttributeType="PassportNumber" CredentialAlias="Passport"/>
+                </abc:VerifierDrivenRevocation>
+            </policy>
+            <tokenCandidates>
+                <tokenCandidate candidateId="0">
+                    <tokenDescription PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard" TokenUID="abc4t://token/1chq0sv5ag1cpy2f">
+                        <abc:Message>
+                            <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
+                            <abc:FriendlyPolicyName lang="en">Policy: Standard Booking</abc:FriendlyPolicyName>
+                            <abc:FriendlyPolicyName lang="da">Policy: Standard Booking</abc:FriendlyPolicyName>
+                            <abc:FriendlyPolicyDescription lang="en">Booking of Hotel Room.</abc:FriendlyPolicyDescription>
+                            <abc:FriendlyPolicyDescription lang="da">Bookning af hotelvaerelse.</abc:FriendlyPolicyDescription>
+                            <abc:ApplicationData>
+        <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
+        <Bedsize xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">King</Bedsize>
+        <ArrivalDate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-04-01</ArrivalDate>
+        <NrOfNights xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2</NrOfNights>
+        <ReservationCode xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">HCJ095</ReservationCode>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+                        </abc:Message>
+                        <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" Alias="#mainPseudonym"/>
+                        <abc:Credential Alias="Passport">
+                            <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+                            <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+                            <abc:RevocationInformationUID>http://admin.ch/passport/revocation/parameters</abc:RevocationInformationUID>
+                        </abc:Credential>
+                        <abc:Credential Alias="CreditCard">
+                            <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+                            <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                            <abc:DisclosedAttribute AttributeType="CardNumber" DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
+<abc:InspectorPublicKeyUID></abc:InspectorPublicKeyUID>
+<abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
+                            </abc:DisclosedAttribute>
+                        </abc:Credential>
+                        <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+                            <abc:Attribute CredentialAlias="CreditCard" AttributeType="ExpirationDate"/>
+                            <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-01-06Z</abc:ConstantValue>
+                        </abc:AttributePredicate>
+                        <abc:VerifierDrivenRevocation>
+                            <abc:RevocationInformationUID>no:revocation:information:yet</abc:RevocationInformationUID>
+                            <abc:Attribute AttributeType="PassportNumber" CredentialAlias="Passport"/>
+                        </abc:VerifierDrivenRevocation>
+                    </tokenDescription>
+                    <credentials>
+                        <credential ref="IdmxCredential/2go7r0u5spm9w6yn"/>
+                        <credential ref="IdmxCredential/2locm909by41g7e4"/>
+                    </credentials>
+                    <pseudonymCandidates>
+                        <pseudonymCandidate candidateId="0">
+                            <pseudonyms>
+<pseudonym ref="abc4t://nym/4v77mvk5nf2krf24"/>
+                            </pseudonyms>
+                        </pseudonymCandidate>
+                        <pseudonymCandidate candidateId="1">
+                            <pseudonyms>
+<pseudonym ref="abc4t://nym/xtf3b7jicnq8h9k"/>
+                            </pseudonyms>
+                        </pseudonymCandidate>
+                    </pseudonymCandidates>
+                    <revealedFacts>
+                        <revealedFact>
+                            <descriptions>
+<description lang="da">The value of Udløbsdato from Visa Kreditkort is greater or equal than 2012-01-06Z</description>
+<description lang="en">The value of Expiration Date from Visa Credit Card is greater or equal than 2012-01-06Z</description>
+                            </descriptions>
+                        </revealedFact>
+                    </revealedFacts>
+                    <revealedAttributeValues>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute A is X</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute B is Y</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                    </revealedAttributeValues>
+                    <inspectableAttributes>
+                        <inspectableAttribute>
+                            <credential ref="IdmxCredential/2locm909by41g7e4"/>
+                            <attributeType>CardNumber</attributeType>
+                            <dataHandlingPolicy>http://www.sweetdreamsuites.com/policies/creditcards</dataHandlingPolicy>
+                            <inspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</inspectionGrounds>
+                            <inspectorAlternatives>
+<inspectorAlternative ref="http://thebestbank.com/inspector/pub_key_v1"/>
+<inspectorAlternative ref="http://admin.ch/inspector/pub_key_v1"/>
+                            </inspectorAlternatives>
+                        </inspectableAttribute>
+                    </inspectableAttributes>
+                </tokenCandidate>
+            </tokenCandidates>
+        </tokenCandidatePerPolicy>
+        <tokenCandidatePerPolicy policyId="1">
+            <policy PolicyUID="http://www.sweetdreamsuites.com/policies/booking/studentcardoffer">
+                <abc:Message>
+                    <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
+                    <abc:FriendlyPolicyName lang="en"/>
+                    <abc:FriendlyPolicyName lang="da"/>
+                    <abc:FriendlyPolicyDescription lang="en"/>
+                    <abc:FriendlyPolicyDescription lang="da"/>
+                    <abc:ApplicationData>
+        <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
+        <Bedsize xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">King</Bedsize>
+        <ArrivalDate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-04-01</ArrivalDate>
+        <NrOfNights xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2</NrOfNights>
+        <ReservationCode xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">HCJ095</ReservationCode>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+                </abc:Message>
+                <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" Alias="#mainPseudonym" Established="false"/>
+                <abc:Credential Alias="Passport">
+                    <abc:CredentialSpecAlternatives>
+                        <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://governo.it/passport/specification</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://bundesregierung.de/passport/specification</abc:CredentialSpecUID>
+                    </abc:CredentialSpecAlternatives>
+                    <abc:IssuerAlternatives>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://admin.ch/passport/revocation/parameters">http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://governo.it/passport/revocation/parameters">http://governo.it/id/chiave2048</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://bundesregierung.de/passport/revocation/parameters">http://bundesregierung.de/idkarte/schluessel</abc:IssuerParametersUID>
+                    </abc:IssuerAlternatives>
+                    <DisclosedAttribute AttributeType="PassportNumber" />
+                    <DisclosedAttribute AttributeType="Name" />
+                </abc:Credential>
+                <abc:Credential Alias="CreditCard">
+                    <abc:CredentialSpecAlternatives>
+                        <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+                    </abc:CredentialSpecAlternatives>
+                    <abc:IssuerAlternatives>
+                        <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                    </abc:IssuerAlternatives>
+                    <abc:DisclosedAttribute AttributeType="CardNumber" DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
+                        <abc:InspectorAlternatives>
+                            <abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+                        </abc:InspectorAlternatives>
+                        <abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
+                    </abc:DisclosedAttribute>
+                </abc:Credential>
+                <abc:Credential Alias="StudentID">
+                    <abc:CredentialSpecAlternatives>
+                        <abc:CredentialSpecUID>http://ethz.ch/studentid/specification</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://msu.ru/studentid/specification</abc:CredentialSpecUID>
+                        <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+                    </abc:CredentialSpecAlternatives>
+                    <abc:IssuerAlternatives>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://ethz.ch/studentid/revocation/information">http://ethz.ch/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://msu.ru/studentid/revocation/information">http://msu.ru/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                        <abc:IssuerParametersUID RevocationInformationUID="http://www.admin.edu/studentid/revocation/information">http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                    </abc:IssuerAlternatives>
+                </abc:Credential>
+                <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+                    <abc:Attribute CredentialAlias="CreditCard" AttributeType="ExpirationDate"/>
+                    <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-01-06Z</abc:ConstantValue>
+                </abc:AttributePredicate>
+                <abc:VerifierDrivenRevocation>
+                    <abc:RevocationParametersUID>http://www.sweetdreamsuites.com/passport/revocation/parameters</abc:RevocationParametersUID>
+                    <abc:Attribute AttributeType="PassportNumber" CredentialAlias="Passport"/>
+                </abc:VerifierDrivenRevocation>
+            </policy>
+            <tokenCandidates>
+                <tokenCandidate candidateId="0">
+                    <tokenDescription PolicyUID="http://www.sweetdreamsuites.com/policies/booking/studentcardoffer" TokenUID="abc4t://token/17ru1c5qxq0221uh">
+                        <abc:Message>
+                            <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
+                            <abc:FriendlyPolicyName lang="en"/>
+                            <abc:FriendlyPolicyName lang="da"/>
+                            <abc:FriendlyPolicyDescription lang="en"/>
+                            <abc:FriendlyPolicyDescription lang="da"/>
+                            <abc:ApplicationData>
+        <RoomType xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">Double</RoomType>
+        <Bedsize xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">King</Bedsize>
+        <ArrivalDate xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-04-01</ArrivalDate>
+        <NrOfNights xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2</NrOfNights>
+        <ReservationCode xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">HCJ095</ReservationCode>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+                        </abc:Message>
+                        <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com" Alias="#mainPseudonym"/>
+                        <abc:Credential Alias="Passport">
+                            <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
+                            <abc:IssuerParametersUID>http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>
+                            <abc:RevocationInformationUID>http://admin.ch/passport/revocation/parameters</abc:RevocationInformationUID>
+                        </abc:Credential>
+                        <abc:Credential Alias="CreditCard">
+                            <abc:CredentialSpecUID>http://visa.com/creditcard/specification</abc:CredentialSpecUID>
+                            <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+                            <abc:DisclosedAttribute AttributeType="CardNumber" DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/creditcards">
+<abc:InspectorPublicKeyUID></abc:InspectorPublicKeyUID>
+<abc:InspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</abc:InspectionGrounds>
+                            </abc:DisclosedAttribute>
+                        </abc:Credential>
+                        <abc:Credential Alias="StudentID">
+                            <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+                            <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                            <abc:RevocationInformationUID>http://www.admin.edu/studentid/revocation/information</abc:RevocationInformationUID>
+                        </abc:Credential>
+                        <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+                            <abc:Attribute CredentialAlias="CreditCard" AttributeType="ExpirationDate"/>
+                            <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2012-01-06Z</abc:ConstantValue>
+                        </abc:AttributePredicate>
+                        <abc:VerifierDrivenRevocation>
+                            <abc:RevocationInformationUID>no:revocation:information:yet</abc:RevocationInformationUID>
+                            <abc:Attribute AttributeType="PassportNumber" CredentialAlias="Passport"/>
+                        </abc:VerifierDrivenRevocation>
+                    </tokenDescription>
+                    <credentials>
+                        <credential ref="IdmxCredential/2go7r0u5spm9w6yn"/>
+                        <credential ref="IdmxCredential/2locm909by41g7e4"/>
+                        <credential ref="IdmxCredential/1ownsil0lag0kqv8"/>
+                    </credentials>
+                    <pseudonymCandidates>
+                        <pseudonymCandidate candidateId="0">
+                            <pseudonyms>
+<pseudonym ref="abc4t://nym/4v77mvk5nf2krf24"/>
+                            </pseudonyms>
+                        </pseudonymCandidate>
+                        <pseudonymCandidate candidateId="1">
+                            <pseudonyms>
+<pseudonym ref="abc4t://nym/4w1mlb32cxo31tu4"/>
+                            </pseudonyms>
+                        </pseudonymCandidate>
+                    </pseudonymCandidates>
+                    <revealedFacts>
+                        <revealedFact>
+                            <descriptions>
+<description lang="da">The value of Udløbsdato from Visa Kreditkort is greater or equal than 2012-01-06Z</description>
+<description lang="en">The value of Expiration Date from Visa Credit Card is greater or equal than 2012-01-06Z</description>
+                            </descriptions>
+                        </revealedFact>
+                    </revealedFacts>
+                    <revealedAttributeValues>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute A is X</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                        <revealedAttributeValue>
+                            <descriptions>
+                                 <description lang="en">The value of attribute B is Y</description>
+                            </descriptions>
+                        </revealedAttributeValue>
+                    </revealedAttributeValues>
+                    <inspectableAttributes>
+                        <inspectableAttribute>
+                            <credential ref="IdmxCredential/2locm909by41g7e4"/>
+                            <attributeType>CardNumber</attributeType>
+                            <dataHandlingPolicy>http://www.sweetdreamsuites.com/policies/creditcards</dataHandlingPolicy>
+                            <inspectionGrounds>Describe inspection grounds here. See &lt;a href=&apos;https://abc4trust.eu/&apos; target=&apos;_blank&apos;&gt;Link&lt;/a&gt;. More text if you want.</inspectionGrounds>
+                            <inspectorAlternatives>
+<inspectorAlternative ref="http://thebestbank.com/inspector/pub_key_v1"/>
+                            </inspectorAlternatives>
+                        </inspectableAttribute>
+                    </inspectableAttributes>
+                </tokenCandidate>
+            </tokenCandidates>
+        </tokenCandidatePerPolicy>
+    </tokenCandidatesPerPolicy>
+</abc:UiPresentationArguments>

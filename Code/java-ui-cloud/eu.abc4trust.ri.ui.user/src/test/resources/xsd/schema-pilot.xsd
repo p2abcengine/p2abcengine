@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://abc4trust.eu/wp2/abcschemav1.0"
+  attributeFormDefault="unqualified" elementFormDefault="qualified">
+  
+  <xs:include schemaLocation="schema.xsd" />
+    
+  <xs:element name="VerificationCall" type="VerificationCall" />
+  <xs:complexType name="VerificationCall">
+    <xs:sequence>
+      <xs:element ref="PresentationPolicyAlternatives" minOccurs="1" maxOccurs="1" />
+      <xs:element ref="PresentationToken" minOccurs="1" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

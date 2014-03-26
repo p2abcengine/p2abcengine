@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0">
+    <abc:PresentationPolicy PolicyUID="urn:patras:policies:loginPseudonym">
+        <abc:Message>
+            <abc:Nonce>5laem07shPg+lg==</abc:Nonce>
+            <abc:FriendlyPolicyName lang="en">Policy: Authorized Students only</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyName lang="da">Policy: Kun Authoriserede Studenter</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyDescription lang="en">This policy will request the student to present the established scope-exclusive Pseudonym with the scope &quot;urn:patras:registration&quot;.No Privacy ABCs are required for this step.</abc:FriendlyPolicyDescription>
+            <abc:FriendlyPolicyDescription lang="da">Denne policy kr+ªver at den studrende pr+ªsentere et etableret scope-exclusive Pseudonym med scope &quot;urn:patras:registration&quot;.Privacy ABCs vil ikke blive afsl++ret.</abc:FriendlyPolicyDescription>
+        </abc:Message>
+        <abc:Pseudonym Exclusive="true" Scope="urn:patras:registration"/>
+    </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

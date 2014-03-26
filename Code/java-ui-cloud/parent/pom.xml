@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  
+  <groupId>eu.abc4trust.ui</groupId>
+  <artifactId>eu.abc4trust.ri.ui.user.parent</artifactId>
+  <version>1.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  
+  <parent>
+    <groupId>eu.abc4trust.ui</groupId>
+    <artifactId>eu.abc4trust.ri.ui.user.parent.parent</artifactId>
+    <version>1.1.0-SNAPSHOT</version>
+    <relativePath>parent</relativePath>
+  </parent>
+
+  <!--dependencies>
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-servlet_3.0_spec</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies!-->
+  
+  <!--
+    Two-stage parent pom to work around bug 348045 (equinox servletbridge extensionbundle).
+    All settings are defined in the parent of this pom (example.parent.parent).
+    This pom (example.parent) removes the problematic extension bundle and serves as parent for all
+    modules. Only the feature and the product, which need the extension bundle, have derive from
+    the top parent.
+  -->
+
+  <build>
+    <plugins>
+
+      <!-- Work around bug 348045 (servletbridge.extensionbundle) -->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <filters>
+            <filter>
+              <type>java-package</type>
+              <id>javax.servlet</id>
+              <restrictTo>
+                <type>eclipse-plugin</type>
+                <id>javax.servlet</id>
+              </restrictTo>
+            </filter>
+          </filters>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

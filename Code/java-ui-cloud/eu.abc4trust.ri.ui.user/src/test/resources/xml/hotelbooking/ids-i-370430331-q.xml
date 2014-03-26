@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:UiIssuanceArguments xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <data>
+        <credentialSpecifications/>
+        <issuers/>
+        <revocationAuthorities/>
+        <credentials/>
+        <pseudonyms/>
+        <inspectors/>
+    </data>
+    <tokenCandidates>
+        <tokenCandidate candidateId="0">
+            <tokenDescription PolicyUID="http://ethz.ch/studentid/issuance/policy" TokenUID="abc4t://token/9xetvxlwqwvsax">
+                <abc:Message>
+                    <abc:Nonce>ShCtOR/mtv6hxw==</abc:Nonce>
+                </abc:Message>
+            </tokenDescription>
+            <credentials/>
+            <pseudonymCandidates>
+                <pseudonymCandidate candidateId="0">
+                    <pseudonyms/>
+                </pseudonymCandidate>
+            </pseudonymCandidates>
+            <revealedFacts/>
+            <revealedAttributeValues/>
+            <inspectableAttributes/>
+        </tokenCandidate>
+    </tokenCandidates>
+    <policy Version="1.0">
+        <abc:PresentationPolicy PolicyUID="http://ethz.ch/studentid/issuance/policy">
+            <abc:Message>
+                <abc:Nonce>ShCtOR/mtv6hxw==</abc:Nonce>
+            </abc:Message>
+        </abc:PresentationPolicy>
+        <abc:CredentialTemplate>
+            <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+            <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+            <abc:UnknownAttributes/>
+        </abc:CredentialTemplate>
+    </policy>
+</abc:UiIssuanceArguments>

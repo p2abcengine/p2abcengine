@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:UiIssuanceArguments xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <data>
+        <credentialSpecifications>
+            <credentialSpecification uri="http://www.admin.edu/studentid/specification">
+                <spec Version="Version 1.0" KeyBinding="true" Revocable="true">
+                    <abc:SpecificationUID>http://www.admin.edu/studentid/specification</abc:SpecificationUID>
+                    <abc:FriendlyCredentialName lang="en">Student ID</abc:FriendlyCredentialName>
+                    <abc:DefaultImageReference>http://www.csensations.com/images/news/160.jpg</abc:DefaultImageReference>
+                    <abc:AttributeDescriptions MaxLength="0">
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeDescription Type="StudentNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+                        <abc:AttributeDescription Type="Issued" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeDescription Type="Expires" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeDescription Type="IssuedBy" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                    </abc:AttributeDescriptions>
+                </spec>
+            </credentialSpecification>
+        </credentialSpecifications>
+        <issuers>
+            <issuer uri="http://www.admin.edu/studentid/issuancekey_v1.0">
+                <revocationAuthorityUri>revocationUID2</revocationAuthorityUri>
+                <description>
+                    <description lang="en">ACME University</description>
+                </description>
+                <spec ref="http://www.admin.edu/studentid/specification"/>
+            </issuer>
+        </issuers>
+        <revocationAuthorities/>
+        <credentials>
+            <credential uri="IdmxCredential/1ownsil0lag0kqv8">
+                <desc>
+                    <abc:CredentialUID>IdmxCredential/1ownsil0lag0kqv8</abc:CredentialUID>
+                    <abc:FriendlyCredentialName lang="en">Student ID</abc:FriendlyCredentialName>
+                    <abc:ImageReference>file:////C:/Users/frp/AppData/Local/Temp/8c7d249e-d6ae-49a6-854b-88f17a48d175.jpg</abc:ImageReference>
+                    <abc:CredentialSpecificationUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecificationUID>
+                    <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:SecretReference>abc4trust://secret/170q1e1faacu16ii</abc:SecretReference>
+                    <abc:Attribute>
+                        <abc:AttributeUID>4256990702371429804</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Name" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-8639238099347197112</abc:AttributeUID>
+                        <abc:AttributeDescription Type="LastName" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-4081623809379167443</abc:AttributeUID>
+                        <abc:AttributeDescription Type="StudentNumber" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:int">345</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>766428194126668440</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Issued" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2012-02-02Z</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-6362063199769097789</abc:AttributeUID>
+                        <abc:AttributeDescription Type="Expires" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:unix:signed"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">2022-02-02Z</abc:AttributeValue>
+                    </abc:Attribute>
+                    <abc:Attribute>
+                        <abc:AttributeUID>-1893345134847822152</abc:AttributeUID>
+                        <abc:AttributeDescription Type="IssuedBy" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256"/>
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">ethz.ch</abc:AttributeValue>
+                    </abc:Attribute>
+                </desc>
+                <revocationAuthority/>
+                <spec ref="http://www.admin.edu/studentid/specification"/>
+                <issuer ref="http://www.admin.edu/studentid/issuancekey_v1.0"/>
+            </credential>
+        </credentials>
+        <pseudonyms/>
+        <inspectors/>
+    </data>
+    <tokenCandidates>
+        <tokenCandidate candidateId="0">
+            <tokenDescription PolicyUID="http://thebestbank.com/creditcards/issuance/policy" TokenUID="abc4t://token/57ltz6d15vbkpe2g">
+                <abc:Message>
+                    <abc:Nonce>Uxwr/1k04n2hyA==</abc:Nonce>
+                    <abc:ApplicationData>
+        <abc:TestApplicationData>
+                            <abc:Data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Student Account and Credit Card Issuance Request</abc:Data>
+                        </abc:TestApplicationData>
+      </abc:ApplicationData>
+                </abc:Message>
+                <abc:Credential Alias="#studentid">
+                    <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+                    <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:RevocationInformationUID>http://www.admin.edu/revocation/info</abc:RevocationInformationUID>
+                    <abc:DisclosedAttribute AttributeType="Name">
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:AttributeValue>
+                    </abc:DisclosedAttribute>
+                    <abc:DisclosedAttribute AttributeType="LastName">
+                        <abc:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:AttributeValue>
+                    </abc:DisclosedAttribute>
+                </abc:Credential>
+                <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+                    <abc:Attribute CredentialAlias="#studentid" AttributeType="Expires"/>
+                    <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:date">2012-06-06Z</abc:ConstantValue>
+                </abc:AttributePredicate>
+                <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                    <abc:Attribute CredentialAlias="#studentid" AttributeType="Name"/>
+                    <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:ConstantValue>
+                </abc:AttributePredicate>
+                <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                    <abc:Attribute CredentialAlias="#studentid" AttributeType="LastName"/>
+                    <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:ConstantValue>
+                </abc:AttributePredicate>
+                <abc:VerifierDrivenRevocation>
+                    <abc:RevocationInformationUID>no:revocation:information:yet</abc:RevocationInformationUID>
+                    <abc:Attribute AttributeType="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" CredentialAlias="#studentid"/>
+                </abc:VerifierDrivenRevocation>
+            </tokenDescription>
+            <credentials>
+                <credential ref="IdmxCredential/1ownsil0lag0kqv8"/>
+            </credentials>
+            <pseudonymCandidates>
+                <pseudonymCandidate candidateId="0">
+                    <pseudonyms/>
+                </pseudonymCandidate>
+            </pseudonymCandidates>
+            <revealedFacts>
+                <revealedFact>
+                    <descriptions>
+                        <description lang="en">The value of NO FRIENDLY DESCRIPTION from Student ID is greater or equal than 2012-06-06Z</description>
+                    </descriptions>
+                </revealedFact>
+            </revealedFacts>
+            <revealedAttributeValues>
+                <revealedAttributeValue>
+                    <descriptions/>
+                </revealedAttributeValue>
+                <revealedAttributeValue>
+                    <descriptions/>
+                </revealedAttributeValue>
+            </revealedAttributeValues>
+            <inspectableAttributes/>
+        </tokenCandidate>
+    </tokenCandidates>
+    <policy Version="1.0">
+        <abc:PresentationPolicy PolicyUID="http://thebestbank.com/creditcards/issuance/policy">
+            <abc:Message>
+                <abc:Nonce>Uxwr/1k04n2hyA==</abc:Nonce>
+                <abc:ApplicationData>
+        <abc:TestApplicationData>
+                        <abc:Data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Student Account and Credit Card Issuance Request</abc:Data>
+                    </abc:TestApplicationData>
+      </abc:ApplicationData>
+            </abc:Message>
+            <abc:Credential Alias="#studentid">
+                <abc:CredentialSpecAlternatives>
+                    <abc:CredentialSpecUID>http://ethz.ch/studentid/specification</abc:CredentialSpecUID>
+                    <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+                </abc:CredentialSpecAlternatives>
+                <abc:IssuerAlternatives>
+                    <abc:IssuerParametersUID RevocationInformationUID="http://ethz.ch/revocation/info">http://ethz.ch/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:IssuerParametersUID RevocationInformationUID="http://msu.ru/revocation/info">http://msu.ru/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                    <abc:IssuerParametersUID RevocationInformationUID="http://www.admin.edu/revocation/info">http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+                </abc:IssuerAlternatives>
+                <abc:DisclosedAttribute AttributeType="Name"/>
+                <abc:DisclosedAttribute AttributeType="LastName"/>
+            </abc:Credential>
+            <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal">
+                <abc:Attribute CredentialAlias="#studentid" AttributeType="Expires"/>
+                <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:date">2012-06-06Z</abc:ConstantValue>
+            </abc:AttributePredicate>
+            <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                <abc:Attribute CredentialAlias="#studentid" AttributeType="Name"/>
+                <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">John</abc:ConstantValue>
+            </abc:AttributePredicate>
+            <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+                <abc:Attribute CredentialAlias="#studentid" AttributeType="LastName"/>
+                <abc:ConstantValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema" xsi:type="xs:string">Doe</abc:ConstantValue>
+            </abc:AttributePredicate>
+            <abc:VerifierDrivenRevocation>
+                <abc:RevocationParametersUID>http://ethz.ch/studentids/revocation/parameters</abc:RevocationParametersUID>
+                <abc:Attribute AttributeType="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" CredentialAlias="#studentid"/>
+            </abc:VerifierDrivenRevocation>
+        </abc:PresentationPolicy>
+        <abc:CredentialTemplate SameKeyBindingAs="#studentid">
+            <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+            <abc:IssuerParametersUID>http://thebestbank.com/cc/issuancekey_v1.0</abc:IssuerParametersUID>
+            <abc:UnknownAttributes>
+                <abc:CarriedOverAttribute TargetAttributeType="Name">
+                    <abc:SourceCredentialInfo Alias="#studentid" AttributeType="Name"/>
+                </abc:CarriedOverAttribute>
+                <abc:CarriedOverAttribute TargetAttributeType="LastName">
+                    <abc:SourceCredentialInfo Alias="#studentid" AttributeType="LastName"/>
+                </abc:CarriedOverAttribute>
+                <abc:CarriedOverAttribute TargetAttributeType="ExpirationDate">
+                    <abc:SourceCredentialInfo Alias="#studentid" AttributeType="Expires"/>
+                </abc:CarriedOverAttribute>
+                <abc:JointlyRandomAttribute TargetAttributeType="CardNumber"/>
+                <abc:JointlyRandomAttribute TargetAttributeType="Test"/>
+            </abc:UnknownAttributes>
+        </abc:CredentialTemplate>
+    </policy>
+</abc:UiIssuanceArguments>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema elementFormDefault="qualified" version="1.0" targetNamespace="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:tns="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="PolicyRequest" type="tns:PolicyRequest"/>
+
+  <xs:complexType name="PolicyRequest">
+    <xs:sequence>
+      <xs:element name="VerifierName" type="xs:string" minOccurs="0"/>
+      <xs:element name="VerifierPassword" type="xs:string" minOccurs="0"/>
+      <xs:element name="PolicyID" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+

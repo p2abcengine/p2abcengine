@@ -1,0 +1,777 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://abc4trust.eu/wp2/abcschemav1.0"
+  attributeFormDefault="unqualified" elementFormDefault="qualified">
+
+  <xs:element name="CredentialSpecification" type="CredentialSpecification" />
+  <xs:complexType name="CredentialSpecification">
+    <xs:sequence>
+      <xs:element name="SpecificationUID" type="xs:anyURI" />
+      <xs:element name="FriendlyCredentialName" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element name="DefaultImageReference" type="xs:anyURI" minOccurs="0"/>
+      <xs:element ref="AttributeDescriptions" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+    <xs:attribute name="KeyBinding" type="xs:boolean" use="required" />
+    <xs:attribute name="Revocable" type="xs:boolean" use="required" />
+  </xs:complexType>
+
+  <xs:element name="AttributeDescriptions" type="AttributeDescriptions" />
+  <xs:complexType name="AttributeDescriptions">
+  	<xs:sequence>
+      <xs:element ref="AttributeDescription" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="MaxLength" type="xs:unsignedInt" use="required" />
+  </xs:complexType>
+  <xs:element name="AttributeDescription" type="AttributeDescription" />
+  <xs:complexType name="AttributeDescription">
+    <xs:sequence>
+	  <xs:element name="FriendlyAttributeName" type="FriendlyDescription"  minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="AllowedValue" type="xs:string"  minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Type" type="xs:anyURI" use="required"/>
+    <xs:attribute name="DataType" type="AttributeDatatype" use="required"/>
+    <xs:attribute name="Encoding" type="AttributeEncoding" use="required"/>
+  </xs:complexType>
+ 
+  <xs:element name="FriendlyDescription" type="FriendlyDescription"/>
+    <xs:complexType name="FriendlyDescription">
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute name="lang" type="xs:language" use="required"/>
+        </xs:extension>
+      </xs:simpleContent>
+  </xs:complexType>
+   
+  <xs:element name="IssuerParameters" type="IssuerParameters" />
+  <xs:complexType name="IssuerParameters">
+    <xs:sequence>
+      <xs:element name="ParametersUID" type="xs:anyURI" />
+      <xs:element name="FriendlyIssuerDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element name="AlgorithmID" type="ABCAlgorithmId" />
+      <xs:element ref="SystemParameters" />
+      <xs:element name="CredentialSpecUID" type="xs:anyURI" />
+      <xs:element name="HashAlgorithm" type="HashAlgorithmId" />
+      <xs:element ref="CryptoParams" />
+      <xs:element ref="KeyBindingInfo" minOccurs="0" />
+      <xs:element name="RevocationParametersUID" type="xs:anyURI" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="SystemParameters" type="SystemParameters" />
+  <xs:complexType name="SystemParameters">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="CryptoParams" type="CryptoParams" />
+  <xs:complexType name="CryptoParams">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="KeyBindingInfo" type="KeyBindingInfo" />
+  <xs:complexType name="KeyBindingInfo">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="InspectorPublicKey" type="InspectorPublicKey" />
+  <xs:complexType name="InspectorPublicKey">
+    <xs:sequence>
+      <xs:element name="PublicKeyUID" type="xs:anyURI" />
+      <xs:element name="AlgorithmID" type="InspectionAlgorithmId" />
+      <xs:element name="FriendlyInspectorDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element ref="CryptoParams" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="RevocationAuthorityParameters" type="RevocationAuthorityParameters" />
+  <xs:complexType name="RevocationAuthorityParameters">
+    <xs:sequence>
+      <xs:element name="ParametersUID" type="xs:anyURI" />
+      <xs:element name="RevocationMechanism" type="xs:anyURI" />
+      <xs:element name="RevocationInfoReference" 	type="Reference" minOccurs="0" />
+      <xs:element name="NonRevocationEvidenceReference" type="Reference" minOccurs="0" />
+      <xs:element name="NonRevocationEvidenceUpdateReference" type="Reference" minOccurs="0" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="Reference">
+    <xs:sequence>
+      <xs:element name="References" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" />
+      <!--<xs:any type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" processContents="lax" />-->
+    </xs:sequence>
+    <xs:attribute name="ReferenceType" type="xs:anyURI" />
+  </xs:complexType>
+
+  <xs:element name="RevocationInformation" type="RevocationInformation" />
+  <xs:complexType name="RevocationInformation">
+    <xs:sequence>
+      <xs:element name="InformationUID" type="xs:anyURI" />
+      <xs:element name="RevocationAuthorityParameters" type="xs:anyURI" />
+      <xs:element name="Created" type="xs:dateTime" minOccurs="0" />
+      <xs:element name="Expires" type="xs:dateTime" minOccurs="0" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="RevocationMessage" type="RevocationMessage" />
+  <xs:complexType name="RevocationMessage">
+    <xs:sequence>
+      <xs:element name="RevocationAuthorityParametersUID" type="xs:anyURI" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Context" type="xs:anyURI" />
+  </xs:complexType>
+
+  <xs:element name="IssuanceMessage" type="IssuanceMessage" />
+  <xs:complexType name="IssuanceMessage">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+    <xs:attribute name="Context" type="xs:anyURI" />
+  </xs:complexType>
+
+  <xs:element name="IssuancePolicy" type="IssuancePolicy" />
+  <xs:complexType name="IssuancePolicy">
+    <xs:sequence>
+      <xs:element ref="PresentationPolicy" />
+      <xs:element ref="CredentialTemplate" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="CredentialTemplate" type="CredentialTemplate" />
+  <xs:complexType name="CredentialTemplate">
+    <xs:sequence>
+      <xs:element name="CredentialSpecUID" type="xs:anyURI" />
+      <xs:element name="IssuerParametersUID" type="xs:anyURI" />
+      <xs:element ref="UnknownAttributes"  minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="SameKeyBindingAs" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+
+  <xs:element name="UnknownAttributes" type="UnknownAttributes" />
+  <xs:complexType name="UnknownAttributes">
+    <xs:sequence>
+      <xs:element ref="CarriedOverAttribute" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element ref="JointlyRandomAttribute" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="JointlyRandomAttribute" type="JointlyRandomAttribute" />
+  <xs:complexType name="JointlyRandomAttribute">
+    <xs:attribute name="TargetAttributeType" type="xs:anyURI" use="required" />
+  </xs:complexType>
+
+  <xs:element name="CarriedOverAttribute" type="CarriedOverAttribute" />
+  <xs:complexType name="CarriedOverAttribute">
+    <xs:sequence>
+      <xs:element name="SourceCredentialInfo" type="AttSourceCredentialInfo"/>
+    </xs:sequence>
+    <xs:attribute name="TargetAttributeType" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+
+  <xs:complexType name="AttSourceCredentialInfo">
+    <xs:sequence />
+    <xs:attribute name="Alias" type="xs:anyURI" use="required" />
+    <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
+  </xs:complexType>
+
+  <xs:element name="IssuanceToken" type="IssuanceToken" />
+  <xs:complexType name="IssuanceToken">
+    <xs:sequence>
+      <xs:element name="IssuanceTokenDescription" type="IssuanceTokenDescription" />
+      <xs:element name="CryptoEvidence" type="CryptoParams" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="IssuanceTokenDescription">
+    <xs:sequence>
+      <xs:element ref="PresentationTokenDescription" />
+      <xs:element ref="CredentialTemplate" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="Pseudonym" type="Pseudonym" />
+  <xs:complexType name="Pseudonym">
+    <xs:sequence>
+      <xs:element ref="PseudonymValue" minOccurs="0" />
+      <xs:element name="SecretReference" type="xs:anyURI" />
+    </xs:sequence>
+    <xs:attribute name="Exclusive" type="xs:boolean" default="false" use="optional" />
+    <xs:attribute name="Scope" type="xs:string" use="required" />
+    <xs:attribute name="PseudonymUID" type="xs:anyURI" use="required" />
+  </xs:complexType>
+
+  <xs:element name="PseudonymValue" type="xs:base64Binary" />
+  
+  <xs:element name="PresentationPolicyAlternatives" type="PresentationPolicyAlternatives" />
+  <xs:complexType name="PresentationPolicyAlternatives">
+    <xs:sequence>
+      <xs:element ref="PresentationPolicy" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="PresentationPolicy" type="PresentationPolicy" />
+  <xs:complexType name="PresentationPolicy">
+    <xs:sequence>
+      <xs:element ref="Message" minOccurs="0" />
+      <xs:element name="Pseudonym" type="PseudonymInPolicy" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="Credential" type="CredentialInPolicy" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element ref="AttributePredicate" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="VerifierDrivenRevocation" type="VerifierDrivenRevocationInPolicy" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="PolicyUID" type="xs:anyURI" use="required" />
+  </xs:complexType>
+
+  <xs:element name="Message" type="Message" />
+  <xs:complexType name="Message">
+    <xs:sequence>
+      <xs:element name="Nonce" type="xs:base64Binary" minOccurs="0" />
+      <xs:element name="FriendlyPolicyName" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element name="FriendlyPolicyDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element ref="ApplicationData" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="ApplicationData" type="ApplicationData" />
+  <xs:complexType name="ApplicationData" mixed="true">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="PseudonymInPolicy" type="PseudonymInPolicy" />
+  <xs:complexType name="PseudonymInPolicy">
+    <xs:attribute name="Exclusive" type="xs:boolean" default="false" use="optional" />
+    <xs:attribute name="Scope" type="xs:string" use="required" />
+    <xs:attribute name="Alias" type="xs:anyURI" use="optional" />
+    <xs:attribute name="SameKeyBindingAs" type="xs:anyURI" use="optional" />
+    <xs:attribute name="Established" type="xs:boolean" default="false" use="optional" />
+  </xs:complexType>
+  
+  <xs:complexType name="CredentialInPolicy">
+    <xs:sequence>
+      <xs:element name="CredentialSpecAlternatives">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="CredentialSpecUID" type="xs:anyURI" maxOccurs="unbounded" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="IssuerAlternatives">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="IssuerParametersUID" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:simpleContent>
+                  <xs:extension base="xs:anyURI">
+                    <xs:attribute name="RevocationInformationUID" type="xs:anyURI" />
+                  </xs:extension>
+                </xs:simpleContent>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="DisclosedAttribute" type="AttributeInPolicy" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Alias" type="xs:anyURI" use="optional" />
+    <xs:attribute name="SameKeyBindingAs" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+
+  <xs:complexType name="AttributeInPolicy">
+     <xs:sequence minOccurs="0">
+        <xs:element name="InspectorAlternatives">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="InspectorPublicKeyUID" type="xs:anyURI" maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="InspectionGrounds" type="xs:string" />
+      </xs:sequence>
+    <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
+    <xs:attribute name="DataHandlingPolicy" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+  
+  <xs:complexType name="VerifierDrivenRevocationInPolicy">
+  <xs:sequence>
+    <xs:element name="RevocationParametersUID" type="xs:anyURI" /> 
+    <xs:element name="Attribute" type="AttributeInRevocation" maxOccurs="unbounded"/>
+  </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="VerifierDrivenRevocationInToken">
+  <xs:sequence>
+    <xs:element name="RevocationInformationUID" type="xs:anyURI" /> 
+    <xs:element name="Attribute" type="AttributeInRevocation" maxOccurs="unbounded"/>
+  </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="AttributeInRevocation">
+  <xs:attribute name="AttributeType" type="xs:anyURI" use="required"/>
+  <xs:attribute name="CredentialAlias" type="xs:anyURI" use="required" />
+  </xs:complexType>
+
+  <xs:element name="AttributePredicate" type="AttributePredicate" />
+  <xs:complexType name="AttributePredicate">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element name="Attribute">
+        <xs:complexType>
+          <xs:attribute name="CredentialAlias" type="xs:anyURI" use="required" />
+          <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
+          <xs:attribute name="DataHandlingPolicy" type="xs:anyURI" use="optional" />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ConstantValue" type="xs:anySimpleType" />
+    </xs:choice>
+    <xs:attribute name="Function" type="PredicateFunction" use="required" />
+  </xs:complexType>
+
+  <xs:simpleType name="PredicateFunction">
+    <xs:restriction base="xs:anyURI">
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:string-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:boolean-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:integer-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:date-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:time-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:dateTime-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:anyURI-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:integer-greater-than" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:integer-greater-than-or-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:integer-less-than" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:integer-less-than-or-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:date-greater-than" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:date-greater-than-or-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:date-less-than" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:date-less-than-or-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:dateTime-greater-than" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:dateTime-greater-than-or-equal" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:dateTime-less-than" />
+      <xs:enumeration value="urn:oasis:names:tc:xacml:1.0:function:dateTime-less-than-or-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:string-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:boolean-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:integer-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:date-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:time-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:dateTime-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:anyURI-not-equal" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:string-equal-oneof" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:boolean-equal-oneof" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:integer-equal-oneof" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:date-equal-oneof" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:time-equal-oneof" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:dateTime-equal-oneof" />
+      <xs:enumeration value="urn:abc4trust:1.0:function:anyURI-equal-oneof" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="AttributeDatatype">
+    <xs:restriction base="xs:anyURI">
+      <xs:enumeration value="xs:string" />
+      <xs:enumeration value="xs:anyURI" />
+      <xs:enumeration value="xs:date" />
+      <xs:enumeration value="xs:time" />
+      <xs:enumeration value="xs:dateTime" />
+      <xs:enumeration value="xs:integer" />
+      <xs:enumeration value="xs:boolean" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="AttributeEncoding">
+    <xs:restriction base="xs:anyURI">
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:string:sha-256" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:string:utf-8" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:anyUri:sha-256" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:anyUri:utf-8" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:dateTime:unix:signed" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:dateTime:unix:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:date:unix:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:date:unix:signed" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:date:since1870:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:date:since2010:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:time:sinceMidnight:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:boolean:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:integer:unsigned" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:integer:signed" />
+      <xs:enumeration value="urn:abc4trust:1.0:encoding:string:prime"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="HashAlgorithmId">
+    <xs:restriction base="xs:anyURI">
+      <xs:enumeration value="urn:abc4trust:1.0:hashalgorithm:sha-256" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="ABCAlgorithmId">
+    <xs:restriction base="xs:anyURI">
+      <xs:enumeration value="urn:abc4trust:1.0:algorithm:idemix" />
+      <xs:enumeration value="urn:abc4trust:1.0:algorithm:uprove" />
+    </xs:restriction>
+  </xs:simpleType>
+  
+  <xs:simpleType name="InspectionAlgorithmId">
+    <xs:restriction base="xs:anyURI">
+      <xs:enumeration value="urn:abc4trust:1.0:inspectionalgorithm:camenisch-shoup03" />
+    </xs:restriction>
+  </xs:simpleType>  
+
+  <xs:element name="PresentationToken" type="PresentationToken" />
+  <xs:complexType name="PresentationToken">
+    <xs:sequence>
+      <xs:element ref="PresentationTokenDescription" />
+      <xs:element name="CryptoEvidence" type="CryptoParams" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+
+  <xs:element name="PresentationTokenDescription" type="PresentationTokenDescription" />
+  <xs:complexType name="PresentationTokenDescription">
+    <xs:sequence>
+      <xs:element ref="Message" minOccurs="0" />
+      <xs:element name="Pseudonym" type="PseudonymInToken" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="Credential" type="CredentialInToken"
+        minOccurs="0" maxOccurs="unbounded" />
+      <xs:element ref="AttributePredicate" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="VerifierDrivenRevocation" type="VerifierDrivenRevocationInToken" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="PolicyUID" type="xs:anyURI" use="required" />
+    <xs:attribute name="TokenUID" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+  
+  <xs:element name="PresentationTokenWithCommitments" type="PresentationTokenWithCommitments" />
+  <xs:complexType name="PresentationTokenWithCommitments">
+    <xs:sequence>
+      <xs:element ref="PresentationTokenDescriptionWithCommitments" />
+      <xs:element name="CryptoEvidence" type="CryptoParams" />
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string" use="required" />
+  </xs:complexType>
+  
+  <xs:element name="PseudonymInToken" type="PseudonymInToken" />
+  <xs:complexType name="PseudonymInToken">
+    <xs:sequence>
+      <xs:element ref="PseudonymValue" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Exclusive" type="xs:boolean" default="false" use="optional" />
+    <xs:attribute name="Scope" type="xs:string" use="required" />
+    <xs:attribute name="Alias" type="xs:anyURI" use="optional" />
+    <xs:attribute name="SameKeyBindingAs" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+
+  <xs:element name="CredentialInToken" type="CredentialInToken" />
+  <xs:complexType name="CredentialInToken">
+    <xs:sequence>
+      <xs:element name="CredentialSpecUID" type="xs:anyURI" />
+      <xs:element name="IssuerParametersUID" type="xs:anyURI" />
+      <xs:element name="RevocationInformationUID" type="xs:anyURI" minOccurs="0" />
+      <xs:element name="DisclosedAttribute" type="AttributeInToken" maxOccurs="unbounded"
+        minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Alias" type="xs:anyURI" use="optional" />
+    <xs:attribute name="SameKeyBindingAs" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+
+  <xs:element name="AttributeInToken" type="AttributeInToken" />
+  <xs:complexType name="AttributeInToken">
+    <xs:sequence>
+      <xs:sequence minOccurs="0">
+        <xs:element name="InspectorPublicKeyUID" type="xs:anyURI" />
+        <xs:element name="InspectionGrounds" type="xs:string" />
+      </xs:sequence>
+      <xs:element name="AttributeValue" type="xs:anySimpleType" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
+    <xs:attribute name="DataHandlingPolicy" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+  
+    <xs:element name="PresentationTokenDescriptionWithCommitments" type="PresentationTokenDescriptionWithCommitments" />
+  <xs:complexType name="PresentationTokenDescriptionWithCommitments">
+    <xs:sequence>
+      <xs:element ref="Message" minOccurs="0" />
+      <xs:element name="Pseudonym" type="PseudonymInToken" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="Credential" type="CredentialInTokenWithCommitments"
+        minOccurs="0" maxOccurs="unbounded" />
+      <xs:element ref="AttributePredicate" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="VerifierDrivenRevocation" type="VerifierDrivenRevocationInToken" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="CryptoEvidence" type="CryptoParams" />
+    </xs:sequence>
+    <xs:attribute name="PolicyUID" type="xs:anyURI" use="required" />
+    <xs:attribute name="TokenUID" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+  
+  <xs:element name="CredentialInTokenWithCommitments" type="CredentialInTokenWithCommitments" />
+  <xs:complexType name="CredentialInTokenWithCommitments">
+    <xs:sequence>
+      <xs:element name="CredentialSpecUID" type="xs:anyURI" />
+      <xs:element name="IssuerParametersUID" type="xs:anyURI" />
+      <xs:element name="RevocationInformationUID" type="xs:anyURI" minOccurs="0" />
+      <xs:element name="DisclosedAttribute" type="AttributeInToken" maxOccurs="unbounded"
+        minOccurs="0" />
+      <xs:element name="CommittedKey" type="CommittedKey"  minOccurs="0" />
+      <xs:element name="CommittedAttribute" type="CommittedAttribute" maxOccurs="unbounded"
+        minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="Alias" type="xs:anyURI" use="optional" />
+    <xs:attribute name="SameKeyBindingAs" type="xs:anyURI" use="optional" />
+  </xs:complexType>
+  
+  <xs:element name="CommittedKey" type="CommittedKey" />
+  <xs:complexType name="CommittedKey">
+    <xs:sequence>
+      <xs:element name="Commitment" type="CryptoParams" minOccurs="0" />
+      <xs:element name="CommittedValue" type="CryptoParams" minOccurs="0" />
+      <xs:element name="OpeningInformation" type="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="CommittedAttribute" type="CommittedAttribute" />
+  <xs:complexType name="CommittedAttribute">
+    <xs:sequence>
+      <xs:element name="Commitment" type="CryptoParams" minOccurs="0" />
+      <xs:element name="CommittedValue" type="CryptoParams" minOccurs="0" />
+      <xs:element name="OpeningInformation" type="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
+  </xs:complexType>
+ 
+  <xs:element name="Credential" type="Credential" />
+  <xs:complexType name="Credential">
+    <xs:sequence>
+      <xs:element ref="CredentialDescription"/>
+      <xs:element name="NonRevocationEvidenceUID" type="xs:anyURI" minOccurs="0"
+        maxOccurs="unbounded" />
+      <xs:element ref="CryptoParams" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="Attribute" type="Attribute" />
+  <xs:complexType name="Attribute">
+    <xs:sequence>
+      <xs:element name="AttributeUID" type="xs:anyURI" />
+      <xs:element ref="AttributeDescription" />
+      <xs:element name="AttributeValue" type="xs:anyType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="CredentialDescription" type="CredentialDescription" />
+  <xs:complexType name="CredentialDescription">
+    <xs:sequence>
+      <xs:element name="CredentialUID" type="xs:anyURI" />
+      <xs:element name="FriendlyCredentialName" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element name="ImageReference" type="xs:anyURI" minOccurs="0"/>
+      <xs:element name="CredentialSpecificationUID" type="xs:anyURI" />
+      <xs:element name="IssuerParametersUID" type="xs:anyURI" />
+      <xs:element name="SecretReference" type="xs:anyURI" minOccurs="0" />
+      <xs:element ref="Attribute" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="RevokedByIssuer" type="xs:boolean" default="false" />
+  </xs:complexType>
+
+  <xs:element name="NonRevocationEvidence" type="NonRevocationEvidence" />
+  <xs:complexType name="NonRevocationEvidence">
+    <xs:sequence>
+      <xs:element name="NonRevocationEvidenceUID" type="xs:anyURI" />
+      <xs:element name="RevocationAuthorityParametersUID" type="xs:anyURI" />
+      <xs:element name="CredentialUID" type="xs:anyURI" />
+      <xs:element name="Created" type="xs:dateTime" minOccurs="0" />
+      <xs:element name="Expires" type="xs:dateTime" minOccurs="0" />
+      <xs:element name="Epoch" type="xs:int" minOccurs="0" />
+      <xs:element ref="Attribute" maxOccurs="unbounded" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="NonRevocationEvidenceUpdate" type="NonRevocationEvidenceUpdate" />
+  <xs:complexType name="NonRevocationEvidenceUpdate">
+    <xs:sequence>
+      <xs:element name="NonRevocationEvidenceUpdateUID" type="xs:anyURI" />
+      <xs:element name="NonRevocationEvidenceUID" type="xs:anyURI" />
+      <xs:element name="RevocationAuthorityParametersUID" type="xs:anyURI" />
+      <xs:element name="Created" type="xs:dateTime" minOccurs="0" />
+      <xs:element name="Expires" type="xs:dateTime" minOccurs="0" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="Metadata" type="Metadata" />
+  <xs:complexType name="Metadata">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+  </xs:complexType>
+
+<!-- HumanReadableData element will be removed after fixing the build -->
+  <xs:element name="PseudonymMetadata" type="PseudonymMetadata" />
+  <xs:complexType name="PseudonymMetadata">
+    <xs:sequence>
+      <xs:element name="HumanReadableData" type="xs:string" /> 
+      <xs:element name="FriendlyPseudonymDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element ref="Metadata" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="PseudonymWithMetadata" type="PseudonymWithMetadata" />
+  <xs:complexType name="PseudonymWithMetadata">
+    <xs:sequence>
+      <xs:element ref="Pseudonym" />
+      <xs:element ref="PseudonymMetadata" minOccurs="0" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="IssuanceProtocolMetadata" type="IssuanceProtocolMetadata"/>
+  <xs:complexType name="IssuanceProtocolMetadata">
+    <xs:attribute name="Counter" type="xs:integer" use="required" />
+  </xs:complexType>
+  
+  <xs:element name="Secret" type="Secret" />
+  <xs:complexType name="Secret">
+    <xs:sequence>
+      <xs:element ref="SecretDescription"/>
+      <xs:element name="SystemParameters" type="SmartcardSystemParameters" minOccurs="0"/>
+      <xs:element name="SecretKey" type="xs:integer" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="SmartcardSystemParameters" type="SmartcardSystemParameters" />
+  <xs:complexType name="SmartcardSystemParameters">
+    <xs:sequence>
+      <xs:element name="primeModulus" type="xs:integer" />
+      <xs:element name="generator" type="xs:integer" />
+      <xs:element name="subgroupOrder" type="xs:integer" />
+      <xs:element name="zkChallengeSizeBytes" type="xs:int" />
+      <xs:element name="zkStatisticalHidingSizeBytes" type="xs:int" />
+      <xs:element name="deviceSecretSizeBytes" type="xs:int" />
+      <xs:element name="signatureNonceLengthBytes" type="xs:int" />
+      <xs:element name="zkNonceSizeBytes" type="xs:int" />
+      <xs:element name="zkNonceOpeningSizeBytes" type="xs:int" />
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- HumanReadableData element will be removed after fixing the build -->
+  <xs:element name="SecretDescription" type="SecretDescription" />
+  <xs:complexType name="SecretDescription">
+    <xs:sequence>
+      <xs:element name="SecretUID" type="xs:anyURI" />
+ <!--      <xs:element name="HumanReadableData" type="xs:string" minOccurs="0"/> --> 
+       <xs:element name="FriendlySecretDescription" type="FriendlyDescription" minOccurs="0" maxOccurs="unbounded"  />
+      <xs:element ref="Metadata"  minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="DeviceBoundSecret" type="xs:boolean" default="false" />
+  </xs:complexType>
+   
+  <xs:element name="SmartcardPinRequests" type="SmartcardPinRequests" />
+  <xs:complexType name="SmartcardPinRequests">
+    <xs:sequence>
+      <xs:element name="SmartcardPinRequest" type="SmartcardPinRequest" minOccurs="0" maxOccurs="unbounded"  />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="SmartcardPinRequest">
+  </xs:complexType>
+  
+  <xs:element name="RevocationAuthoritySecretKey" type="SecretKey" />
+
+  <xs:element name="IssuerSecretKey" type="SecretKey" />
+  
+  <xs:element name="InspectorSecretKey" type="SecretKey" />
+    
+  <xs:complexType name="SecretKey">
+    <xs:sequence>
+      <xs:element name="secretKeyUID" type="xs:anyURI" />
+      <xs:element ref="CryptoParams" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="IssuanceLogEntry" type="IssuanceLogEntry" />
+  <xs:complexType name="IssuanceLogEntry">
+    <xs:sequence>
+      <xs:element name="IssuanceLogEntryUID" type="xs:anyURI" />
+      <xs:element name="IssuerParametersUID" type="xs:anyURI" />
+      <xs:element ref="IssuanceToken" minOccurs="0"/>
+      <xs:element name="IssuerAttributes" type="AttributeInLogEntry" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:element name="RevocationHistory" type="RevocationHistory" />
+  <xs:complexType name="RevocationHistory">
+    <xs:sequence>
+      <xs:element name="RevocationHistoryUID" type="xs:anyURI" />
+      <xs:element name="RevocationAuthorityParametersUID" type="xs:anyURI" />
+      <xs:element name="CurrentState" type="CryptoParams" minOccurs="0" />
+      <xs:element name="RevocationLogEntry" type="RevocationLogEntry" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  <xs:complexType name="RevocationLogEntry">
+    <xs:sequence>
+      <xs:element name="RevocationLogEntryUID" type="xs:anyURI" />
+      <xs:element name="RevocableAttribute"  type="AttributeInLogEntry" maxOccurs="unbounded" />
+      <xs:element name="DateCreated" type="xs:dateTime"/>
+      <xs:element name="CryptoParameters" type="CryptoParams" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="Revoked" type="xs:boolean" use="required"/>
+  </xs:complexType>
+  
+  <xs:element name="AttributeInLogEntry" type="AttributeInLogEntry" />
+  <xs:complexType name="AttributeInLogEntry">
+    <xs:sequence>
+      <xs:element name="AttributeValue" type="xs:anyType" />
+    </xs:sequence>
+    <xs:attribute name="AttributeType" type="xs:anyURI" use="required" />
+  </xs:complexType>
+  
+  <xs:element name="CredentialSpecificationAndSystemParameters" type="CredentialSpecificationAndSystemParameters" />
+  <xs:complexType name="CredentialSpecificationAndSystemParameters">
+    <xs:sequence>
+      <xs:element name="CredentialSpecification" type="CredentialSpecification"/>
+      <xs:element name="SystemParameters" type="SystemParameters"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="IssuancePolicyAndAttributes" type="IssuancePolicyAndAttributes" />
+  <xs:complexType name="IssuancePolicyAndAttributes">
+    <xs:sequence>
+      <xs:element name="IssuancePolicy" type="IssuancePolicy"/>
+      <xs:element ref="Attribute" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="IssuanceMessageAndBoolean" type="IssuanceMessageAndBoolean" />
+  <xs:complexType name="IssuanceMessageAndBoolean">
+    <xs:sequence>
+      <xs:element name="IssuanceMessage" type="IssuanceMessage"/>
+      <xs:element name="LastMessage" type="xs:boolean"/>
+      <xs:element name="IssuanceLogEntryURI" type="xs:anyURI"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="RevocationReferences" type="RevocationReferences" />
+  <xs:complexType name="RevocationReferences">
+    <xs:sequence>
+      <xs:element name="RevocationInfoReference" 	type="Reference" minOccurs="0" />
+      <xs:element name="NonRevocationEvidenceReference" type="Reference" minOccurs="0" />
+      <xs:element name="NonRevocationEvidenceUpdateReference" type="Reference" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  
+  
+</xs:schema>
