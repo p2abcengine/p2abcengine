@@ -58,11 +58,6 @@
         <version>${abc4trust.version}</version>
       </dependency>
       <dependency>
-        <groupId>eu.abc4trust.ri</groupId>
-        <artifactId>ui-osgi-dependency-ws-rt</artifactId>
-        <version>${abc4trust.version}</version>
-      </dependency>
-      <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>2.4</version>

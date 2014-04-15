@@ -38,10 +38,6 @@
       <groupId>eu.abc4trust.ri</groupId>
       <artifactId>ui-osgi-dependencies</artifactId>
     </dependency>
-    <dependency> <!-- To make the com.sun.xml.bind.marshaller.NamespacePrefixMapper work: -->
-      <groupId>eu.abc4trust.ri</groupId>
-      <artifactId>ui-osgi-dependency-ws-rt</artifactId>
-    </dependency>
     <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-client</artifactId>
