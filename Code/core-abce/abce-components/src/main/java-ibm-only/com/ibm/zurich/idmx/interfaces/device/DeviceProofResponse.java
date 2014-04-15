@@ -20,6 +20,7 @@
 //* under the License.                                                *
 //*/**/****************************************************************
 
+package com.ibm.zurich.idmx.interfaces.device;
 
 import java.math.BigInteger;
 import java.net.URI;
