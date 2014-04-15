@@ -26,7 +26,7 @@ We provide a number of core components for authentication with privacy-preservin
 
 Building a full-fledged authentication and authorization solution requires a number of additional components such as credential storage or key management. We provide basic implementations of such components and of example application as well. While these components could be useful as well, you might have to replace them with your own ones to integrate the core components into your application.
 
-Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either [Microsoft U-Prove](http://uprovecsharp.codeplex.com) and/or [IBM Identity Mixer](http://prime.inf.tu-dresden.de/idemix) separately (some of the the features will only work if Identity Mixer is installed).
+Finally, we do not provide that cryptography that generates the cryptographic values in the authentication token. However, our engine is designed to be used with Identity Mixer and U-Prove. So all you need to do is to download either [Microsoft U-Prove](http://uprovecsharp.codeplex.com) and/or [IBM Identity Mixer](https://abc4trust.eu/idemix) separately (some of the the features will only work if Identity Mixer is installed).
 
 For more details about the components and how to integrate them into an application we refer to the [Architecture](https://github.com/p2abcengine/p2abcengine/wiki/Architecture) page.
 
