@@ -11,16 +11,6 @@ This Privacy-Preserving Attribute-Based Credential Engine enables application de
 
 An introduction to the project and links to further information is found on the [wiki][wikihome].
 
-License
-===========
-The source code of the p2abcengine is licensed under the [Apache License, Version 2.0](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSE.txt).
-
-Note, however, that the p2abcengine depends on a number of Java libraries that are licensed under other licenses.
-For details, see the [overview of licenses of the library dependencies](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSES-OF-DEPENDENCIES.txt).
-
-The p2abcengine requires either [IBM Identity Mixer](https://abc4trust.eu/idemix) or [Microsoft U-Prove](http://uprovecsharp.codeplex.com) as cryptographic engines (some of the the features will only work if Identity Mixer is installed). U-Prove is available under the [Apache License, Version 2.0](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSE.txt) whereas
-Identity Mixer is available under the [Identity Mixer License](https://abc4trust.eu/idemix).
-
 
 Overview of Codebase
 ===========
@@ -42,6 +32,18 @@ ABCE][wikiintegration]. Or the page on how to build the ABCE for information on 
 [wikihome]: https://github.com/p2abcengine/p2abcengine/wiki
 [wikiintegration]: https://github.com/p2abcengine/p2abcengine/wiki/Integrating%20the%20ABC-Engine
 [wikihowtobuild]: https://github.com/p2abcengine/p2abcengine/wiki/How-to-Build-the-ABC-Engine
+
+License
+===========
+The source code of the p2abcengine is licensed under the [Apache License, Version 2.0](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSE.txt).
+
+Note, however, that the p2abcengine depends on a number of Java libraries that are licensed under other licenses.
+For details, see the [overview of licenses of the library dependencies](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSES-OF-DEPENDENCIES.txt).
+
+The p2abcengine requires either [IBM Identity Mixer](https://abc4trust.eu/idemix) or [Microsoft U-Prove](http://uprovecsharp.codeplex.com) as cryptographic engines (some of the the features will only work if Identity Mixer is installed). U-Prove is available under the [Apache License, Version 2.0](https://github.com/p2abcengine/p2abcengine/blob/master/Code/LICENSE.txt) whereas
+Identity Mixer is available under the [Identity Mixer License](https://abc4trust.eu/idemix).
+
+
 
 Acknowledgements
 ===============
