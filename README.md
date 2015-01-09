@@ -1,7 +1,7 @@
 <p style="text-align: center;">
-<a href="https://abc4trust.eu/" ><img src="https://raw2.github.com/p2abcengine/p2abcengine/master/Documentation/logos/abc4trust.png" alt="Abc4Trust" /></a>
-<a href="http://fi-ware.eu" ><img src="https://raw2.github.com/p2abcengine/p2abcengine/master/Documentation/logos/fiware.png" alt="FI-Ware" /></a>
-<a href="http://primelife.ercim.eu" ><img src="https://raw2.github.com/p2abcengine/p2abcengine/master/Documentation/logos/primelife.jpeg" alt="PrimeLife" /></a>
+<a href="https://abc4trust.eu/" ><img src="https://raw.github.com/p2abcengine/p2abcengine/master/Documentation/logos/abc4trust.png" alt="Abc4Trust" /></a>
+<a href="http://fi-ware.eu" ><img src="https://raw.github.com/p2abcengine/p2abcengine/master/Documentation/logos/fiware.png" alt="FI-Ware" /></a>
+<a href="http://primelife.ercim.eu" ><img src="https://raw.github.com/p2abcengine/p2abcengine/master/Documentation/logos/primelife.jpeg" alt="PrimeLife" /></a>
 </p>
 
 p2abcengine
