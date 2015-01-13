@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is the issuance policy for issuance of the Soderhamn School credential. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:issuance:credSchool">
+        
+        <abc:Pseudonym Exclusive="true" Scope="urn:soderhamn:registration" Established="true" Alias="#nym"/>
+    </abc:PresentationPolicy>
+    
+    <abc:CredentialTemplate SameKeyBindingAs="#nym">
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSameKeyAs</abc:CredentialSpecUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSameKeyAsNym</abc:IssuerParametersUID>
+    </abc:CredentialTemplate>
+    
+</abc:IssuancePolicy>

@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -23,7 +24,6 @@
 package eu.abc4trust.ri.service.inspector;
 
 import java.io.File;
-import java.math.BigInteger;
 import java.net.URI;
 import java.util.List;
 
@@ -37,12 +37,14 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.xml.bind.JAXBElement;
 
+import eu.abc4trust.ri.servicehelper.AbstractHelper;
+import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.ri.servicehelper.inspector.InspectorHelper;
-import eu.abc4trust.util.attributeEncoding.MyAttributeEncodingFactory;
-import eu.abc4trust.util.attributeTypes.MyAttributeValue;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.SystemParameters;
 
 /**
  */
@@ -50,7 +52,9 @@ import eu.abc4trust.xml.PresentationToken;
 public class InspectService {
 
 
-  private final URI[] inspectorPublicKeyUIDs = {URI.create("urn:soderhamn:inspectorpk")};
+  public static final URI[] inspectorPublicKeyUIDs = {URI.create("urn:patras:inspector:tombola"),
+  // URI.create("urn:soderhamn:inspectorpk")
+      };
   ObjectFactory of = new ObjectFactory();
 
   public InspectService() {}
@@ -58,21 +62,34 @@ public class InspectService {
   public void initInspectorHelper(String testcase) throws Exception {
     System.out.println("InspectService");
     String fileStoragePrefix;
-    String systemParametersResource; 
+    String systemParametersResource;
+
+
     if (new File("target").exists()) {
       fileStoragePrefix = "target/inspector_";
-      systemParametersResource = "target/issuer_idemix_system_params_bridged";
+      systemParametersResource = "target/issuer_" + AbstractHelper.SYSTEM_PARAMS_XML_NAME;
     } else {
       fileStoragePrefix = "integration-test-inspector/target/inspector_";
-      systemParametersResource = "integration-test-inspector/target/issuer_idemix_system_params_bridged";
+      systemParametersResource = "integration-test-inspector/target/issuer_" + AbstractHelper.SYSTEM_PARAMS_XML_NAME;
     }
 
-    String[] credSpecResourceList =
-        {"/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchool.xml"};
+    SystemParameters systemParams = FileSystem.loadXmlFromResource(systemParametersResource);
+
+    String[] credSpecResourceList;
+    boolean soderhamn = "soderhamn".equals(testcase);
+    if (soderhamn) {
+      credSpecResourceList =
+          new String[] {"/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchool.xml"};
+    } else {
+      credSpecResourceList =
+          new String[] {"/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasUniversity.xml"};
+    }
+    List<CredentialSpecification> credSpecList =
+        FileSystem.loadXmlListFromResources(credSpecResourceList);
 
     InspectorHelper.resetInstance();
-    InspectorHelper.initInstance(fileStoragePrefix, fileStoragePrefix, systemParametersResource, inspectorPublicKeyUIDs,
-        credSpecResourceList);
+    InspectorHelper.initInstance(fileStoragePrefix, fileStoragePrefix, systemParams,
+        inspectorPublicKeyUIDs, credSpecList);
   }
 
   @GET()
@@ -96,26 +113,28 @@ public class InspectService {
 
     try {
       System.out.println("InspectService : ===================================================");
-      System.out.println("InspectService : issuedValue : " + issuedValue + " : " + presentationToken);
-//      System.out.println("Inspect PresentationToken " + XmlUtils.toXml(presentationToken));
+      System.out.println("InspectService : issuedValue : " + issuedValue + " : "
+          + presentationToken);
+      // System.out.println("Inspect PresentationToken " + XmlUtils.toXml(presentationToken));
 
 
       List<Attribute> atts = InspectorHelper.getInstance().inspect(presentationToken.getValue());
-      if(atts != null) {
+      if (atts != null) {
         System.out.println("- inspected attributes : " + atts);
-        for(Attribute a : atts) {
-          
-          System.out.println("--- " + a.getAttributeUID() + " : " + a.getAttributeValue().getClass() + ": " + a.getAttributeValue() + " " + a.getAttributeDescription().getType() + " : " + a.getAttributeDescription().getDataType() + " : " + a.getAttributeDescription().getEncoding());
-          MyAttributeValue value = MyAttributeEncodingFactory.recoverValueFromBigInteger(a.getAttributeDescription().getEncoding(), (BigInteger)a.getAttributeValue(), null);
-          System.out.println("--- " + value );
-          if(issuedValue.equals(value.getValueAsObject().toString())) {
-            // every thing ok!
-          } else {
-            throw new IllegalStateException("Issued AttributeValue must match issued value - issued " + issuedValue + " - inspected : " + value); 
-          }
+        for (Attribute a : atts) {
+
+          System.out.println("--- " + a.getAttributeUID() + " : "
+              + a.getAttributeValue().getClass() + ": " + a.getAttributeValue() + " "
+              + a.getAttributeDescription().getType() + " : "
+              + a.getAttributeDescription().getDataType() + " : "
+              + a.getAttributeDescription().getEncoding());
+          System.out.println("--- " + a.getAttributeValue());
         }
       } else {
         System.out.println("- inspected attributes is null : " + atts);
+      }
+      if (issuedValue != null && (atts == null || atts.size() == 0)) {
+        throw new RuntimeException("Expected more than zero inspectable attributes");
       }
 
       return "OK";
@@ -124,7 +143,7 @@ public class InspectService {
       e.printStackTrace();
       throw new Exception("Failed : " + e);
     }
-    
+
   }
 
 }

@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -25,9 +27,7 @@ package eu.abc4trust.util;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.Test;
-
 import eu.abc4trust.returnTypes.ui.RevealedAttributeValue;
 import eu.abc4trust.returnTypes.ui.RevealedFact;
 import eu.abc4trust.returnTypes.ui.RevealedFactsAndAttributeValues;
@@ -40,7 +40,7 @@ public class RevealedAttrsAndFactsdDescrGeneratorTest {
 
 	@Test
 	public void testFriendlyTokenDescriptionGenerator() throws Exception {
-		
+
         //---------------------------------------------------
         //Store credential specifications
         //---------------------------------------------------
@@ -64,22 +64,29 @@ public class RevealedAttrsAndFactsdDescrGeneratorTest {
         }
         
         //---------------------------------------------------
-        //Test
+        //Retrieve presentation tokens
         //---------------------------------------------------
 	
-        runTest("/eu/abc4trust/sampleXml/presentationTokens/presentationTokenCreditCardForFriendlyGenTest.xml", uriCredspecs);
-        runTest("/eu/abc4trust/sampleXml/presentationTokens/presentationTokenCreditCardForFriendlyGenTestOnlyDisclosed.xml", uriCredspecs);
-        runTest("/eu/abc4trust/sampleXml/presentationTokens/presentationTokenHotelOption1.xml", uriCredspecs);
+		PresentationToken ptCard =
+	                (PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
+	                        "/eu/abc4trust/sampleXml/presentationTokens/presentationTokenCreditCardForFriendlyGenTest.xml"), true);
+
+		PresentationToken ptHotel =
+                (PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
+                        "/eu/abc4trust/sampleXml/presentationTokens/presentationTokenHotelOption1.xml"), true);
+
 		
-	}
-	
-	private void runTest(String ptdFileName,  Map<URI,CredentialSpecification> uriCredspecs) throws Exception{
-	     PresentationToken pt =
-          (PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
-                  ptdFileName), true);
-	     RevealedFactsAndAttributeValues rvs = RevealedAttrsAndFactsdDescrGenerator.generateFriendlyDesciptions(pt.getPresentationTokenDescription(),uriCredspecs);
-	        printRevealedAttributes(rvs);
-	        printRevealedFacts(rvs);
+	    //---------------------------------------------------
+        //Generate friendly descriptions of revealed facts and attribute values
+        //---------------------------------------------------
+
+		RevealedFactsAndAttributeValues rvs = RevealedAttrsAndFactsdDescrGenerator.generateFriendlyDesciptions(ptCard.getPresentationTokenDescription(),uriCredspecs);
+		printRevealedAttributes(rvs);
+		printRevealedFacts(rvs);
+				
+		RevealedFactsAndAttributeValues rvs2 = RevealedAttrsAndFactsdDescrGenerator.generateFriendlyDesciptions(ptHotel.getPresentationTokenDescription(), uriCredspecs);
+		printRevealedAttributes(rvs2);
+		printRevealedFacts(rvs2);
 	}
 	
 	private void printRevealedFacts(RevealedFactsAndAttributeValues revAttsAndValues){

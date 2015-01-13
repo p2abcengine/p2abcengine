@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -26,16 +25,19 @@ import java.util.List;
 
 import eu.abc4trust.returnTypes.UiPresentationArguments;
 import eu.abc4trust.util.MyCandidateToken;
+import eu.abc4trust.xml.VerifierParameters;
 
 public class PresentationState {
 
   public final UiPresentationArguments arg;
   public final List<MyCandidateToken> candidateTokens;
+  public final VerifierParameters vp;
   
-  public PresentationState(UiPresentationArguments arg, List<MyCandidateToken> candidateTokens) {
+  public PresentationState(UiPresentationArguments arg, List<MyCandidateToken> candidateTokens, VerifierParameters vp) {
     super();
     this.arg = arg;
     this.candidateTokens = candidateTokens;
+    this.vp = vp;
   }
 
 }

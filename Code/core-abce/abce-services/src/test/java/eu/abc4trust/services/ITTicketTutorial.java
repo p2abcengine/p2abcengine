@@ -1,9 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,7 +45,6 @@ import org.xml.sax.SAXException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
-import com.ibm.zurich.idmx.utils.Parser;
 
 import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PolicyCredentialMatcherImpl;
 import eu.abc4trust.abce.utils.SecretWrapper;
@@ -65,10 +65,10 @@ import eu.abc4trust.ri.servicehelper.verifier.VerificationHelper;
 import eu.abc4trust.services.helpers.RevocationHelper;
 import eu.abc4trust.smartcard.BasicSmartcard;
 import eu.abc4trust.util.CryptoUriUtil;
-import eu.abc4trust.util.DummyForNewABCEInterfaces;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.FriendlyDescription;
+import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
@@ -89,6 +89,7 @@ import eu.abc4trust.xml.util.XmlUtils;
 public class ITTicketTutorial extends ITAbstract {
 
     private static final CryptoEngine cryptoEngine = CryptoEngine.IDEMIX;
+    private static final String USERNAME = "default_user";
 
     private static final String revocation_fileStoragePrefix = "target/revocation_storage/";
     private static final String issuerParamsPrefix = "target/issuer_resources/";
@@ -101,6 +102,7 @@ public class ITTicketTutorial extends ITAbstract {
 
     private static final int revocation_keyLength = 1024;
 
+    private SystemParameters sysparams;
     static ObjectFactory of = new ObjectFactory();
 
     final String baseUrl = "http://localhost:9500/abce-services/issuer";
@@ -154,7 +156,7 @@ public class ITTicketTutorial extends ITAbstract {
 
         // Setup System Parameters.
         SystemParameters systemParameters = this.setupSystemParameters(issuanceHelper);
-
+sysparams = systemParameters;
         // Store System parameters at Revocation Authority.
         this.storeSystemParametersAtRevocationAuthority(systemParameters);
 
@@ -206,8 +208,8 @@ public class ITTicketTutorial extends ITAbstract {
                 issuerParameters);
 
         // Create smartcard at user.
-        this.createSmartcardAtUser(userHelper,
-                issuerParameters.getParametersUID());
+//        this.createSmartcardAtUser(userHelper,
+//                issuerParameters.getParametersUID());
 
         // Init issuance protocol.
         IssuanceMessageAndBoolean issuanceMessageAndBoolean = this
@@ -285,7 +287,7 @@ public class ITTicketTutorial extends ITAbstract {
     private PresentationToken createPresentationTokenUi(UserHelper userHelper,
             UiPresentationReturn uiPresentationReturn) throws Exception {
         PresentationToken presentationToken = userHelper.getEngine()
-                .createPresentationToken(uiPresentationReturn);
+                .createPresentationToken(USERNAME, uiPresentationReturn);
         return presentationToken;
     }
 
@@ -304,10 +306,9 @@ public class ITTicketTutorial extends ITAbstract {
             UserHelper userHelper,
             PresentationPolicyAlternatives modifiedPresentationPolicyAlternatives)
                     throws Exception {
-        DummyForNewABCEInterfaces d = null;
         UiPresentationArguments uiPresentationArguments = userHelper
-                .getEngine().createPresentationToken(
-                        modifiedPresentationPolicyAlternatives, d);
+                .getEngine().createPresentationToken(USERNAME,
+                        modifiedPresentationPolicyAlternatives);
         return uiPresentationArguments;
     }
 
@@ -319,7 +320,8 @@ public class ITTicketTutorial extends ITAbstract {
 
         PresentationPolicyAlternatives presentationPolicy = this
                 .getPresentationPolicyAlternatives();
-        verificationHelper.createPresentationPolicy(presentationPolicy,
+        //Was createPresentationPolicy, without nonce
+        verificationHelper.modifyPresentationPolicy(presentationPolicy, verificationHelper.generateNonce(),
                 applicationData, revocationInformationUids);
         return presentationPolicy;
     }
@@ -338,7 +340,7 @@ public class ITTicketTutorial extends ITAbstract {
             IssuanceHelper issuanceHelper, IssuanceMessage secondIssuanceMessage)
                     throws Exception {
         IssuanceMessageAndBoolean response = IssuanceHelper.getInstance()
-                .issueStep(cryptoEngine, secondIssuanceMessage);
+                .issueStep(secondIssuanceMessage);
         return response;
     }
 
@@ -355,15 +357,14 @@ public class ITTicketTutorial extends ITAbstract {
     private IssuanceMessage issuanceProtocolStepUi(UserHelper userHelper,
             UiIssuanceReturn uiIssuanceReturn) throws Exception {
         IssuanceMessage issuanceMessage = userHelper.getEngine()
-                .issuanceProtocolStep(uiIssuanceReturn);
+                .issuanceProtocolStep(USERNAME, uiIssuanceReturn);
         return issuanceMessage;
     }
 
     private IssuanceReturn issuanceProtocolStep(UserHelper userHelper,
             IssuanceMessage issuanceMessage) throws Exception {
-        DummyForNewABCEInterfaces d = null;
         IssuanceReturn issuanceReturn = userHelper.getEngine()
-                .issuanceProtocolStep(issuanceMessage, d);
+                .issuanceProtocolStep(USERNAME, issuanceMessage);
         return issuanceReturn;
     }
 
@@ -387,7 +388,7 @@ public class ITTicketTutorial extends ITAbstract {
                                 + filename), true);
         return o;
     }
-
+/* NO LONGER IN USE?
     private void createSmartcardAtUser(UserHelper userHelper,
             URI issuerParametersUid) throws Exception {
         Parser xmlSerializer = Parser.getInstance();
@@ -412,7 +413,7 @@ public class ITTicketTutorial extends ITAbstract {
 
         userHelper.cardStorage.addSmartcard(softwareSmartcard, 1234);
     }
-
+*/
     private void storeIssuerParametersAtVerifier(
             VerificationHelper verificationHelper,
             IssuerParameters issuerParameters) throws Exception {
@@ -539,9 +540,8 @@ public class ITTicketTutorial extends ITAbstract {
 
     private IssuanceHelper setupIssuanceHelper(
             Module revocationProxyAuthorityModule) throws Exception {
-        IssuanceHelper.initInstanceForService(cryptoEngine, ITTicketTutorial.issuerParamsPrefix,
-                ITTicketTutorial.issuerFileStoragePrefix,
-                revocationProxyAuthorityModule);
+        IssuanceHelper.initInstanceForService(ITTicketTutorial.issuerParamsPrefix,
+                ITTicketTutorial.issuerFileStoragePrefix);
 
         IssuanceHelper issuanceHelper = IssuanceHelper.getInstance();
         return issuanceHelper;
@@ -555,11 +555,14 @@ public class ITTicketTutorial extends ITAbstract {
 
         String[] issuerParamsResourceList = new String[0];
 
-        VerificationHelper.initInstance(CryptoEngine.BRIDGED,
-                issuerParamsResourceList, credSpecResources,
-                inspectorResourceList, revAuthResourceList,
-                ITTicketTutorial.verifierFileStoragePrefix,
-                new Module[] { revocationProxyAuthorityModule });
+        List<IssuerParameters> issuerParamsList = new ArrayList<IssuerParameters>();
+        List<CredentialSpecification> credSpecsList = new ArrayList<CredentialSpecification>();
+        List<InspectorPublicKey> inspectorKeyList = new ArrayList<InspectorPublicKey>();
+        List<RevocationAuthorityParameters> revAuthParamsList = new ArrayList<RevocationAuthorityParameters>();
+        
+        VerificationHelper.initInstance(sysparams, issuerParamsList, credSpecsList,
+                inspectorKeyList, revAuthParamsList,
+                ITTicketTutorial.verifierFileStoragePrefix);
 
         VerificationHelper verificationHelper = VerificationHelper
                 .getInstance();
@@ -580,7 +583,7 @@ public class ITTicketTutorial extends ITAbstract {
     private UserHelper setupUserHelper(Module revocationProxyAuthorityModule)
             throws Exception {
         UserHelper.initInstanceForService(cryptoEngine,
-                ITTicketTutorial.userFileStoragePrefix, revocationProxyAuthorityModule);
+                ITTicketTutorial.userFileStoragePrefix);
         UserHelper instance = UserHelper.getInstance();
         return instance;
     }
@@ -588,10 +591,8 @@ public class ITTicketTutorial extends ITAbstract {
     private SystemParameters setupSystemParameters(IssuanceHelper issuanceHelper)
             throws IOException, KeyManagerException, Exception {
         int idemixKeylength = 1024;
-        int uproveKeylength = 2048;
-        SystemParameters systemParameters = issuanceHelper
-                .createNewSystemParametersWithIdemixSpecificKeylength(
-                        idemixKeylength, uproveKeylength);
+
+        SystemParameters systemParameters = issuanceHelper.createNewSystemParametersKeylength(idemixKeylength);
         return systemParameters;
     }
 

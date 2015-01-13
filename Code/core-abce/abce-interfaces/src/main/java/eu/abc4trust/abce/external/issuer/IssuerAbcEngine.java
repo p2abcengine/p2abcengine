@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -26,6 +30,7 @@ import java.net.URI;
 import java.util.List;
 
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
+import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.FriendlyDescription;
@@ -33,6 +38,7 @@ import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
+import eu.abc4trust.xml.IssuanceTokenDescription;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.SystemParameters;
 
@@ -48,8 +54,10 @@ public interface IssuerAbcEngine {
      * @param keyLength
      * @param cryptographicMechanism
      * @return
+     * @throws CryptoEngineException 
+     * @throws KeyManagerException 
      */
-    public SystemParameters setupSystemParameters(int keyLength, URI cryptographicMechanism);
+    public SystemParameters setupSystemParameters(int keyLength) throws CryptoEngineException, KeyManagerException;
 
     /**
      * This method generates a fresh issuance key and the corresponding Issuer parameters. The
@@ -67,10 +75,34 @@ public interface IssuerAbcEngine {
      * @param algorithmId
      * @param revParsUid
      * @return
+     * @throws CryptoEngineException 
      */
+    @Deprecated
     public IssuerParameters setupIssuerParameters(CredentialSpecification credspec,
-            SystemParameters syspars, URI uid, URI hash, URI algorithmId, URI revParsUid, List<FriendlyDescription> friendlyDescriptions);
+            SystemParameters syspars, URI uid, URI hash, URI algorithmId, URI revParsUid, List<FriendlyDescription> friendlyDescriptions) throws CryptoEngineException;
 
+    /**
+     * This method generates a fresh issuance key and the corresponding Issuer parameters. The
+     * issuance key is stored in the Issuer’s key store, the Issuer parameters are returned as output
+     * of the method. The input to this method specify the maximal number of attributes of the
+     * credentials that will be issued with these parameters, the system parameters syspars, the
+     * unique identifier uid of the generated parameters,
+     * the credential algorithm id (idemix or uprove) and,
+     * optionally, the parameters identifier for any Issuer-driven Revocation Authority.
+     * 
+     * @param credspec
+     * @param syspars
+     * @param uid
+     * @param hash
+     * @param algorithmId
+     * @param revParsUid
+     * @return
+     * @throws CryptoEngineException 
+     */
+    public IssuerParameters setupIssuerParameters(SystemParameters syspars,
+        int maximalNumberOfAttributes, URI technology, URI uid, URI revocationAuthority,
+        List<FriendlyDescription> friendlyIssuerDescription) throws CryptoEngineException;
+    
     /**
      * 
      * This method is invoked by the Issuer to initiate an issuance protocol
@@ -148,4 +180,12 @@ public interface IssuerAbcEngine {
     public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid)
             throws Exception;
 
+    /**
+     * This method looks for an IssuanceTokenDescription inside the issuance message. This method
+     * returns the issuance token, or NULL if none could be found. It is guaranteed that this method
+     * returns a non-null value before a new credential is actually issued, so that the upper layers
+     * may abort the issuance protocol if a certain condition is not satisfied (such as the absence of
+     * a registered pseudonym).
+     */
+    public IssuanceTokenDescription extractIssuanceTokenDescription(IssuanceMessage issuanceMessage);
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is the issuance policy for issuance of the Soderhamn School credential. -->
+
+<abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+
+    <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:issuance:simple">
+        <!--   <abc:Message>
+            <abc:FriendlyPolicyName lang="en">Policy: empty presentation policy</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyDescription lang="en">This policy will request the ... NOTHING. Just go and issue.</abc:FriendlyPolicyDescription>
+        </abc:Message>    
+        -->
+    </abc:PresentationPolicy>
+     
+    <abc:CredentialTemplate >
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool_simple</abc:CredentialSpecUID>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool_simple</abc:IssuerParametersUID>
+    </abc:CredentialTemplate>
+</abc:IssuancePolicy>

@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -25,6 +27,7 @@ package eu.abc4trust.cryptoEngine.user;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -66,8 +69,7 @@ public class PseudonymSerializerGzipXml extends AbstractPseudonymSerializer {
       ObjectFactory of = new ObjectFactory();
       ByteArrayOutputStream xml = XmlUtils.toXmlAsBaos(of.createPseudonymWithMetadata(pwm), true);
       gs.write(xml.toByteArray());
-      gs.close();
-      
+      gs.close();      
       return ser.toByteArray();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -76,15 +78,12 @@ public class PseudonymSerializerGzipXml extends AbstractPseudonymSerializer {
 
   @Override
   public PseudonymWithMetadata unserializePseudonym(byte[] data, URI pseudonymUID) {
-	  PseudonymWithMetadata pwm;
-	  try{
-		  pwm = this.unserializeExclusivePseudonym(data, pseudonymUID);
-		  if(pwm != null){
-			  return pwm;
-		  }
-	  }catch(Exception e){
-		  //Not scope-exclusive. Trying normal pseudonym
-	  }
+    PseudonymWithMetadata pwm;
+    int magicHeader = data[0];
+
+    if (magicHeader == this.magicHeaderForScopeExclusive()) {
+      return this.unserializeExclusivePseudonym(data, pseudonymUID);
+    }
 	  
     try {
       ByteArrayInputStream bais = new ByteArrayInputStream(data);

@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -29,7 +28,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Ignore;
+import org.junit.Test;
 
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.CredentialInToken;
@@ -40,11 +39,11 @@ import eu.abc4trust.xml.util.XmlUtils;
 
 public class PolicyTranslatorTest{
   
-  @Ignore
+  @Test
   public void testPolicyTranslatorOne() throws Exception {
 	  
 		// Step 1. Load credential& credspec from XML.
-	  Credential creditCard =
+	     Credential creditCard =
               (Credential) XmlUtils.getObjectFromXML(getClass().getResourceAsStream(
                   "/eu/abc4trust/sampleXml/credentials/credentialCreditcard.xml"), true);
 	  
@@ -80,7 +79,7 @@ public class PolicyTranslatorTest{
 		String ps = mp.getPredicateAsString();
 		System.out.println(ps);
 					
-		assertTrue(ps.equals("#creditcardExpirationDate GREATEREQ (dateTime) constant"));
+		assertTrue(ps.equals("#creditcard: #creditcardExpirationDate GREATEREQ(dateTime) constant"));
   }
   }
 

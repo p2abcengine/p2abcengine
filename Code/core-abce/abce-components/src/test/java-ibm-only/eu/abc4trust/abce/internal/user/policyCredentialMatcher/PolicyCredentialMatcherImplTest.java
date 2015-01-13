@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -73,12 +72,14 @@ import eu.abc4trust.xml.PseudonymMetadata;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 import eu.abc4trust.xml.Secret;
 import eu.abc4trust.xml.SecretDescription;
+import eu.abc4trust.xml.VerifierParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 
 public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
   
   private static final URI PSEUDONYM_NAME = URI.create("zz-some-pseudonym-uri");
+  private static final String USERNAME = "defaultUser";
 
   private CredentialManager credentialManager;
   private EvidenceGenerationOrchestration evidenceOrchestration;
@@ -102,200 +103,150 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
                                           contextGenerator, keyManager, logger);
   }
 
-  @SuppressWarnings("unchecked")
-  @Test
-  @Ignore
-  public void testEmptyPolicy() throws Exception {
-    PresentationPolicyAlternatives emptyPolicy =
-        (PresentationPolicyAlternatives) XmlUtils.getObjectFromXML(
-            getClass().getResourceAsStream(
-                "/eu/abc4trust/sampleXml/presentationPolicies/emptyPolicy.xml"), true);
-
-    List<URI> chosenPseudonyms = new ArrayList<URI>();
-    SptdReturn uiReturn =
-        new SptdReturn(0, new HashMap<URI, PseudonymMetadata>(), chosenPseudonyms,
-            new ArrayList<URI>());
-    Capture<Map<URI, CredentialDescription>> capturedCdList =
-        new Capture<Map<URI, CredentialDescription>>();
-    Capture<List<PresentationTokenDescription>> capturedTokens =
-        new Capture<List<PresentationTokenDescription>>();
-    Capture<List<List<URI>>> capturedCu = new Capture<List<List<URI>>>();
-    Capture<List<Set<List<URI>>>> capturedPc = new Capture<List<Set<List<URI>>>>();
-    Capture<List<List<Set<URI>>>> capturedIc = new Capture<List<List<Set<URI>>>>();
-    expect(
-        identitySelection.selectPresentationTokenDescription(notNull(Map.class), capture(capturedCdList),
-            notNull(Map.class), notNull(Map.class), capture(capturedTokens), capture(capturedCu),
-            capture(capturedPc), capture(capturedIc))).andReturn(uiReturn);
-
-    PresentationToken pt = new PresentationToken();
-    expect(
-        evidenceOrchestration.createPresentationToken(
-            anyObject(PresentationTokenDescription.class), anyObject(List.class),
-            same(chosenPseudonyms))).andReturn(pt);
-
-    populateCredentialManager();
-    replayAll();
-    assertSame(pt, pcm.createPresentationToken(emptyPolicy, identitySelection));
-    verifyAll();
-
-    assertEquals(0, capturedCdList.getValue().size());
-
-    // There should be one candidate assignment: an empty list of credentials
-    assertEquals(1, capturedCu.getValue().size());
-    assertEquals(0, capturedCu.getValue().get(0).size());
-
-    // The corresponding presentation token should be empty
-    assertEquals(1, capturedTokens.getValue().size());
-    InputStream expectedTd =
-        getClass()
-            .getResourceAsStream("/eu/abc4trust/sampleXml/presentationTokens/emptyPolicy.xml");
-    assertEquals(XmlUtils.toNormalizedXML(expectedTd), XmlUtils.toNormalizedXML(new ObjectFactory()
-        .createPresentationTokenDescription(capturedTokens.getValue().get(0))));
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testPolicyHotel() throws Exception {
-    PresentationPolicyAlternatives hotelPolicy =
-        (PresentationPolicyAlternatives) XmlUtils.getObjectFromXML(
-            getClass().getResourceAsStream(
-                "/eu/abc4trust/sampleXml/presentationPolicies/simpleHotelPolicy.xml"), true);
-
-    programCredManager();
-
-    int uiChoice = 0;
-    SptdReturn uiReturn =
-        new SptdReturn(uiChoice, new HashMap<URI, PseudonymMetadata>(), new ArrayList<URI>(),
-            new ArrayList<URI>());
-    uiReturn.chosenInspectors.add(URI.create("http://thebestbank.com/inspector/pub_key_v1"));
-    uiReturn.chosenPseudonyms.add(URI.create("abc4t://nym/2"));
-    Capture<Map<URI, CredentialDescription>> capturedCdList =
-        new Capture<Map<URI, CredentialDescription>>();
-    Capture<List<PresentationTokenDescription>> capturedTokens =
-        new Capture<List<PresentationTokenDescription>>();
-    //Capture<Map<URI, PseudonymWithMetadata>> capturedPwm =
-    //    new Capture<Map<URI, PseudonymWithMetadata>>();
-    Capture<List<List<URI>>> capturedCu = new Capture<List<List<URI>>>();
-    Capture<List<Set<List<URI>>>> capturedPc = new Capture<List<Set<List<URI>>>>();
-    Capture<List<List<Set<URI>>>> capturedIc = new Capture<List<List<Set<URI>>>>();
-    expect(
-        identitySelection.selectPresentationTokenDescription(notNull(Map.class),
-          capture(capturedCdList), notNull(Map.class), notNull(Map.class),
-          capture(capturedTokens), capture(capturedCu),
-            capture(capturedPc), capture(capturedIc))).andReturn(uiReturn);
-
-    Capture<PresentationTokenDescription> presTokenInCreate =
-        new Capture<PresentationTokenDescription>();
-    Capture<List<URI>> credsInCreate = new Capture<List<URI>>();
-    Capture<List<URI>> chosenPseudonyms = new Capture<List<URI>>();
-
-    PresentationToken pt = new PresentationToken();
-    expect(
-        evidenceOrchestration.createPresentationToken(capture(presTokenInCreate),
-          capture(credsInCreate), capture(chosenPseudonyms))).andReturn(pt);
-
-    logger.info(anyObject(String.class));
-    expectLastCall().anyTimes();
-    
-    PseudonymWithMetadata pwm = new PseudonymWithMetadata();
-    pwm.setPseudonym(new Pseudonym());
-    expect(evidenceOrchestration.createPseudonym(anyObject(URI.class), anyObject(String.class),
-      eq(false), anyObject(URI.class))).andReturn(pwm);
-    credentialManager.storePseudonym(pwm);
-    
-    populateKeyManager();
-    populateCredentialManager();
-
-    replayAll();
-    pcm.createPresentationToken(hotelPolicy, identitySelection);
-    verifyAll();
-
-    Map<URI, CredentialDescription> credentialList = capturedCdList.getValue();
-
-    // Should create the right token
-    assertSame(presTokenInCreate.getValue(), capturedTokens.getValue().get(uiChoice));
-    assertEquals(credsInCreate.getValue(), capturedCu.getValue().get(uiChoice));
-    assertEquals(chosenPseudonyms.getValue(), uiReturn.chosenPseudonyms);
-
-    // There should be 3 credentials: two passports, and one credit card
-    {
-      Set<URI> expectedSet = new HashSet<URI>();
-      expectedSet.add(URI.create("passport/12344546"));
-      expectedSet.add(URI.create("passport/98383309"));
-      expectedSet.add(URI.create("cc/bestbank/7263774644748533"));
-      assertEquals(expectedSet, credentialList.keySet());
-    }
-
-    // Check captured peudonymWithMetadata
-    /*{
-      Map<URI, PseudonymWithMetadata> pwm = capturedPwm.getValue();
-      // Only 1 pseudonym should be proposed: a newly created one
-      assertEquals(2, pwm.size());
-      assertNotNull(pwm.get(PSEUDONYM_NAME));
-      PseudonymWithMetadata p = pwm.get(URI.create("pseudonym/1"));
-      assertNotNull(p);
-      assertEquals("http://www.sweetdreamsuites.com", p.getPseudonym().getScope());
-      assertEquals(false, p.getPseudonym().isExclusive());
-    }*/
-
-    // Automated checking of output presentation policies (first choice only)
-    {
-      PresentationToken hotelTokenOption1 =
-          (PresentationToken) XmlUtils.getObjectFromXML(
-              getClass().getResourceAsStream(
-                  "/eu/abc4trust/sampleXml/presentationTokens/presentationTokenHotelOption1.xml"),
-              true);
-
-      String xmlExpected =
-          XmlUtils.toXml(new ObjectFactory().createPresentationTokenDescription(hotelTokenOption1
-              .getPresentationTokenDescription()));
-      String xmlActual =
-          XmlUtils.toXml(new ObjectFactory().createPresentationTokenDescription(presTokenInCreate
-              .getValue()));
-      assertEquals(xmlExpected, xmlActual);
-    }
-
-    // There should be 2 assignments: check that these are present
-    {
-      List<List<URI>> expectedList = new ArrayList<List<URI>>();
-      {
-        List<URI> expectedAssignment = new ArrayList<URI>();
-        expectedAssignment.add(new URI("passport/12344546"));
-        expectedAssignment.add(new URI("cc/bestbank/7263774644748533"));
-        expectedList.add(expectedAssignment);
-      }
-      {
-        List<URI> expectedAssignment = new ArrayList<URI>();
-        expectedAssignment.add(new URI("passport/98383309"));
-        expectedAssignment.add(new URI("cc/bestbank/7263774644748533"));
-        expectedList.add(expectedAssignment);
-      }
-      assertEquals(expectedList, capturedCu.getValue());
-    }
-
-    // Check that for each assignment we have an inspector
-    {
-      Set<URI> expectedInspectorsPerAttribute = new HashSet<URI>();
-      expectedInspectorsPerAttribute.add(new URI("http://thebestbank.com/inspector/pub_key_v1"));
-      expectedInspectorsPerAttribute.add(new URI("http://admin.ch/inspector/pub_key_v1"));
-      List<Set<URI>> expectedInspectorsPerCredential = new ArrayList<Set<URI>>();
-      expectedInspectorsPerCredential.add(expectedInspectorsPerAttribute);
-      List<List<Set<URI>>> expectedInspectors = new ArrayList<List<Set<URI>>>();
-      for (int i = 0; i < 2; ++i) {
-        expectedInspectors.add(expectedInspectorsPerCredential);
-      }
-      assertEquals(expectedInspectors, capturedIc.getValue());
-    }
-  }
+//  @SuppressWarnings("unchecked")
+//  @Test
+//  public void testPolicyHotel() throws Exception {
+//    PresentationPolicyAlternatives hotelPolicy =
+//        (PresentationPolicyAlternatives) XmlUtils.getObjectFromXML(
+//            getClass().getResourceAsStream(
+//                "/eu/abc4trust/sampleXml/presentationPolicies/simpleHotelPolicy.xml"), true);
+//
+//    programCredManager();
+//
+//    int uiChoice = 0;
+//    SptdReturn uiReturn =
+//        new SptdReturn(uiChoice, new HashMap<URI, PseudonymMetadata>(), new ArrayList<URI>(),
+//            new ArrayList<URI>());
+//    uiReturn.chosenInspectors.add(URI.create("http://thebestbank.com/inspector/pub_key_v1"));
+//    uiReturn.chosenPseudonyms.add(URI.create("abc4t://nym/2"));
+//    Capture<Map<URI, CredentialDescription>> capturedCdList =
+//        new Capture<Map<URI, CredentialDescription>>();
+//    Capture<List<PresentationTokenDescription>> capturedTokens =
+//        new Capture<List<PresentationTokenDescription>>();
+//    //Capture<Map<URI, PseudonymWithMetadata>> capturedPwm =
+//    //    new Capture<Map<URI, PseudonymWithMetadata>>();
+//    Capture<List<List<URI>>> capturedCu = new Capture<List<List<URI>>>();
+//    Capture<List<Set<List<URI>>>> capturedPc = new Capture<List<Set<List<URI>>>>();
+//    Capture<List<List<Set<URI>>>> capturedIc = new Capture<List<List<Set<URI>>>>();
+//    expect(
+//        identitySelection.selectPresentationTokenDescription(notNull(Map.class),
+//          capture(capturedCdList), notNull(Map.class), notNull(Map.class),
+//          capture(capturedTokens), capture(capturedCu),
+//            capture(capturedPc), capture(capturedIc))).andReturn(uiReturn);
+//
+//    Capture<PresentationTokenDescription> presTokenInCreate =
+//        new Capture<PresentationTokenDescription>();
+//    Capture<List<URI>> credsInCreate = new Capture<List<URI>>();
+//    Capture<List<URI>> chosenPseudonyms = new Capture<List<URI>>();
+//    Capture<VerifierParameters> verifierParameters = new Capture<VerifierParameters>();
+//
+//    PresentationToken pt = new PresentationToken();
+//    expect(
+//        evidenceOrchestration.createPresentationToken(USERNAME,capture(presTokenInCreate), capture(verifierParameters),
+//          capture(credsInCreate), capture(chosenPseudonyms))).andReturn(pt);
+//
+//    logger.info(anyObject(String.class));
+//    expectLastCall().anyTimes();
+//    
+//    PseudonymWithMetadata pwm = new PseudonymWithMetadata();
+//    pwm.setPseudonym(new Pseudonym());
+//    expect(evidenceOrchestration.createPseudonym(USERNAME,anyObject(URI.class), anyObject(String.class),
+//      eq(false), anyObject(URI.class))).andReturn(pwm);
+//    credentialManager.storePseudonym(USERNAME,pwm);
+//    
+//    populateKeyManager();
+//    populateCredentialManager();
+//
+//    replayAll();
+//    pcm.createPresentationToken(USERNAME,hotelPolicy, identitySelection);
+//    verifyAll();
+//
+//    Map<URI, CredentialDescription> credentialList = capturedCdList.getValue();
+//
+//    // Should create the right token
+//    assertSame(presTokenInCreate.getValue(), capturedTokens.getValue().get(uiChoice));
+//    assertEquals(credsInCreate.getValue(), capturedCu.getValue().get(uiChoice));
+//    assertEquals(chosenPseudonyms.getValue(), uiReturn.chosenPseudonyms);
+//
+//    // There should be 3 credentials: two passports, and one credit card
+//    {
+//      Set<URI> expectedSet = new HashSet<URI>();
+//      expectedSet.add(URI.create("passport/12344546"));
+//      expectedSet.add(URI.create("passport/98383309"));
+//      expectedSet.add(URI.create("cc/bestbank/7263774644748533"));
+//      assertEquals(expectedSet, credentialList.keySet());
+//    }
+//
+//    // Check captured peudonymWithMetadata
+//    /*{
+//      Map<URI, PseudonymWithMetadata> pwm = capturedPwm.getValue();
+//      // Only 1 pseudonym should be proposed: a newly created one
+//      assertEquals(2, pwm.size());
+//      assertNotNull(pwm.get(PSEUDONYM_NAME));
+//      PseudonymWithMetadata p = pwm.get(URI.create("pseudonym/1"));
+//      assertNotNull(p);
+//      assertEquals("http://www.sweetdreamsuites.com", p.getPseudonym().getScope());
+//      assertEquals(false, p.getPseudonym().isExclusive());
+//    }*/
+//
+//    // Automated checking of output presentation policies (first choice only)
+//    {
+//      PresentationToken hotelTokenOption1 =
+//          (PresentationToken) XmlUtils.getObjectFromXML(
+//              getClass().getResourceAsStream(
+//                  "/eu/abc4trust/sampleXml/presentationTokens/presentationTokenHotelOption1.xml"),
+//              true);
+//
+//      String xmlExpected =
+//          XmlUtils.toXml(new ObjectFactory().createPresentationTokenDescription(hotelTokenOption1
+//              .getPresentationTokenDescription()));
+//      String xmlActual =
+//          XmlUtils.toXml(new ObjectFactory().createPresentationTokenDescription(presTokenInCreate
+//              .getValue()));
+//      assertEquals(xmlExpected, xmlActual);
+//    }
+//
+//    // There should be 2 assignments: check that these are present
+//    {
+//      List<List<URI>> expectedList = new ArrayList<List<URI>>();
+//      {
+//        List<URI> expectedAssignment = new ArrayList<URI>();
+//        expectedAssignment.add(new URI("passport/12344546"));
+//        expectedAssignment.add(new URI("cc/bestbank/7263774644748533"));
+//        expectedList.add(expectedAssignment);
+//      }
+//      {
+//        List<URI> expectedAssignment = new ArrayList<URI>();
+//        expectedAssignment.add(new URI("passport/98383309"));
+//        expectedAssignment.add(new URI("cc/bestbank/7263774644748533"));
+//        expectedList.add(expectedAssignment);
+//      }
+//      assertEquals(expectedList, capturedCu.getValue());
+//    }
+//
+//    // Check that for each assignment we have an inspector
+//    {
+//      Set<URI> expectedInspectorsPerAttribute = new HashSet<URI>();
+//      expectedInspectorsPerAttribute.add(new URI("http://thebestbank.com/inspector/pub_key_v1"));
+//      expectedInspectorsPerAttribute.add(new URI("http://admin.ch/inspector/pub_key_v1"));
+//      List<Set<URI>> expectedInspectorsPerCredential = new ArrayList<Set<URI>>();
+//      expectedInspectorsPerCredential.add(expectedInspectorsPerAttribute);
+//      List<List<Set<URI>>> expectedInspectors = new ArrayList<List<Set<URI>>>();
+//      for (int i = 0; i < 2; ++i) {
+//        expectedInspectors.add(expectedInspectorsPerCredential);
+//      }
+//      assertEquals(expectedInspectors, capturedIc.getValue());
+//    }
+//  }
 
   private void populateCredentialManager() throws CredentialManagerException {
-    expect(credentialManager.listSecrets()).andReturn(new ArrayList<SecretDescription>());
+    expect(credentialManager.listSecrets(USERNAME)).andReturn(new ArrayList<SecretDescription>());
     Secret s = new Secret();
     s.setSecretDescription(new SecretDescription());
     s.getSecretDescription().setSecretUID(contextGenerator.getUniqueContext(URI.create("abc4t://secret")));
-    expect(evidenceOrchestration.createSecret()).andReturn(s);
-    credentialManager.storeSecret(s);
-    expect(credentialManager.listSecrets()).andReturn(Collections.singletonList(s.getSecretDescription()));
+    expect(evidenceOrchestration.createSecret(USERNAME)).andReturn(s);
+    credentialManager.storeSecret(USERNAME,s);
+    expect(credentialManager.listSecrets(USERNAME)).andReturn(Collections.singletonList(s.getSecretDescription()));
   }
 
   private void populateKeyManager() throws Exception {
@@ -330,7 +281,10 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
       ((CredentialSpecification) XmlUtils.getObjectFromXML(
           getClass().getResourceAsStream(
               "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationRevocableCreditcard.xml"), true));
-      expect(keyManager.getCredentialSpecification(URI.create("http://visa.com/creditcard/specification"))).andReturn(ccSpec).atLeastOnce();    
+      expect(keyManager.getCredentialSpecification(URI.create("http://visa.com/creditcard/specification"))).andReturn(ccSpec).atLeastOnce();  
+      
+      expect(keyManager.getCredentialSpecification(URI.create("http://governo.it/passport"))).andReturn(null).atLeastOnce();
+      expect(keyManager.getCredentialSpecification(URI.create("http://amex.com/amexcard/specification"))).andReturn(null).atLeastOnce();
     }
     
     // Dummy issuer parameters
@@ -350,9 +304,9 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
       expectedIssuers.add(new URI("http://governo.it/id/chiave2048"));
       expectedIssuers.add(new URI("http://www.bundesregierung.de/idkarte/schluessel"));
       List<URI> expectedCredSpecs = new ArrayList<URI>();
-      expectedCredSpecs.add(new URI("http://admin.ch/passport"));
+      expectedCredSpecs.add(new URI("http://admin.ch/passport/specification"));
       expectedCredSpecs.add(new URI("http://governo.it/passport"));
-      expectedCredSpecs.add(new URI("http://bundesregierung.de/passport"));
+      expectedCredSpecs.add(new URI("http://www.bundesregierung.de/passport"));
 
       List<CredentialDescription> passportList = new ArrayList<CredentialDescription>();
       {
@@ -361,7 +315,7 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
                 getClass().getResourceAsStream(
                     "/eu/abc4trust/sampleXml/credentials/credentialPassport.xml"), true));
         passportList.add(passport.getCredentialDescription());
-        expect(credentialManager.getCredential(passport.getCredentialDescription().getCredentialUID())).andReturn(passport);
+        expect(credentialManager.getCredential(USERNAME,passport.getCredentialDescription().getCredentialUID())).andReturn(passport);
       }
       {
         Credential passport =
@@ -369,10 +323,10 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
                 getClass().getResourceAsStream(
                     "/eu/abc4trust/sampleXml/credentials/credentialPassport2.xml"), true));
         passportList.add(passport.getCredentialDescription());
-        expect(credentialManager.getCredential(passport.getCredentialDescription().getCredentialUID())).andReturn(passport);
+        expect(credentialManager.getCredential(USERNAME,passport.getCredentialDescription().getCredentialUID())).andReturn(passport);
       }
 
-      expect(credentialManager.getCredentialDescription(eq(expectedIssuers), eq(expectedCredSpecs)))
+      expect(credentialManager.getCredentialDescription(USERNAME,eq(expectedIssuers), eq(expectedCredSpecs)))
           .andReturn(passportList);
     }
     // Credit cards
@@ -390,7 +344,7 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
             ((Credential) XmlUtils.getObjectFromXML(
                 getClass().getResourceAsStream(
                     "/eu/abc4trust/sampleXml/credentials/credentialCreditcard.xml"), true));
-        expect(credentialManager.getCredential(credCard.getCredentialDescription().getCredentialUID())).andReturn(credCard).anyTimes();
+        expect(credentialManager.getCredential(USERNAME,credCard.getCredentialDescription().getCredentialUID())).andReturn(credCard).anyTimes();
         ccList.add(credCard.getCredentialDescription());
       }
       {
@@ -398,11 +352,11 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
             ((Credential) XmlUtils.getObjectFromXML(
                 getClass().getResourceAsStream(
                     "/eu/abc4trust/sampleXml/credentials/credentialValidCreditCard.xml"), true));
-        expect(credentialManager.getCredential(credCard.getCredentialDescription().getCredentialUID())).andReturn(credCard);
+        expect(credentialManager.getCredential(USERNAME,credCard.getCredentialDescription().getCredentialUID())).andReturn(credCard);
         ccList.add(credCard.getCredentialDescription());
       }
 
-      expect(credentialManager.getCredentialDescription(eq(expectedIssuers), eq(expectedCredSpecs)))
+      expect(credentialManager.getCredentialDescription(USERNAME,eq(expectedIssuers), eq(expectedCredSpecs)))
           .andReturn(ccList);
     }
     // Pseudonyms
@@ -412,7 +366,7 @@ public class PolicyCredentialMatcherImplTest extends EasyMockSupport {
       pwm.setPseudonym(of.createPseudonym());
       pwm.getPseudonym().setPseudonymUID(PSEUDONYM_NAME);
       pwmChoice.add(pwm);
-      expect(credentialManager.listPseudonyms("http://www.sweetdreamsuites.com", false)).andReturn(pwmChoice);
+      expect(credentialManager.listPseudonyms(USERNAME,"http://www.sweetdreamsuites.com", false)).andReturn(pwmChoice);
     }
 
   }

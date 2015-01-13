@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -25,6 +29,7 @@ package eu.abc4trust.guice.configuration;
 import java.io.File;
 import java.util.Random;
 
+@Deprecated
 public class AbceConfigurationImpl implements AbceConfiguration {
 
     private File keyStorageFile;
@@ -39,9 +44,6 @@ public class AbceConfigurationImpl implements AbceConfiguration {
     private File issuerLogFile;
     private File inspectorSecretKeyFile;
     private Integer uproveRetryTimeout;
-    private File uproveWorkingDirectory;
-    private String uprovePathToExe;
-    private Integer uprovePortnumber;
     private Integer uproveNumberOfCredentialsToGenerate;
 
     private File revocationAuthoritySecretKeyFile;
@@ -157,33 +159,6 @@ public class AbceConfigurationImpl implements AbceConfiguration {
 
     public void setUProveRetryTimeout(Integer uproveRetryTimeout) {
         this.uproveRetryTimeout = uproveRetryTimeout;
-    }
-
-    @Override
-    public File getUProveWorkingDirectory() {
-        return this.uproveWorkingDirectory;
-    }
-
-    @Override
-    public String getUProvePathToExe() {
-        return this.uprovePathToExe;
-    }
-
-    public void setUProveWorkingDirectory(File file) {
-        this.uproveWorkingDirectory = file;
-    }
-
-    public void setUProvePathToExe(String pathToExe) {
-        this.uprovePathToExe = pathToExe;
-    }
-
-    @Override
-    public Integer getUProvePortNumber() {
-        return this.uprovePortnumber;
-    }
-
-    public void setUProvePortNumber(Integer uprovePortnumber) {
-        this.uprovePortnumber = uprovePortnumber;
     }
 
     @Override

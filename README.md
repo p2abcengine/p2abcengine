@@ -26,6 +26,9 @@ For more details about the components and how to integrate them into an applicat
 Usage
 ==========
 
+NOTE: The java-ui component (and possibly other components) refer to an older version of core-abce. We are currently working on a fix for this, as well as updating documentation.
+
+
 See the page on integration for information on how to [integrate the
 ABCE][wikiintegration]. Or the page on how to build the ABCE for information on [how to build the ABCE for development][wikihowtobuild].
 

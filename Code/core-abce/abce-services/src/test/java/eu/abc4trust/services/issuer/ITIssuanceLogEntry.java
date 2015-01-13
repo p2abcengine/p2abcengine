@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -40,14 +44,15 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
 
-import edu.rice.cs.plt.tuple.Pair;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
 import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.services.Constants;
 import eu.abc4trust.services.ITAbstract;
+import eu.abc4trust.util.attributeEncoding.MyAttributeEncodingFactory;
+import eu.abc4trust.util.attributeTypes.MyAttributeValue;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.AttributeInLogEntry;
 import eu.abc4trust.xml.CredentialSpecification;
@@ -62,7 +67,7 @@ public class ITIssuanceLogEntry extends ITAbstract {
 
     static ObjectFactory of = new ObjectFactory();
 
-    final String baseUrl = "http://localhost:9500/abce-services/issuer";
+    final String baseUrl = "http://localhost:9200/abce-services/issuer";
 
     @Test
     public void issuanceLogEntryIdemix() throws Exception {
@@ -91,12 +96,12 @@ public class ITIssuanceLogEntry extends ITAbstract {
         this.copyCredentialSpecification(credentialSpecificationFilename);
 
         this.deleteStorageDirectory();
+        this.deleteResourcesDirectory();
 
         IssuerServiceFactory issuerServiceFactory = new IssuerServiceFactory();
 
         SystemParameters systemParameters = issuerServiceFactory
-                .getSystemParameters(80,
-                        URI.create("urn:abc4trust:1.0:algorithm:idemix"));
+                .getSystemParameters(1024);
 
         String issuerParametersUid = "http://my.country/identitycard/issuancekey_v1.0:"
                 + engineSuffix;
@@ -104,24 +109,23 @@ public class ITIssuanceLogEntry extends ITAbstract {
                 .getIssuerParameters(issuerParametersUid);
 
 
-        Injector userInjector = Guice.createInjector(BridgingModuleFactory
-                .newModule(new Random(1987), UProveUtils.UPROVE_COMMON_PORT));
+        Injector userInjector = Guice.createInjector(IntegrationModuleFactory
+                .newModule(new Random(1987)));
 
         Pair<IssuMsgOrCredDesc, URI> p = issuerServiceFactory.issueCredential(
                 credentialSpecification,
                 issuerServiceFactory, systemParameters, issuerParametersUid,
                 issuerParameters, userInjector);
-        IssuMsgOrCredDesc userIm = p.first();
+        IssuMsgOrCredDesc userIm = p.first;
         assertNull(userIm.im);
         assertNotNull(userIm.cd);
 
         IssuanceLogEntry issuerLogEntry = issuerServiceFactory
-                .getIssuanceLogEntry(p.second());
+                .getIssuanceLogEntry(p.second);
 
         assertNotNull(issuerLogEntry);
         assertEquals(issuerParametersUid, issuerLogEntry
                 .getIssuerParametersUID().toString());
-
 
         List<Attribute> attributes = this.getIssuerAttributes();
 
@@ -129,9 +133,11 @@ public class ITIssuanceLogEntry extends ITAbstract {
             AttributeInLogEntry a = issuerLogEntry.getIssuerAttributes().get(
                     inx);
             Attribute attribute = attributes.get(inx);
+            
+            MyAttributeValue encodedValue = MyAttributeEncodingFactory.parseValueFromEncoding(attribute.getAttributeDescription().getEncoding(), attribute.getAttributeValue(), null);
             assertEquals(attribute.getAttributeDescription().getType(),
                     a.getAttributeType());
-            assertEquals(attribute.getAttributeValue(), a.getAttributeValue());
+            assertEquals(encodedValue.getIntegerValueOrNull(), a.getAttributeValue());
         }
     }
 
@@ -147,19 +153,31 @@ public class ITIssuanceLogEntry extends ITAbstract {
     private void deleteStorageDirectory() {
         File directory1 = new File("target" + File.separatorChar
                 + "issuer_storage");
-        File directory2 = new File("abce-services" + File.separatorChar
-                + "target" + File.separatorChar + "issuer_storage");
+        File directory2 = new File("issuer_storage");
 
         this.delete(directory1);
         this.delete(directory2);
+        
+        directory1.mkdir();
+        directory2.mkdir();
+    }
+    
+    private void deleteResourcesDirectory() {
+        File directory1 = new File("target" + File.separatorChar
+                + "issuer_resources");
+        File directory2 = new File("issuer_resources");
 
+        this.delete(directory1);
+        this.delete(directory2);
+        
+        directory1.mkdir();
+        directory2.mkdir();
     }
 
     private void delete(File directory) {
         if (directory.exists()) {
             this.deleteBody(directory);
         }
-
     }
 
     private void deleteBody(File file) {

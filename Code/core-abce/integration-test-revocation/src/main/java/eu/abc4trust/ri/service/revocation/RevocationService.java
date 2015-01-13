@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -23,84 +27,104 @@
 package eu.abc4trust.ri.service.revocation;
 
 import java.io.File;
-import java.math.BigInteger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBElement;
 
-import eu.abc4trust.abce.internal.revocation.RevocationConstants;
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
-import eu.abc4trust.returnTypes.RevocationMessageAndBoolean;
+import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
+import eu.abc4trust.ri.servicehelper.AbstractHelper;
+import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.ri.servicehelper.revocation.RevocationHelper;
 import eu.abc4trust.ri.servicehelper.revocation.RevocationHelper.RevocationReferences;
 import eu.abc4trust.xml.Attribute;
-import eu.abc4trust.xml.AttributeDescription;
 import eu.abc4trust.xml.AttributeList;
-import eu.abc4trust.xml.CryptoParams;
+import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.NonRevocationEvidence;
 import eu.abc4trust.xml.NonRevocationEvidenceUpdate;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.RevocationInformation;
-import eu.abc4trust.xml.RevocationMessage;
+import eu.abc4trust.xml.SystemParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 
-/** class RevocationService 
- *  This is a demo implementation. This particular service will either accept or fail all 
- *  RevocationMessage requests in a number of rounds.
- *  It is expected that 3d party providers implement this interface and do what needs to be done
+/**
+ * class RevocationService This is a demo implementation. This particular service will either accept
+ * or fail all RevocationMessage requests in a number of rounds. It is expected that 3d party
+ * providers implement this interface and do what needs to be done
  */
 @Path("/")
 public class RevocationService {
-  
-  public static final URI soderhamnRevocationAuthority = URI.create("urn:soderhamn:revocationauthority:default");
+  private final Logger log = Logger.getLogger(RevocationService.class.getName());
+
+  public static final URI soderhamnRevocationAuthority = URI
+      .create("urn:soderhamn:revocationauthority:default");
+  public static final URI patrasRevocationAuthority = URI
+      .create("urn:patras:revocationauthority:default");
 
   private ObjectFactory of = new ObjectFactory();
 
   public RevocationService() {
-      System.out.println("RevocationService created");
+    System.out.println("RevocationService created");
   }
 
   public void initRevocationHelper(String testcase) throws Exception {
     System.out.println("RevocationService - initHelper : " + testcase);
-    String fileStoragePrefix;
-    String systemParametersResource; 
-    String[] issuerParamsResourceList = {};
+    String folderName;
     if (new File("target").exists()) {
-      fileStoragePrefix = "target/revocation_";
-      systemParametersResource = "target/issuer_bridged_system_params_bridged";
-      issuerParamsResourceList = new String[] { "target/issuer_bridged_issuer_params_urn_soderhamn_issuer_credSchool_idemix",
-                                                "target/issuer_bridged_issuer_params_urn_soderhamn_issuer_credSchool_uprove"};
+      folderName = "target";
 
     } else {
-      fileStoragePrefix = "integration-test-revocation/target/revocation_";
-      systemParametersResource = "integration-test-revocation/target/issuer_bridged_system_params_bridged";
-      issuerParamsResourceList = new String[] { "integration-test-revocation/target/issuer_bridged_issuer_params_urn_soderhamn_issuer_credSchool_idemix",
-                                                "integration-test-revocation/target/issuer_bridged_issuer_params_urn_soderhamn_issuer_credSchool_uprove"};
+      folderName = "integration-test-revocation/target";
     }
+    String fileStoragePrefix = folderName + "/revocation_";
+    String systemParametersResource = folderName + "/issuer_" + AbstractHelper.SYSTEM_PARAMS_XML_NAME;
+    SystemParameters systemParams = FileSystem.loadXmlFromResource(systemParametersResource);
 
-    String[] credSpecResourceList =
-        {"/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchoolWithRevocation.xml"};
+    List<IssuerParameters> issuerParamsList =
+        FileSystem.findAndLoadXmlResourcesInDir(folderName, "issuer_params");
+
+    String[] credSpecResourceList;
+
+    URI revocationInfoReference =
+        URI.create("http://localhost:9094/integration-test-revocation/revocation/getrevocationinformation");
+    URI nonRevocationEvidenceReference =
+        URI.create("http://localhost:9094/integration-test-revocation/revocation/generatenonrevocationevidence");
+    URI nonRevocationUpdateReference =
+        URI.create("http://localhost:9094/integration-test-revocation/revocation/generatenonrevocationevidenceupdate");;
+    RevocationReferences revocationReferences;
+
+    boolean soderhamn = "soderhamn".equals(testcase);
+    if (false && soderhamn) {
+      revocationReferences =
+          new RevocationReferences(soderhamnRevocationAuthority, revocationInfoReference,
+              nonRevocationEvidenceReference, nonRevocationUpdateReference);
+      credSpecResourceList =
+          new String[] {"/eu/abc4trust/sampleXml/soderhamn/credentialSpecificationSoderhamnSchool.xml"};
+    } else {
+      revocationReferences =
+          new RevocationReferences(patrasRevocationAuthority, revocationInfoReference,
+              nonRevocationEvidenceReference, nonRevocationUpdateReference);
+      credSpecResourceList =
+          new String[] {"/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasUniversityWithRevocation.xml"};
+    }
+    List<CredentialSpecification> credSpecList =
+        FileSystem.loadXmlListFromResources(credSpecResourceList);
 
     RevocationHelper.resetInstance();
-    URI revocationInfoReference = URI.create("http://localhost:9094/integration-test-revocation/revocation/info");
-    URI nonRevocationEvidenceReference = URI.create("http://localhost:9094/integration-test-revocation/nonrevocation/evidence");
-    URI nonRevocationUpdateReference = URI.create("http://localhost:9094/integration-test-revocation/nonrevocation/update");;
-    RevocationReferences revocationReferences = new RevocationReferences(soderhamnRevocationAuthority, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference);
-    RevocationHelper.initInstance(CryptoEngine.BRIDGED, fileStoragePrefix, fileStoragePrefix, systemParametersResource, issuerParamsResourceList , credSpecResourceList, revocationReferences );
+    RevocationHelper.initInstance(fileStoragePrefix, fileStoragePrefix, systemParams,
+        issuerParamsList, credSpecList, revocationReferences);
   }
 
   @GET()
@@ -112,119 +136,107 @@ public class RevocationService {
     return "OK";
   }
 
-    // INFO
+  @POST()
+  @Path("/revocation/generatenonrevocationevidence/{revParUid}")
+  @Produces(MediaType.TEXT_XML)
+  public JAXBElement<NonRevocationEvidence> generateNonRevocationEvidence(
+      @PathParam("revParUid") final URI revParUid, JAXBElement<AttributeList> attributeList)
+      throws Exception {
+    this.log.info("RevocationService - generatenonrevocationevidence");
+
+    this.validateRevocationParametersUid(revParUid);
+
+    List<Attribute> attributes = attributeList.getValue().getAttributes();
+    RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
+    NonRevocationEvidence revInfo = engine.generateNonRevocationEvidence(revParUid, attributes);
+
+    return this.of.createNonRevocationEvidence(revInfo);
+  }
+
+  private void validateRevocationParametersUid(final URI revParUid) throws Exception {
+    if (revParUid == null) {
+      throw new Exception("Revocation Parameters UID is null!");
+    }
+  }
+
+  @POST()
+  @Path("/revocation/generatenonrevocationevidenceupdate/{revParUid}")
+  @Produces(MediaType.TEXT_XML)
+  public JAXBElement<NonRevocationEvidenceUpdate> generateNonRevocationEvidenceUpdate(
+      @PathParam("revParUid") final URI revParUid, @QueryParam("epoch") final int epoch)
+      throws Exception {
+    this.log.info("RevocationService - generatenonrevocationevidenceupdate");
+
+    this.validateRevocationParametersUid(revParUid);
+
+    RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
+    NonRevocationEvidenceUpdate revInfo =
+        engine.generateNonRevocationEvidenceUpdate(revParUid, epoch);
+
+    return this.of.createNonRevocationEvidenceUpdate(revInfo);
+  }
+
+  @GET()
+  @Path("/revocation/getrevocationinformation/{revParUid}")
+  @Produces(MediaType.TEXT_XML)
+  public JAXBElement<RevocationInformation> getRevocationInformation(
+      @PathParam("revParUid") final URI revParUid) throws Exception {
+    this.log.info("RevocationService - getrevocationinformation " + revParUid);
+
+    this.validateRevocationParametersUid(revParUid);
+
+    RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
+    RevocationInformation revInfo = engine.updateRevocationInformation(revParUid);
+    return this.of.createRevocationInformation(revInfo);
+  }
 
   @POST()
   @Path("/revocation/revokeAttribute/{revParUid}")
-//  @Produces(MediaType.APPLICATION_XML)
-  public JAXBElement<RevocationInformation> revoke(@PathParam ("revParUid") final URI revParUid, final Attribute in) throws Exception {
-      System.out.println("=========== R E V O K E ===========");
-      System.out.println("revoke attribute! " + revParUid + " " + in.getAttributeUID() + " : " + in.getAttributeValue());
-      System.out.println("XML " + XmlUtils.toXml(of.createAttribute(in), false));
-      List<Attribute> attributes = new ArrayList<Attribute>();
-      attributes.add(in);
-      RevocationInformation ri = RevocationHelper.getInstance().engine.revoke(revParUid, attributes);
-      System.out.println("RevocationInformation : " + ri + " : " + ri.getInformationUID());
-      return of.createRevocationInformation(ri);
+  // @Produces(MediaType.APPLICATION_XML)
+  public JAXBElement<RevocationInformation> revoke(@PathParam("revParUid") final URI revParUid,
+      final JAXBElement<Attribute> in_jaxb) throws Exception {
+    System.out.println("=========== R E V O K E ===========");
+    Attribute in = in_jaxb.getValue();
+    System.out.println("revoke attribute! " + revParUid + " " + in.getAttributeUID() + " : "
+        + in.getAttributeValue());
+    System.out.println("XML " + XmlUtils.toXml(of.createAttribute(in), false));
+    List<Attribute> attributes = new ArrayList<Attribute>();
+    attributes.add(in);
+    RevocationInformation ri = RevocationHelper.getInstance().engine.revoke(revParUid, attributes);
+    System.out.println("RevocationInformation : " + ri + " : " + ri.getRevocationInformationUID());
+    return of.createRevocationInformation(ri);
   }
+
   @POST()
-  @Path("/revocation/revokeHandle/{revParUid}")
-//  @Produces(MediaType.APPLICATION_XML)
-  public JAXBElement<RevocationInformation> revoke(@PathParam ("revParUid") final URI revParUid, @QueryParam("revocationHandle") final BigInteger revocationHandle) throws Exception {
-      System.out.println("=========== R E V O K E ===========");
-      System.out.println("revoke attribute! " + revParUid + " " + revocationHandle);
-      
-      // create Attribute based on handle...
-      Attribute in = new Attribute();
-      AttributeDescription ad = new AttributeDescription();
+  @Path("/revocation/revoke/{revParUid}")
+  @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
+  @Produces(MediaType.TEXT_XML)
+  public JAXBElement<RevocationInformation> revokeList(@PathParam("revParUid") final URI revParUid,
+      final JAXBElement<AttributeList> in_jaxb) throws Exception {
+    this.log.info("RevocationService - revoke");
+    AttributeList in = in_jaxb.getValue();
+    
+    this.validateRevocationParametersUid(revParUid);
 
-      ad.setType(RevocationConstants.REVOCATION_HANDLE);
-      ad.setDataType(RevocationConstants.REVOCATION_HANDLE_DATA_TYPE);
-      ad.setEncoding(RevocationConstants.REVOCATION_HANDLE_ENCODING);
-      
-      in.setAttributeDescription(ad );
-      in.setAttributeValue(revocationHandle);
-      
-//      in.getAttributeUID() + " : " + in.getAttributeValue());
-      System.out.println("XML " + XmlUtils.toXml(of.createAttribute(in), false));
-      List<Attribute> attributes = new ArrayList<Attribute>();
-      attributes.add(in);
-      RevocationInformation ri = RevocationHelper.getInstance().engine.revoke(revParUid, attributes);
-      System.out.println("RevocationInformation : " + ri + " : " + ri.getInformationUID());
-      return of.createRevocationInformation(ri);
+    List<Attribute> attributes = in.getAttributes();
+    RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
+    RevocationInformation ri = engine.revoke(revParUid, attributes);
+
+    return this.of.createRevocationInformation(ri);
   }
 
-    @GET()
-    @Path("/revocation/info/{revParUid}")
-//    @Produces(MediaType.APPLICATION_XML)
-//    public JAXBElement<RevocationMessage> revocationInfo(final RevocationMessage in) throws Exception {
-    //public JAXBElement<RevocationInformation> revocationInfo(final RevocationMessage in) throws Exception {
-    //@Path("/getrevocationinformation/{revParUid}")
-    @Produces(MediaType.TEXT_XML)
-    public JAXBElement<RevocationInformation> getRevocationInformation(@PathParam ("revParUid") final URI revParUid) throws Exception {
-        System.out.println("===========================================");
-        System.out.println("revocationInfo");
-        //System.out.println("XML " + XmlUtils.toXml(of.createRevocationMessage(in), false));
-    
-        //RevocationMessageAndBoolean out = RevocationHelper.getInstance().revocationProxyAuthority.processRevocationMessage(in);
-RevocationInformation ri = RevocationHelper.getInstance().engine.updateRevocationInformation(revParUid);
-        //System.out.println("XML OUT : " + XmlUtils.toXml(of.createRevocationMessage(out.revmess), false));
-        
-		return new ObjectFactory().createRevocationInformation(ri);
-        //return (JAXBElement<RevocationInformation>)out.revmess.getCryptoParams().getAny().get(0);
-        //return of.createRevocationInformation((RevocationInformation)out.revmess.getCryptoParams().getAny().get(0));
-//        return of.createRevocationMessage(out.revmess);
-    }
+  @GET()
+  @Path("/revocation/updaterevocationinformation/{revParUid}")
+  public JAXBElement<RevocationInformation> updateRevocationInformation(
+      @PathParam("revParUid") final URI revParUid) throws Exception {
+    this.log.info("RevocationService - updaterevocationinformation");
 
-// /integration-test-revocation/nonrevocation/evidence/urn:soderhamn:revocationauthority:default
-// /integration-test-revocation/revocation/info/urn:soderhamn:revocationauthority:default
+    this.validateRevocationParametersUid(revParUid);
 
+    RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
+    RevocationInformation revInfo = engine.updateRevocationInformation(revParUid);
 
-    @POST()
-    @Path("/nonrevocation/evidence/{revParUid}")
-    @Produces(MediaType.TEXT_XML)
-    public JAXBElement<NonRevocationEvidence> generateNonRevocationEvidence(@PathParam ("revParUid") final URI revParUid, JAXBElement<AttributeList> attributeList) throws Exception {  
-/*  @POST()
-  @Path("/nonrevocation/evidence")
-//  @Produces(MediaType.APPLICATION_XML)
-//    public JAXBElement<RevocationMessage> nonRevocationEvidence(final RevocationMessage in) throws Exception {
-  public JAXBElement<NonRevocationEvidence> nonRevocationEvidence(final RevocationMessage in) throws Exception {*/
-        System.out.println("===========================================");
-        System.out.println("nonRevocationEvidence");
-        //System.out.println("XML " + XmlUtils.toXml(new ObjectFactory().createRevocationMessage(in), false));
-        System.out.println("XML " + XmlUtils.toXml(attributeList));
-        
-//        RevocationMessageAndBoolean out = RevocationHelper.getInstance().revocationProxyAuthority.processRevocationMessage(in);
-        NonRevocationEvidence nre = RevocationHelper.getInstance().engine.generateNonRevocationEvidence(revParUid, attributeList.getValue().getAttributes());
+    return this.of.createRevocationInformation(revInfo);
+  }
 
-  //      System.out.println("XML OUT : " + XmlUtils.toXml(of.createRevocationMessage(out.revmess), false));
-
-        return new ObjectFactory().createNonRevocationEvidence(nre);
-        //return (JAXBElement<NonRevocationEvidence>)out.revmess.getCryptoParams().getAny().get(0);
-//        return of.createNonRevocationEvidence((NonRevocationEvidence)out.revmess.getCryptoParams().getAny().get(0));
-//        return of.createRevocationMessage(out.revmess);
-    }
-
-    @POST()
-    @Produces(MediaType.TEXT_XML)
-    @Path("/generatenonrevocationevidenceupdate/{revParUid}")
-    public JAXBElement<NonRevocationEvidenceUpdate> generateNonRevocationEvidenceUpdate(@PathParam ("revParUid") final URI revParUid, @QueryParam("epoch") final int epoch) throws Exception {
-//    @Path("/nonrevocation/update")
-//     @Produces(MediaType.APPLICATION_XML)
-//    public JAXBElement<NonRevocationEvidenceUpdate> nonRevocationUpdate(final RevocationMessage in) throws Exception {
-//    public JAXBElement<RevocationMessage> nonRevocationUpdate(final RevocationMessage in) throws Exception {
-
-      System.out.println("===========================================");
-        System.out.println("nonRevocationUpdate");
-    //    System.out.println("XML " + XmlUtils.toXml(new ObjectFactory().createRevocationMessage(in), false));
-       NonRevocationEvidenceUpdate nreu = RevocationHelper.getInstance().engine.generateNonRevocationEvidenceUpdate(revParUid, epoch); 
-    //    RevocationMessageAndBoolean out = RevocationHelper.getInstance().revocationProxyAuthority.processRevocationMessage(in);
-
-        //System.out.println("XML OUT : " + XmlUtils.toXml(of.createRevocationMessage(out.revmess), false));
-        return new ObjectFactory().createNonRevocationEvidenceUpdate(nreu);
-     //   return (JAXBElement<NonRevocationEvidenceUpdate>)out.revmess.getCryptoParams().getAny().get(0);
-        //return of.createNonRevocationEvidenceUpdate((NonRevocationEvidenceUpdate)out.revmess.getCryptoParams().getAny().get(0));
-        //return of.createRevocationMessage(out.revmess);
-    }
-  
 }

@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -22,16 +23,24 @@
 
 package eu.abc4trust.ri.service.unittest.verifier;
 
+import java.util.List;
+
 import junit.framework.Assert;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
+import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.ri.servicehelper.verifier.VerificationHelper;
+import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.InspectorPublicKey;
+import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.RevocationAuthorityParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
+@Ignore
 public class UTVerifier {
 
   public UTVerifier() throws Exception {
@@ -44,37 +53,48 @@ public class UTVerifier {
       System.out.println(" - Init Helper");
       String fileStoragePrefix = "target/verifier_";
 
-//      String systemParamsResource = null;
-      String[] issuerParamsResourceList = new String[0];
+      // String systemParamsResource = null;
+      List<IssuerParameters> issuerParamsList = null;;
 
       String[] credSpecResourceList =
-        { "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationSimpleIdentitycard.xml" };
+          {"/eu/abc4trust/sampleXml/credspecs/credentialSpecificationSimpleIdentitycard.xml"};
 
       String[] presentationPolicyResourceList =
           {"/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicySimpleIdentitycard.xml"};
 
-      String[] inspectorPublicKeyResourceList = new String[0];
-      VerificationHelper.initInstance(CryptoEngine.IDEMIX, /*systemParamsResource, */issuerParamsResourceList, credSpecResourceList, inspectorPublicKeyResourceList, fileStoragePrefix, presentationPolicyResourceList);
+      List<InspectorPublicKey> inspectorPublicKeyList = null;
+      List<RevocationAuthorityParameters> revocationAuthorityParametersList = null;
+
+      List<CredentialSpecification> credSpecList =
+          FileSystem.loadXmlListFromResources(credSpecResourceList);
+
+      VerificationHelper.initInstance(null, issuerParamsList, credSpecList, inspectorPublicKeyList,
+          revocationAuthorityParametersList, fileStoragePrefix, presentationPolicyResourceList);
     }
   }
 
   static ObjectFactory of = new ObjectFactory();
-//
+
+  //
   @Test
   public void testPresentIdcard_AcceptenceTest() throws Exception {
     verifyPresentationToken("/presentationTokens/idcard1.xml");
   }
 
-  @Test
+  // @Test
   public void testPresentIdcard_IntegrationTest() throws Exception {
     verifyPresentationToken("/presentationTokens/idcard2.xml");
   }
 
   private void verifyPresentationToken(String resource) throws Exception {
-    PresentationToken presentationToken = (PresentationToken) XmlUtils. getObjectFromXML(UTVerifier.class.getResourceAsStream(resource), true);
+    PresentationToken presentationToken =
+        (PresentationToken) XmlUtils.getObjectFromXML(
+            UTVerifier.class.getResourceAsStream(resource), true);
 
     byte[] nonce = VerificationHelper.getInstance().generateNonce();
-    boolean ok = VerificationHelper.getInstance().verifyToken("presentationPolicySimpleIdentitycard.xml", nonce, null, presentationToken);
+    boolean ok =
+        VerificationHelper.getInstance().verifyToken("presentationPolicySimpleIdentitycard.xml",
+            nonce, null, presentationToken);
     Assert.assertTrue(ok);
   }
 

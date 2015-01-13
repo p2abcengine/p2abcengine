@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -24,24 +28,26 @@ package eu.abc4trust.services;
 
 import java.net.URI;
 
+import com.ibm.zurich.idmx.interfaces.util.Pair;
+
 import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.services.user.UserServiceFactory;
+import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.IssuancePolicyAndAttributes;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class TestScenarioFactory extends ITAbstract {
 
-    public URI issuanceProtocol(String engineSuffix) throws Exception {
+    public Pair<CredentialDescription, URI> issuanceProtocol(String engineSuffix) throws Exception {
         UserServiceFactory userServiceFactory = new UserServiceFactory();
 
         IssuancePolicyAndAttributes issuancePolicyAndAttributes = userServiceFactory
                 .loadIssuancePolicyAndAttributes("src/test/resources/issuancePolicyAndAttributes.xml");
         return this.issuanceProtocol(engineSuffix, issuancePolicyAndAttributes);
-
     }
 
-    public URI issuanceProtocol(String engineSuffix,
+    public Pair<CredentialDescription, URI> issuanceProtocol(String engineSuffix,
             IssuancePolicyAndAttributes issuancePolicyAndAttributes)
                     throws Exception {
 

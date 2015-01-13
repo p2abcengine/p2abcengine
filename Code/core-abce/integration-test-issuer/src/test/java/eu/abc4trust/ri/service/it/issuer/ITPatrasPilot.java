@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -27,104 +31,74 @@ import java.util.List;
 
 import org.junit.Test;
 
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
+import eu.abc4trust.ri.servicehelper.issuer.CryptoTechnology;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
+import eu.abc4trust.smartcard.SoftwareSmartcard;
 
 public class ITPatrasPilot extends AbstractIT {
 
     public ITPatrasPilot() {
         System.out.println("ITIssuer");
     }
-
-    private void setupCryptoEngines(CryptoEngine cryptoEngine, CryptoEngine clientEngine,
+    private static final String USERNAME = "defaultUser";
+    
+    private SoftwareSmartcard setupCryptoEngines(CryptoTechnology clientTechnology,
             int matNumber) throws Exception {
-        this.initIssuer(cryptoEngine, clientEngine);
 
-        String storagePrefix = "student_" + matNumber;
-        if(cryptoEngine == CryptoEngine.BRIDGED) {
-            storagePrefix += "_bridged";
-        }
-        storagePrefix += "_" + clientEngine.toString().toLowerCase() + "_";
+        String storagePrefix = "student_" + clientTechnology.toString().toLowerCase() + "_" + matNumber;
 
-        this.initHelper(cryptoEngine, clientEngine, storagePrefix);
+        storagePrefix += "_" + clientTechnology.toString().toLowerCase() + "_";
+
+        URI scope = new URI("urn:patras:registration");
+        return initHelper(clientTechnology, storagePrefix, "patras", scope);
     }
 
-    private void issuePatrasCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, int matNumber) throws Exception {
-        System.out.println("-- issuePatrasCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - matNumber : " + matNumber);
-
-        this.setupCryptoEngines(cryptoEngine, clientEngine, matNumber);
+    private void issuePatrasCredentials(CryptoTechnology clientTechnology, int matNumber) throws Exception {
+        System.out.println("-- issuePatrasCredentials - clientTechnology : " + clientTechnology + " - matNumber : " + matNumber);
 
         String scope = "urn:patras:registration";
-        this.initPseudonym(clientEngine, scope, matNumber);
+//        this.initPseudonym(softwareSmartcard, scope, matNumber);
 
         // issue university credential
-        this.runIssuance("startUniversity", "issuanceKey?matriculationnumber=" + matNumber, scope);
+        this.runIssuance("startPatras", "UNIVERSITY_" + clientTechnology + "?matriculationnumber=" + matNumber, scope);
 
         String courceScope = "urn:patras:evaluation";
         // issue course credential
-        this.runIssuance("startCourse", "issuanceKey?matriculationnumber=" + matNumber, courceScope);
+        this.runIssuance("startPatras", "COURSE_" + clientTechnology + "?matriculationnumber=" + matNumber, courceScope);
 
-        List<URI> list = UserHelper.getInstance().credentialManager.listCredentials();
+        List<URI> list = UserHelper.getInstance().credentialManager.listCredentials(USERNAME);
         System.out.println("# of credentials : " + list.size() + " : " + list);
 
     }
 
-    private void verifyPatrasCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, int matNumber) throws Exception {
-        System.out.println("-- verifyPatrasCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - matNumber : " + matNumber);
+    private void verifyPatrasCredentials(CryptoTechnology clientTechnology, int matNumber) throws Exception {
+        System.out.println("-- verifyPatrasCredentials - clientTechnology : " + clientTechnology + " - matNumber : " + matNumber);
 
-        this.setupCryptoEngines(cryptoEngine, clientEngine, matNumber);
+//        this.setupCryptoEngines(clientTechnology, matNumber);
 
         //
         String scope = "urn:patras:registration";
-        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyPatrasUniversityLogin.xml", true, scope);
+        this.runVerification(clientTechnology, "presentationPolicyPatrasUniversityLogin.xml", true, scope);
 
         //
         String courceScope = "urn:patras:evaluation";
-        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyPatrasCourseEvaluation.xml", true, courceScope);
+        this.runVerification(clientTechnology, "presentationPolicyPatrasCourseEvaluation.xml", true, courceScope);
 
     }
 
-    @Test
-    public void testStudent_42_idemix() throws Exception {
-        this.copySystemParameters();
-        this.issuePatrasCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, 42);
-        this.verifyPatrasCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, 42);
-    }
+//      @Test
+      public void testStudent_42_idemix() throws Exception {
+          setupCryptoEngines(CryptoTechnology.IDEMIX, 42);
+          
+          issuePatrasCredentials(CryptoTechnology.IDEMIX, 42);
+          verifyPatrasCredentials(CryptoTechnology.IDEMIX, 42);
+      }
 
-    @Test
-    public void testStudent_42_uprove() throws Exception {
-        this.issuePatrasCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, 42);
-        this.verifyPatrasCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, 42);
-    }
-
-    @Test
-    public void testStudent_42_bridged_idemix() throws Exception {
-        this.copySystemParameters();
-        this.issuePatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, 42);
-        this.verifyPatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, 42);
-    }
-
-    @Test
-    public void testStudent_42_bridged_uprove() throws Exception {
-        this.issuePatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, 42);
-        this.verifyPatrasCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, 42);
-    }
-
-    // @Test
-    public void testStudent_1235332() throws Exception {
-        //    System.out.println("---- testStudent_1235332 ----");
-        //    initHelper("1235332");
-        //
-        //    // issue university credential
-        //    runIssuance("startUniversity", "issuanceKey?matriculationnumber=1235332");
-        //
-        //    // issue course credential
-        //    runIssuance("startCourse", "issuanceKey?matriculationnumber=1235332");
-        //
-        //    // issue attendance credential
-        //    runIssuance("startAttendance", "?attendanceId=2");
-        //    List<URI> list = UserHelper.getInstance().credentialManager.listCredentials();
-        //    System.out.println("# of credentials : " + list.size() + " : " + list);
-    }
+//      @Test
+      public void testStudent_42_uprove() throws Exception {
+          setupCryptoEngines(CryptoTechnology.UPROVE, 42);
+          issuePatrasCredentials(CryptoTechnology.UPROVE, 42);
+          verifyPatrasCredentials(CryptoTechnology.UPROVE, 42);
+      }
 
 }

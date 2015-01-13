@@ -1,0 +1,413 @@
+X-Account-Key: account1
+X-Mozilla-Status: 0015
+X-Mozilla-Status2: 00000000
+X-Mozilla-Keys:                                                                                 
+Received: from lapislazuli.zurich.ibm.com (lapislazuli.zurich.ibm.com [9.4.12.145])
+	by aare.zurich.ibm.com (AIX6.1/8.14.4/8.13.4) with ESMTP id s859jrY79633926
+	for <enr@mailer.zurich.ibm.com>; Fri, 5 Sep 2014 11:45:53 +0200
+Received: by lapislazuli.zurich.ibm.com (Postfix, from userid 24913)
+	id EFF272655; Fri,  5 Sep 2014 10:57:03 +0200 (CEST)
+Content-Type: multipart/mixed;
+	boundary="_002_1E26C6DB42FAB74A8DDBA02CB85AB7306BB47CB2SRVUNIMBX06unia_"
+Content-Language: en-US
+X-Afs-Authentication: NONE
+From: "Michael Bladt Stausholm" <michael.stausholm@alexandra.dk>
+To: "Robert R. Enderlein" <enr@zurich.ibm.com>
+Subject: RE: ABC4trust NewKeyManager
+Date: Fri, 5 Sep 2014 09:44:58 +0000
+Message-ID: <1E26C6DB42FAB74A8DDBA02CB85AB7306BB47CB2@SRVUNIMBX06.uni.au.dk>
+In-Reply-To: <5405EE90.2000500@zurich.ibm.com>
+References: <1E26C6DB42FAB74A8DDBA02CB85AB7306BB44E14@SRVUNIMBX06.uni.au.dk>,
+	<5405EE90.2000500@zurich.ibm.com>
+MIME-Version: 1.0
+X-FetchNotes: yes
+X-NotesHandle: 135554
+X-Notes-Formtype: Memo
+Received: from D06ML359 by lapislazuli.zurich.ibm.com (FetchNotes v1.3cvs);
+	Fri, 05 Sep 2014 10:57:03 +0200
+Received: from b06cxnps3074.portsmouth.uk.ibm.com ([9.149.109.194])
+	by d06ml359.portsmouth.uk.ibm.com (Lotus Domino Release 8.5.3FP5IF1HF3)
+	with ESMTP id 2014090511450727-27079 ; Fri, 5 Sep 2014 11:45:07 +0200
+Received: from d06av08.portsmouth.uk.ibm.com (d06av08.portsmouth.uk.ibm.com
+	[9.149.37.249])
+	by b06cxnps3074.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with
+	ESMTP id s859j8XT9502882
+	for <zrlenr@ch.ibm.com>; Fri, 5 Sep 2014 09:45:08 GMT
+Received: from d06av08.portsmouth.uk.ibm.com (localhost [127.0.0.1])
+	by d06av08.portsmouth.uk.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with
+	ESMTP id s859j7Hv016901
+	for <zrlenr@ch.ibm.com>; Fri, 5 Sep 2014 03:45:07 -0600
+Received: from aare.zurich.ibm.com (aare.zurich.ibm.com [9.4.2.232])
+	by d06av08.portsmouth.uk.ibm.com (8.14.4/8.14.4/NCO v10.0 AVin) with
+	ESMTP id s859j7lc016880
+	for <zrlenr@ch.ibm.com>; Fri, 5 Sep 2014 03:45:07 -0600
+Received: from b06cxnps3074.portsmouth.uk.ibm.com
+	(d06relay09.portsmouth.uk.ibm.com [9.149.109.194])
+	by aare.zurich.ibm.com (AIX6.1/8.14.4/8.13.4) with ESMTP id
+	s859j6gX10027426
+	for <enr@zurich.ibm.com>; Fri, 5 Sep 2014 11:45:07 +0200
+Received: from d06av10.portsmouth.uk.ibm.com (d06av10.portsmouth.uk.ibm.com
+	[9.149.37.251])
+	by b06cxnps3074.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with
+	ESMTP id s859j60n40763506
+	for <enr@zurich.ibm.com>; Fri, 5 Sep 2014 09:45:06 GMT
+Received: from d06av10.portsmouth.uk.ibm.com (localhost [127.0.0.1])
+	by d06av10.portsmouth.uk.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with
+	ESMTP id s859j6E2002946
+	for <enr@zurich.ibm.com>; Fri, 5 Sep 2014 03:45:06 -0600
+Received: from e06smtp02.uk.ibm.com (e06smtp02.portsmouth.uk.ibm.com
+	[9.133.40.2])
+	by d06av10.portsmouth.uk.ibm.com (8.14.4/8.14.4/NCO v10.0 AVin) with
+	ESMTP id s859j6F3002937
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <enr@zurich.ibm.com>; Fri, 5 Sep 2014 03:45:06 -0600
+Received: from /spool/local
+	by e06smtp02.uk.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use
+	Only! Violators will be prosecuted
+	for <enr@zurich.ibm.com> from <michael.stausholm@alexandra.dk>;
+	Fri, 5 Sep 2014 10:45:05 +0100
+Received: from emea01-db3-obe.outbound.protection.outlook.com (157.55.234.82)
+	by e06smtp02.uk.ibm.com (192.168.201.132) with IBM ESMTP SMTP
+	Gateway: Authorized Use Only! Violators will be prosecuted; 
+	(version=TLSv1/SSLv3 cipher=AES256-SHA bits=256/256)
+	Fri, 5 Sep 2014 10:45:04 +0100
+Received: from DBXPR04CA008.eurprd04.prod.outlook.com (10.255.191.156) by
+	DB4PR04MB505.eurprd04.prod.outlook.com (10.141.239.139) with Microsoft
+	SMTP Server (TLS) id 15.0.1019.16; Fri, 5 Sep 2014 09:45:02 +0000
+Received: from DB3FFO11FD009.protection.gbl (2a01:111:f400:7e04::187) by
+	DBXPR04CA008.outlook.office365.com (2a01:111:e400:9800::28) with
+	Microsoft SMTP Server (TLS) id 15.0.1019.16 via Frontend Transport;
+	Fri, 5 Sep 2014 09:45:02 +0000
+Received: from uniedge01.uni.au.dk (130.225.30.55) by
+	DB3FFO11FD009.mail.protection.outlook.com (10.47.216.165) with
+	Microsoft SMTP Server (TLS) id 15.0.1010.11 via Frontend Transport;
+	Fri, 5 Sep 2014 09:45:02 +0000
+Received: from SRVUNIHUB02.uni.au.dk (10.88.2.7) by uniedge01.uni.au.dk
+	(10.87.2.12) with Microsoft SMTP Server (TLS) id 14.3.195.1;
+	Fri, 5 Sep 2014 11:45:00 +0200
+Received: from SRVUNIMBX06.uni.au.dk ([fe80::d45a:bbda:8c90:4eec]) by
+	SRVUNIHUB02.uni.au.dk ([fe80::9e5:7fc:d965:fb2%12]) with mapi id
+	14.03.0181.006; Fri, 5 Sep 2014 11:44:59 +0200
+
+--_002_1E26C6DB42FAB74A8DDBA02CB85AB7306BB47CB2SRVUNIMBX06unia_
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+
+Hi Robert,=0A=
+=0A=
+I hereby offer the attached code to IBM and relinquish any copyright I, or =
+the Alexandra Institute, may have over it.=0A=
+=0A=
+=0A=
+_____________________________________________=0A=
+=0A=
+MICHAEL STAUSHOLM=0A=
+=0A=
+FORSKNINGS- OG INNOVATIONSSPECIALIST=0A=
+SECURITY LAB=0A=
+=0A=
+RESEARCH AND INNOVATIONSPECIALIST=0A=
+SECURITY LAB=0A=
+=0A=
+ALEXANDRA INSTITUTTET A/S=0A=
+THE ALEXANDRA INSTITUTE LTD.=0A=
+=0A=
+T   +45 20 29 63 22=0A=
+W  www.alexandra.dk=0A=
+__________________________________________=0A=
+=0A=
+=0A=
+=0A=
+________________________________________=0A=
+From: Robert R. Enderlein [enr@zurich.ibm.com]=0A=
+Sent: Tuesday, September 02, 2014 18:21=0A=
+To: Michael Bladt Stausholm=0A=
+Subject: Re: ABC4trust NewKeyManager=0A=
+=0A=
+Hi Michael,=0A=
+=0A=
+Thank you for being proactive in this matter.=0A=
+However me committing your code into the ibm-only codebase will make our=0A=
+lawyers nervous, so this is not an option.=0A=
+=0A=
+Moving the file out of the IBM-only folder is something we would prefer=0A=
+not to do, because we might eventually want to move that code into the=0A=
+Idemix library (for which we cannot accept external contributions due to=0A=
+the special status of that library).=0A=
+=0A=
+One solution is that you write us a short e-mail to confirm that you=0A=
+offer that code to IBM and thereby relinquish your copyright.=0A=
+=0A=
+=0A=
+Best,=0A=
+=0A=
+Robert=0A=
+=0A=
+On 09/01/2014 10:27 AM, Michael Bladt Stausholm wrote:=0A=
+> Hi Robert,=0A=
+>=0A=
+> I made the missing revocation implementations in the NewKeyManager=0A=
+> class. I have attached the diff, so it should be easy for you to add it=
+=0A=
+> to the ibm-only folder.=0A=
+> If you also add an @Ignore TestJdbcPersistentStorage, all the test cases=
+=0A=
+> should run as well.=0A=
+>=0A=
+> -Michael=0A=
+>=0A=
+=0A=
+--_002_1E26C6DB42FAB74A8DDBA02CB85AB7306BB47CB2SRVUNIMBX06unia_
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; name="diff.txt"
+Content-Disposition: attachment; filename="diff.txt"; size=9558;
+	creation-date="Fri, 05 Sep 2014 09:39:47 GMT";
+	modification-date="Fri, 05 Sep 2014 09:39:47 GMT"
+Content-Description: diff.txt
+
+diff --git a/abce-components/src/main/java-ibm-only/eu/abc4trust/keyManager/NewKeyManager.java b/abce-components/src/main/java-ibm-only/eu/abc4trust/keyManager/NewKeyManager.java
+index 06cb5ee..59f4286 100644
+--- a/abce-components/src/main/java-ibm-only/eu/abc4trust/keyManager/NewKeyManager.java
++++ b/abce-components/src/main/java-ibm-only/eu/abc4trust/keyManager/NewKeyManager.java
+@@ -1,28 +1,38 @@
+ package eu.abc4trust.keyManager;
+ 
+ import java.net.URI;
++import java.util.Calendar;
++import java.util.GregorianCalendar;
+ import java.util.List;
+ 
+ import com.google.inject.Inject;
++import com.ibm.zurich.idmix.abc4trust.facades.RevocationMessageFacade;
+ 
+ import eu.abc4trust.db.PersistentStorage;
+ import eu.abc4trust.db.SimpleParamTypes;
++import eu.abc4trust.revocationProxy.RevocationProxy;
+ import eu.abc4trust.util.ByteSerializer;
+ import eu.abc4trust.xml.CredentialSpecification;
+ import eu.abc4trust.xml.InspectorPublicKey;
+ import eu.abc4trust.xml.IssuerParameters;
+ import eu.abc4trust.xml.RevocationAuthorityParameters;
+ import eu.abc4trust.xml.RevocationInformation;
++import eu.abc4trust.xml.RevocationMessage;
+ import eu.abc4trust.xml.SystemParameters;
+ import eu.abc4trust.xml.util.XmlUtils;
+ 
+ public class NewKeyManager implements KeyManager {
+ 
+   private final PersistentStorage ps;
++	
++  //copied
++  private final RevocationProxy revocationProxy;
++  public static final String CURRENT_REVOCATION_UID_STR = ":current_revocation_information_uid";
+ 
+   @Inject
+-  public NewKeyManager(PersistentStorage ps) {
+-    this.ps = ps;
++  public NewKeyManager(PersistentStorage ps, RevocationProxy revocationProxy) {
++	this.ps = ps;
++	this.revocationProxy = revocationProxy;
+   }
+ 
+   @Override
+@@ -49,7 +59,7 @@ public class NewKeyManager implements KeyManager {
+     if (ret != null && ret.getCryptoParams() != null) {
+     	XmlUtils.fixNestedContent(ret.getCryptoParams());
+     }
+-	return ret;
++    return ret;
+   }
+ 
+   @Override
+@@ -63,48 +73,154 @@ public class NewKeyManager implements KeyManager {
+   public RevocationAuthorityParameters getRevocationAuthorityParameters(URI rapuid)
+       throws KeyManagerException {
+     final RevocationAuthorityParameters ret = (RevocationAuthorityParameters) ByteSerializer.readFromBytes(ps.getItem(
+-		    SimpleParamTypes.REV_AUTH_PARAMS, rapuid));
++    		SimpleParamTypes.REV_AUTH_PARAMS, rapuid));
+     if (ret != null && ret.getCryptoParams() != null) {
+     	XmlUtils.fixNestedContent(ret.getCryptoParams());
+     }
+-	return ret;
++    return ret;
+   }
+ 
+-  @Override
+-  public RevocationInformation getRevocationInformation(URI rapuid, URI revinfouid)
+-      throws KeyManagerException {
+-    // TODO Auto-generated method stub
+-    return null;
++	/**
++	 * Retrieves the revocation information from the revocation authority. If the
++	 * revocationInformationUID is null, the latest revocation information is fetched.
++	 * 
++	 * @throws KeyManagerException
++	 */
++  private RevocationInformation getRevocationInformationFromRevocationAuthority(
++		  RevocationAuthorityParameters raParameters, URI revocationInformationUID)
++				  throws KeyManagerException {
++	  try {
++		  // Wrap the request into the Revocation message.
++		  RevocationMessageFacade revocationMessageFacade = new RevocationMessageFacade();
++		  revocationMessageFacade.setContext(URI.create("NO-CONTEXT"));
++		  revocationMessageFacade.setRevocationAuthorityParametersUID(raParameters.getParametersUID());
++		  revocationMessageFacade.setRequestLatestRevocationInformation();
++		  revocationMessageFacade.setRevocationInformationUID(revocationInformationUID);
++
++		  // TODO (pbi) the revocation proxy should be found using the revocation information UID
++		  // (raParameters.getRevocationInfoReference())
++
++		  RevocationMessage rm =
++				  this.revocationProxy.processRevocationMessage(
++						  revocationMessageFacade.getDelegateeValue(), raParameters);
++
++		  // Unwrap RevocationInformation from RevocationMessage.
++		  RevocationInformation revocationInformation =
++				  new RevocationMessageFacade(rm).getRevocationInformation();
++		  if (revocationInformation == null) {
++			  throw new KeyManagerException(
++					  "Revocation information cannot be retrieved from revocation authority: "
++							  + raParameters.getParametersUID());
++		  }
++		  return revocationInformation;
++
++	  } catch (Exception ex) {
++		  throw new KeyManagerException(ex);
++	  }
+   }
+ 
+   @Override
+-  public RevocationInformation getCurrentRevocationInformation(URI rapuid)
+-      throws KeyManagerException {
+-    // TODO Auto-generated method stub
+-    return null;
++  public RevocationInformation getRevocationInformation(URI raParametersUID, URI revocationInformationUID)
++		  throws KeyManagerException {
++	  try {
++		  RevocationInformation revocationInformation = 
++				  (RevocationInformation) ByteSerializer.readFromBytes(
++						  ps.getRevocationInformation(revocationInformationUID, raParametersUID));
++
++		  if (revocationInformation == null) {
++			  RevocationAuthorityParameters revocationAuthorityParameters =
++					  this.getRevocationAuthorityParameters(raParametersUID);
++
++			  if (revocationAuthorityParameters == null) {
++				  throw new KeyManagerException("Unkown revocation authority parameters");
++			  }
++
++			  revocationInformation =
++					  this.getRevocationInformationFromRevocationAuthority(revocationAuthorityParameters,
++							  revocationInformationUID);
++
++			  if (revocationInformation == null) {
++				  return null;
++			  }
++
++			  try {
++				  this.storeRevocationInformation(revocationInformation.getRevocationInformationUID(),
++						  revocationInformation);
++			  } catch (KeyManagerException ex) {
++				  return null;
++			  }
++		  }
++		  return revocationInformation;
++	  } catch (Exception ex) {
++		  throw new KeyManagerException(ex);
++	  }
+   }
+ 
+   @Override
+-  public RevocationInformation getLatestRevocationInformation(URI rapuid)
+-      throws KeyManagerException {
+-    // TODO Auto-generated method stub
+-    return null;
++  public RevocationInformation getCurrentRevocationInformation(URI raParametersUID)
++		  throws KeyManagerException {
++
++	  if (raParametersUID == null) {
++		  throw new KeyManagerException(
++				  "The revocation authority UID is null. Did you forget to initialize the revocation authority parameters?");
++	  }	  
++
++	  RevocationInformation revocationInformation =
++			  (RevocationInformation) ByteSerializer.readFromBytes(ps.getLatestRevocationInformation(raParametersUID));
++
++	  // Check whether the revocation information is not expired.
++	  if ((revocationInformation != null)
++			  && (revocationInformation.getExpires().compareTo(new GregorianCalendar()) > 0)) {
++		  return revocationInformation;
++	  }
++
++	  // TODO note that the user/issuer/verifier MUST use getLatestRevocationInformation next...
++	  // This is done to allow for the application to control when requests to the RA are made,
++	  // if this is not an issue, the keymanager can automatically call getLatestRevocationInformation(..)
++	  // return this.getLatestRevocationInformation(raParametersUID);	  
++	  return null;
+   }
+ 
+   @Override
+-  public void storeRevocationInformation(URI informationUID,
+-      RevocationInformation revocationInformation) throws KeyManagerException {
+-    // TODO Auto-generated method stub
++  public RevocationInformation getLatestRevocationInformation(URI raParametersUID)
++		  throws KeyManagerException {
++
++	  if (raParametersUID == null) {
++		  throw new KeyManagerException(
++				  "The revocation authority UID is null. Did you forget to initialize the revocation authority parameters?");
++	  }
+ 
++	  RevocationAuthorityParameters revocationAuthorityParameters =
++			  this.getRevocationAuthorityParameters(raParametersUID);
++	  if (revocationAuthorityParameters == null) {
++		  throw new KeyManagerException("Unkown revocation authority parameters : " + raParametersUID);
++	  }
++
++	  RevocationInformation revocationInformation =
++			  this.getRevocationInformationFromRevocationAuthority(revocationAuthorityParameters, null);
++
++	  this.ps.insertRevocationInformation(revocationInformation.getRevocationInformationUID(), 
++			  revocationInformation.getRevocationAuthorityParametersUID(), 
++			  Calendar.getInstance(), ByteSerializer.writeAsBytes(revocationInformation));
++	  return revocationInformation;
+   }
+ 
+   @Override
+-  public void storeCurrentRevocationInformation(RevocationInformation delegateeElement)
+-      throws KeyManagerException {
+-    // TODO Auto-generated method stub
++  public void storeRevocationInformation(URI informationUID,
++		  RevocationInformation revocationInformation) throws KeyManagerException {
+ 
++	  this.ps.insertRevocationInformation(informationUID, 
++			  revocationInformation.getRevocationAuthorityParametersUID(), Calendar.getInstance(), 
++			  ByteSerializer.writeAsBytes(revocationInformation));
+   }
+ 
++	@Override
++	public void storeCurrentRevocationInformation(
++			RevocationInformation delegateeElement) throws KeyManagerException {
++		// TODO Auto-generated method stub
++		// I can't see the use of this method, maybe it shoudl be removed from the interface?
++	}
++
+   @Override
+   public boolean storeRevocationAuthorityParameters(URI issuid,
+       RevocationAuthorityParameters revocationAuthorityParameters) throws KeyManagerException {
+@@ -142,7 +258,7 @@ public class NewKeyManager implements KeyManager {
+     if (ret != null && ret.getCryptoParams() != null) {
+     	XmlUtils.fixNestedContent(ret.getCryptoParams());
+     }
+-	return ret;
++    return ret;
+   }
+ 
+   @Override
+
+
+--_002_1E26C6DB42FAB74A8DDBA02CB85AB7306BB47CB2SRVUNIMBX06unia_--
+
+
+
+

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -24,22 +28,16 @@ package eu.abc4trust.services.helpers;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.logging.Logger;
-
-import org.w3c.dom.Element;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.util.Modules;
-import com.ibm.zurich.idmx.showproof.accumulator.AccumulatorPublicKey;
-import com.ibm.zurich.idmx.utils.Parser;
-import com.ibm.zurich.idmx.utils.StructureStore;
 
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.guice.ProductionModuleFactory;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -65,15 +63,12 @@ public class RevocationHelper extends AbstractHelper {
         }
         logger.info("RevocationHelper.initInstance");
 
-        instance = new RevocationHelper(
-                ProductionModuleFactory.CryptoEngine.BRIDGED,
-                revocationStoragePrefix);
+        instance = new RevocationHelper(revocationStoragePrefix);
 
         return instance;
     }
 
-    @Override()
-    protected void checkIfSystemParametersAreLoaded() {
+    protected void setupIdemixEngine() {
         try {
             if (!instance.keyManager.hasSystemParameters()) {
                 throw new IllegalStateException("No system parameters found");
@@ -85,19 +80,10 @@ public class RevocationHelper extends AbstractHelper {
 
 
     public static synchronized RevocationAuthorityParameters setupParameters(
-            URI mechanism, int keyLength, URI uid, Reference revocationInfoReference, Reference nonRevocationEvidenceReference,
+            URI technology, int keyLength, URI uid, Reference revocationInfoReference, Reference nonRevocationEvidenceReference,
             Reference nonRevocationUpdateReference, String revocationResourcesPrefix) throws CryptoEngineException {
 
-        RevocationAuthorityParameters revocationAuthorityParameters = instance.engine.setupRevocationAuthorityParameters(keyLength, mechanism, uid, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference);
-
-        // Register key for IDEMIX.
-        List<Object> any = revocationAuthorityParameters.getCryptoParams().getAny();
-        Element publicKeyStr = (Element) any.get(0);
-        Object publicKeyObj = Parser.getInstance().parse(publicKeyStr);
-        AccumulatorPublicKey publicKey = (AccumulatorPublicKey) publicKeyObj;
-        String publicKeyUri = publicKey.getUri().toString();
-
-        StructureStore.getInstance().add(publicKeyUri, publicKey);
+        RevocationAuthorityParameters revocationAuthorityParameters = instance.engine.setupRevocationAuthorityParameters(keyLength, technology, uid, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference);
 
         return revocationAuthorityParameters;
     }
@@ -114,7 +100,7 @@ public class RevocationHelper extends AbstractHelper {
      */
     public static synchronized RevocationHelper getInstance() {
         logger.info("RevocationHelper.getInstance : " + instance
-                + (instance == null ? "" : " : " + instance.cryptoEngine));
+                + (instance == null ? "" : " : " + instance));
         if (instance == null) {
             throw new IllegalStateException(
                     "getInstance not called before using IssuanceHelper!");
@@ -137,25 +123,18 @@ public class RevocationHelper extends AbstractHelper {
      *            IssuerAbcEnginge
      * @throws URISyntaxException
      */
-    private RevocationHelper(ProductionModuleFactory.CryptoEngine cryptoEngine,
-            String revocationStoragePrefix, Module... modules)
+    private RevocationHelper(String revocationStoragePrefix)
                     throws URISyntaxException {
         RevocationHelper.logger
         .info("RevocationHelper : create instance - storage prefix : "
                 + revocationStoragePrefix);
         try {
-            this.cryptoEngine = cryptoEngine;
-
             AbceConfigurationImpl configuration = this
-                    .setupStorageFilesForConfiguration(revocationStoragePrefix, this.cryptoEngine);
+                    .setupStorageFilesForConfiguration(revocationStoragePrefix, CryptoEngine.IDEMIX);
 
 
-            Module newModule = ProductionModuleFactory.newModule(
-                    configuration, this.cryptoEngine);
-
-            Module combinedModule = Modules.override(newModule).with(modules);
-            Injector injector = Guice.createInjector(combinedModule);
-
+            Injector injector = Guice.createInjector(ProductionModuleFactory.newModule(
+                    configuration, CryptoEngine.IDEMIX));
 
             this.engine = injector.getInstance(RevocationAbcEngine.class);
 

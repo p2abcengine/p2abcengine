@@ -10,7 +10,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             <abc:FriendlyPolicyName lang="en">Policy: Authorized Users only</abc:FriendlyPolicyName>
             <abc:FriendlyPolicyDescription lang="en">This policy will request the pupil to present the established scope-exclusive Pseudonym with the scope "urn:soderhamn:registration".No Privacy ABCs are required for this step.</abc:FriendlyPolicyDescription>
         </abc:Message>
-        <abc:Pseudonym Exclusive="true" Scope="urn:soderhamn:registration" Established="true" Alias="#nym"/>
+        <abc:Pseudonym Exclusive="true" Scope="urn:soderhamn:registration" Established="false" Alias="#nym"/>
     </abc:PresentationPolicy>
     <abc:CredentialTemplate SameKeyBindingAs="#nym">
         <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool</abc:CredentialSpecUID>

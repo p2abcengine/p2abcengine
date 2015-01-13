@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -25,6 +29,8 @@ package eu.abc4trust.cryptoEngine.verifier;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.TokenVerificationException;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.SystemParameters;
+import eu.abc4trust.xml.VerifierParameters;
 
 public interface CryptoEngineVerifier {
     /**
@@ -45,6 +51,22 @@ public interface CryptoEngineVerifier {
      *             A list of verification errors.
      * @throws CryptoEngineException
      */
-    public boolean verifyToken(PresentationToken t)
+    public boolean verifyToken(PresentationToken t, VerifierParameters vp)
             throws TokenVerificationException, CryptoEngineException;
+    
+    /**
+     * Generate verifier parameters. Those will have to be added to the presentation or issuance
+     * policy.
+     * Verifier parameters advertise the cryptographic building blocks supported by the verifier as
+     * well as verifier-specific information about some of those building blocks (such as
+     * the list of issuers parameters that contain a safe RSA modulus that
+     * can be used when doing range proofs).
+     * @throws CryptoEngineException 
+     */
+    public VerifierParameters createVerifierParameters(SystemParameters sp) throws CryptoEngineException;
+
+    /**
+     * Generate a fresh nonce that can be used by a presentation policy
+     */
+    public byte[] createNonce();
 }

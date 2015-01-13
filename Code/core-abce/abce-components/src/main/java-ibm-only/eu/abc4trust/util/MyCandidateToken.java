@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -296,6 +295,12 @@ public class MyCandidateToken {
         neededIssuers.add(ipu.getValue());
       }
     }
+    List<URI> neededCredSpecs = new ArrayList<URI>();
+    for(CredentialInPolicy cip: policy.getCredential()) {
+      for(URI csid: cip.getCredentialSpecAlternatives().getCredentialSpecUID()) {
+        neededCredSpecs.add(csid);
+      }
+    }
     for(URI u: neededIssuers) {
       try {
         if(u == null) {
@@ -305,7 +310,14 @@ public class MyCandidateToken {
         if(ip == null) {
           continue;
         }
-        URI credUri = ip.getCredentialSpecUID();
+        data.addIssuer(new IssuerInUi(ip));
+      } catch(KeyManagerException kme) {
+        //Ignore
+        continue;
+      }
+    }
+    for(URI credUri: neededCredSpecs) {
+      try {
         if(credUri == null) {
           continue;
         }
@@ -313,7 +325,7 @@ public class MyCandidateToken {
         if(spec == null) {
           continue;
         }
-        data.addIssuer(new IssuerInUi(ip, spec));
+        data.addCredentialSpec(new CredentialSpecInUi(spec));
       } catch(KeyManagerException kme) {
         //Ignore
         continue;
@@ -332,7 +344,13 @@ public class MyCandidateToken {
       if(ip == null) {
         return;
       }
-      URI credSpec = ip.getCredentialSpecUID();
+      data.addIssuer(new IssuerInUi(ip));
+    } catch(KeyManagerException kme) {
+      // Ignore
+      return;
+    }
+    try {
+      URI credSpec = policy.getCredentialTemplate().getCredentialSpecUID();
       if(credSpec == null) {
         return;
       }
@@ -340,7 +358,7 @@ public class MyCandidateToken {
       if(spec == null) {
         return;
       }
-      data.addIssuer(new IssuerInUi(ip, spec));
+      data.addCredentialSpec(new CredentialSpecInUi(spec));
     } catch(KeyManagerException kme) {
       // Ignore
       return;

@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -108,7 +107,7 @@ public class JaxbExperimentsTest {
 
     IssuanceMessage im = of.createIssuanceMessage();
     im.setContext(new URI("context1"));
-    im.getAny().add(of.createIssuancePolicy(ip));
+    im.getContent().add(of.createIssuancePolicy(ip));
 
     String xml = XmlUtils.toXml(of.createIssuanceMessage(im));
     assertTrue(xml.contains("IssuancePolicy"));
@@ -124,7 +123,7 @@ public class JaxbExperimentsTest {
             "/eu/abc4trust/sampleXml/issuanceMessageWithPolicy.xml"), true);
 
     IssuancePolicy ip =
-        (IssuancePolicy) XmlUtils.unwrap(issuanceMessage.getAny(), IssuancePolicy.class);
+        (IssuancePolicy) XmlUtils.unwrap(issuanceMessage.getContent(), IssuancePolicy.class);
 
     assertTrue(ip != null);
   }

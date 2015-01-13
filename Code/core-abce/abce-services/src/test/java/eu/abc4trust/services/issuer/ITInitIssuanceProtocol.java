@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,7 +34,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 
 import javax.xml.bind.JAXBException;
 
@@ -46,7 +49,7 @@ public class ITInitIssuanceProtocol extends ITAbstract {
 
     static ObjectFactory of = new ObjectFactory();
 
-    final String baseUrl = "http://localhost:9500/abce-services/issuer";
+    final String baseUrl = "http://localhost:9200/abce-services/issuer";
 
     @Test
     public void initIssuanceProtocolIdemix() throws Exception {
@@ -69,9 +72,7 @@ public class ITInitIssuanceProtocol extends ITAbstract {
         this.copyCredentialSpecification("credentialSpecificationSimpleIdentitycard.xml");
 
         IssuerServiceFactory issuerServiceFactory = new IssuerServiceFactory();
-        issuerServiceFactory
-        .getSystemParameters(80,
-                URI.create("urn:abc4trust:1.0:algorithm:idemix"));
+        issuerServiceFactory.getSystemParameters(1024);
 
         String issuerParametersUid = "http://my.country/identitycard/issuancekey_v1.0:"
                 + engineSuffix;

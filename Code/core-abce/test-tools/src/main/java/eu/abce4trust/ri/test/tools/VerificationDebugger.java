@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,18 +34,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import javax.xml.bind.JAXBException;
 
 import org.xml.sax.SAXException;
 
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
+import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.ri.servicehelper.verifier.VerificationHelper;
 import eu.abc4trust.xml.ApplicationData;
+import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.InspectorPublicKey;
+import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.Message;
 import eu.abc4trust.xml.PresentationPolicy;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.RevocationAuthorityParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class VerificationDebugger {
@@ -108,7 +118,7 @@ public class VerificationDebugger {
 
     private static void initVerificationHelper(String debuggerResourceFolder)
             throws IOException,
-            URISyntaxException {
+            URISyntaxException, JAXBException, SAXException {
         CryptoEngine cryptoEngine = CryptoEngine.IDEMIX;
 
         VerificationHelper.resetInstance();
@@ -125,6 +135,8 @@ public class VerificationDebugger {
         File[] issuerParamsFileList = findFilesStartingWith(folder,
                 "issuer_params_");
         String[] issuerParamsResourceList = convertFileListToStringList(issuerParamsFileList);
+        List<IssuerParameters> issuerParamsList =
+            FileSystem.loadXmlListFromResources(issuerParamsResourceList);
 
         System.out.println("issuerparams files : " + issuerParamsFileList + " : "
                 + issuerParamsFileList.length);
@@ -132,6 +144,8 @@ public class VerificationDebugger {
         File[] credSpecResourceFileList = findFilesStartingWith(folder,
                 "credentialSpecification");
         String[] credSpecResourceList = convertFileListToStringList(credSpecResourceFileList);
+        List<CredentialSpecification> credSpecList =
+            FileSystem.loadXmlListFromResources(credSpecResourceList);
 
         System.out.println("credspec files : " + credSpecResourceFileList
                 + " : " + credSpecResourceFileList.length);
@@ -144,16 +158,12 @@ public class VerificationDebugger {
                 + presentationPoliciesResoucesFileList + " : "
                 + presentationPoliciesResoucesFileList.length);
 
-        // String[] t = new String[presentationPoliciesResouces.length + 1];
-        // System.arraycopy(presentationPoliciesResouces, 0, t, 0,
-        // presentationPoliciesResouces.length);
-        // t[presentationPoliciesResouces.length] = presentationPolicyFile;
-        // presentationPoliciesResouces = t;
 
-        String[] inspectorPublicKeyResourceList = new String[0];
-
-        VerificationHelper.initInstance(cryptoEngine, issuerParamsResourceList,
-                credSpecResourceList, inspectorPublicKeyResourceList,
+        List<InspectorPublicKey> inspectorPublicKeyList = null;
+        List<RevocationAuthorityParameters> revAuthList = null;
+        
+        VerificationHelper.initInstance(null, issuerParamsList,
+          credSpecList, inspectorPublicKeyList, revAuthList ,
                 fileStoragePrefix, presentationPoliciesResouces);
     }
 

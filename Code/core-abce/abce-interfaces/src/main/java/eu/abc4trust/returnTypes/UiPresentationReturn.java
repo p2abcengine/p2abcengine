@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -24,6 +25,7 @@ package eu.abc4trust.returnTypes;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import eu.abc4trust.returnTypes.ui.InspectableAttribute;
 import eu.abc4trust.xml.PseudonymMetadata;
 
 @XmlRootElement(name="UiPresentationReturn", namespace = "http://abc4trust.eu/wp2/abcschemav1.0") 
@@ -90,6 +93,18 @@ public class UiPresentationReturn {
     this.chosenPseudonymList = 0;
     // when serializing as XML - this chosenInspectors could be null
     this.chosenInspectors = new ArrayList<String>();
+  }
+
+  public UiPresentationReturn(UiPresentationArguments arg) {
+    this.uiContext = arg.uiContext;
+    this.chosenPolicy = 0;
+    this.chosenPresentationToken = 0;
+    this.metadataToChange = Collections.emptyMap();
+    this.chosenPseudonymList = 0;
+    this.chosenInspectors = new ArrayList<String>();
+    for(InspectableAttribute ia: arg.tokenCandidatesPerPolicy.get(0).tokenCandidates.get(0).inspectableAttributes) {
+      chosenInspectors.add(ia.inspectorAlternatives.get(0).uri);
+    }
   }
 
   @Override

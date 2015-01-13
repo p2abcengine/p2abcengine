@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<jaxb:bindings xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" jaxb:extensionBindingPrefixes="xjc">
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<jaxb:bindings xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:annox="http://annox.dev.java.net" version="2.1" jaxb:extensionBindingPrefixes="xjc annox" xsi:schemaLocation="http://java.sun.com/xml/ns/jaxb http://java.sun.com/xml/ns/jaxb/bindingschema_2_0.xsd http://annox.dev.java.net">
   <jaxb:globalBindings generateValueClass="true">
 <!--
     <xjc:simple/>
@@ -10,4 +10,129 @@
     <jaxb:javaType name="java.util.Calendar" xmlType="xs:dateTime" parseMethod="javax.xml.bind.DatatypeConverter.parseDateTime" printMethod="javax.xml.bind.DatatypeConverter.printDateTime"/>
     <jaxb:javaType name="java.net.URI" xmlType="xs:anyURI" parseMethod="java.net.URI.create" printMethod="toString"/>
   </jaxb:globalBindings>
+
+  <jaxb:bindings schemaLocation="../resources/xsd/schema.xsd" node="/xs:schema">
+    <jaxb:bindings node="xs:complexType[@name='PresentationToken']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="PresentationToken"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='PresentationTokenDescription']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="PresentationTokenDescription"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='PresentationPolicyAlternatives']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="PresentationPolicyAlternatives"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='PresentationPolicyAlternativesAndPresentationToken']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="PresentationPolicyAlternativesAndPresentationToken"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='IssuanceMessage']">
+      <annox:annotate target="class">
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="IssuanceMessage"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='IssuanceMessageAndBoolean']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="IssuanceMessageAndBoolean"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='IssuancePolicy']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="IssuancePolicy"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='IssuancePolicyAndAttributes']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="IssuancePolicyAndAttributes"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='AttributeList']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="AttributeList"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='CryptoParams']">
+      <annox:annotate target="class">
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="CryptoParams"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='NonRevocationEvidence']">
+      <annox:annotate target="class">
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="NonRevocationEvidence"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='CredentialDescription']">
+      <annox:annotate target="class">
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="CredentialDescription"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='RevocationHistory']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="RevocationHistory"/>
+      </annox:annotate>
+    </jaxb:bindings>
+  </jaxb:bindings>
+  <jaxb:bindings schemaLocation="../resources/xsd/schema-idmx.xsd" node="/xs:schema">
+    <jaxb:bindings node="xs:complexType[@name='IdemixVerifierParameters']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="IdemixVerifierParameters"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='Signature']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="Signature"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='ZkProof']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="ZkProof"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='MechanismSpecification']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="MechanismSpecification"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='StringParameter']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="StringParameter"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='IntegerParameter']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="IntegerParameter"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='BigIntegerParameter']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="BigIntegerParameter"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='UriParameter']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="UriParameter"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='RevocationState']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="RevocationState"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='RevocationEvent']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="RevocationEvent"/>
+      </annox:annotate>
+    </jaxb:bindings>
+    <jaxb:bindings node="xs:complexType[@name='PublicKey']">
+      <annox:annotate>
+        <annox:annotate annox:class="javax.xml.bind.annotation.XmlRootElement" name="PublicKey"/>
+      </annox:annotate>
+    </jaxb:bindings>
+  </jaxb:bindings>
 </jaxb:bindings>

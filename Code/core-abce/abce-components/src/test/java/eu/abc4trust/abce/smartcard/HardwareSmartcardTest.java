@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -48,11 +50,13 @@ import javax.smartcardio.TerminalFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.ibm.zurich.idmx.buildingBlock.systemParameters.EcryptSystemParametersWrapper;
+import com.ibm.zurich.idmx.exception.ConfigurationException;
+
 import eu.abc4trust.abce.testharness.ImagePathBuilder;
-import eu.abc4trust.cryptoEngine.bridging.StaticGroupParameters;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializerObjectGzip;
-import eu.abc4trust.smartcard.CredentialBases;
+import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.smartcard.HardwareSmartcard;
 import eu.abc4trust.smartcard.RSAKeyPair;
 import eu.abc4trust.smartcard.RSASignature;
@@ -63,6 +67,7 @@ import eu.abc4trust.smartcard.Smartcard;
 import eu.abc4trust.smartcard.SmartcardBackup;
 import eu.abc4trust.smartcard.SmartcardBlob;
 import eu.abc4trust.smartcard.SmartcardCrypto;
+import eu.abc4trust.smartcard.SmartcardParameters;
 import eu.abc4trust.smartcard.SmartcardStatusCode;
 import eu.abc4trust.smartcard.SystemParameters;
 import eu.abc4trust.smartcard.ZkProofCommitment;
@@ -78,7 +83,7 @@ public class HardwareSmartcardTest {
     @SuppressWarnings("unused")
     private static final int puk = 17751674;
     private static final byte[] accesscode = new byte[]{(byte) 0xDD, (byte) 0xE8, (byte) 0x90, (byte) 0x96, 0x3E, (byte) 0xF8, 0x09, 0x0E};
-    private static final byte[] challenge = new byte[16];
+    private static BigInteger challenge;
     private static Random rand = new Random(42);
     //private static final PseudonymSerializer pseudonymSerializer = new PseudonymSerializerGzipXml();
 
@@ -87,7 +92,7 @@ public class HardwareSmartcardTest {
 
     private static final URI deviceURI = URI.create("ImbaCardNo42");
     private static final URI IssuerURINo1 = URI.create("urn:patras:issuer:credUniv:idemix");
-    private static final URI IssuerURINo2 = URI.create("urn:patras:issuer:credCourse:idemix");
+    private static final URI IssuerURINo2 = URI.create("urn:patras:issuer:credCourse:uprove");
 
     private static RSAKeyPair rootKey = new RSAKeyPair(
             new BigInteger("13188739541922660896646064269210831728935525607028122743662847644630716074667792017963587041964414609957176615536380624327700918306145189040520169692459457"),
@@ -116,10 +121,12 @@ public class HardwareSmartcardTest {
             throw new RuntimeException(ex);
         }
         HardwareSmartcard.printInput = true;        
+        
+        challenge = new BigInteger(32, rand); 
         return smartcard;
     }
 
-    public static CredentialBases getCredentialBases() {
+    public static SmartcardParameters getCredentialBases() {
         /*
         BigInteger p = new BigInteger(
                 "12626253643225658788054945243310161001518279478947653549052908831079155905872956458802477139613130936776937607840700839905021318088742281050346423374661061");
@@ -131,23 +138,24 @@ public class HardwareSmartcardTest {
         BigInteger n = new BigInteger(new byte[]{-81, -56, 2, 34, 56, 127, -112, 69, -5, 88, 116, -58, -58, -84, 70, -59, -110, -32, 2, -107, -114, -75, 26, 96, 53, -44, -19, -5, -66, -68, 3, 18, 36, -123, -26, 55, -126, 15, -69, 39, -4, -1, -117, 22, 109, 36, 73, 123, 37, -112, 14, 104, 24, 38, 14, 102, -88, -15, 118, -61, 111, -90, -118, -20, 33, 81, -20, -88, -75, -80, -11, -32, 55, 22, 78, -32, -76, 110, -32, -112, 37, 115, 4, 20, 70, -120, 27, 72, -74, -37, -49, -16, -21, 91, -73, -27, 6, -80, 84, -101, 62, 60, 86, -17, 59, 45, -73, -3, 63, -15, 82, -67, 12, 81, -108, -65, -68, 50, 52, 98, 13, 122, 108, 71, 45, 40, 48, 91, 72, 67, -86, -90, -114, 108, 92, -39, 94, -55, 103, 53, 92, 102, -112, -17, -107, -76, 57, 113, -76, -29, 2, -42, -114, -52, 80, -30, -84, -80, 21, 51, -97, -57, 0, 103, 14, -47, -78, 38, -9, -108, 58, -81, 113, 101, -115, 50, 30, 116, 26, 46, -66, -71, 35, -38, -5, -11, -26, 101, 82, -79, 101, 7});
         BigInteger R0 = new BigInteger(new byte[]{72, -108, 10, 99, 97, 120, 77, 42, -113, -17, 25, 77, 126, 63, 96, 52, 12, 99, -22, 111, 39, -80, -23, 88, -54, -49, -35, -79, 68, 29, 54, -102, 98, -59, 61, 121, 122, 73, 82, 8, 22, 107, 57, 33, 60, -127, 88, -40, -86, 57, -81, -26, 3, -16, -95, 83, 21, 58, 46, -105, 125, 71, -61, -109, 97, -83, -23, -32, 86, -18, -2, 124, -119, -2, -16, -94, 75, 71, 88, -34, 49, -77, -7, 83, -115, 109, 34, -66, -77, -3, -27, -8, 78, -116, -107, -26, -91, 93, 56, 38, -85, -118, -108, -82, 106, 7, 68, 18, -56, 74, 118, 90, 15, 87, -11, -43, 33, 92, 92, 54, -74, 21, -78, -67, 41, -44, 118, -81, 114, 92, -22, 3, 42, -38, -33, -6, 6, 19, -80, 52, -9, -126, 61, 76, -107, -58, 52, -98, -57, -18, 40, 99, 125, 47, 113, -1, 56, -20, 81, 1, -65, -68, -66, -115, 55, -120, -74, -12, 69, 82, -46, -58, -66, -34, -101, 121, -108, 68, 41, 59, 100, -24, -103, -112, -41, -54, -105, 65, -16, 90, 26, 13});
         BigInteger S = new BigInteger(new byte[]{-123, 124, 48, -77, 123, 68, -29, -30, -12, -34, -70, -12, -123, -19, -7, 27, -101, -111, 30, -98, -67, 71, 16, -39, 38, 124, -100, 65, -106, -97, -68, -13, -37, -109, -54, 105, -15, 26, 48, 52, 37, 105, -120, -120, -126, 52, -26, -60, -121, -54, -75, 27, -61, -23, 99, 21, 78, -128, -88, -112, -46, 49, -27, 9, 65, -19, -96, -49, 40, -27, -77, 23, -36, -100, 45, 61, 112, -113, -108, 32, 86, 72, 13, 16, -25, -36, 46, 50, -97, -54, 12, 72, 51, -14, -36, 11, 76, -6, -73, 37, -57, 59, 52, -43, 95, 77, 21, -14, -97, 68, -116, 66, -90, -119, 52, -44, -85, -25, -39, 86, 85, 106, -16, 88, 14, 50, -103, -96, -76, -68, -98, 34, -87, -18, 14, -122, 1, 84, -106, 119, -101, -43, -67, -128, 75, 41, -27, -91, 91, 19, -119, 36, -1, -126, -10, -26, -91, 84, 127, -37, -22, -4, -90, 95, 7, 19, -126, -14, 9, -53, 69, -127, 22, -8, 13, -18, -48, 28, 40, 70, 76, 11, -106, 21, 16, -96, 121, 58, -103, -94, 108, -61});
-        return new CredentialBases(R0, S, n);
+        return SmartcardParameters.forTwoBaseCl(n, R0, S);
     }
 
     public static SystemParameters getSystemParameters(){
-        //This is a 256 bit group order and 2048 bit prime.
-        /*
-    	BigInteger p = new BigInteger("20859401423842860454422008114759011240328381279333436467216419942064511127498091154397176558801098612541261287510985746149910043769113936973848343748565967531676548150724845049519723435958182428221544667720317520644204287812365157031603897739237860695599809101888371544250323218456427794508520516831488817037113547000244187028619731214816520184945648510163998335952323234369291672882265622701526807856379104761268104575929120752337355215861044908923187515344478289989516220415775699556599076069131194346475465951803222402012004787999228966805928336909190707736929618048561782803949667619608287554556109963156478420497");
-    	BigInteger q = new BigInteger("76846242180021167623282785432915297844573862583914026868425942395903759968557");
-    	BigInteger g = new BigInteger("11302791308019330967953494691858057034544724391030739341719709601473665965826853829786225289003782395722566535188158415482293867937814685478876305566390534520864015953855262775588260372847407762717506395081797697891564061340788983932127430607951059489790655774087964235843918067034019717652476979134275291728567243581822266236868001142234032429473620938210341333508634808207629043739574203354485265086289280951756338399261897087753795220391345195222286785217430393974129207317544052021132957048840134876071143178784720060304293439995307098203388708480872396404773654036000750645440211198280457717736147918775468358749");
-         */
-        BigInteger p = new BigInteger(new byte[]{-118, 47, -36, -84, -114, 8, 85, 42, 39, 63, 47, 3, 56, 117, 70, 102, -5, -125, 4, 1, -56, 116, 91, -62, 27, 22, 123, -32, -65, -58, -107, -42, 82, -11, 118, -62, 15, -34, 109, 34, 41, 29, -71, 58, 119, -61, -54, -41, 113, -110, -93, -101, 87, 108, 1, -81, -97, -63, -68, -71, -38, -30, 81, 16, 99, -116, 33, 120, 90, 126, 20, -85, 2, -8, 117, -108, -99, -53, -85, 30, -55, 35, -66, -59, 109, 39, -23, 91, -2, 49, 41, 88, -89, -33, 58, 115, -100, 28, -64, 65, 112, -105, 35, 123, 18, 31, 61, -65, -1, -9, 85, 67, 120, -44, -42, 55, -118, 118, -28, 119, 125, 122, -73, -82, -53, -90, -80, 29});
-        BigInteger q = new BigInteger(new byte[]{-49, 97, -3, -121, 76, 78, -104, -24, -123, -61, 87, 58, -33, 118, -111, -53, 47, 88, -124, -55, 72, 8, -91, -111, -55, 57, -6, 86, 97, -64, -117, 11});
-        BigInteger g = new BigInteger(new byte[]{-119, 117, 27, -103, 18, -94, -24, -63, -110, 40, -45, -8, 115, 76, -74, 44, 79, -18, -13, 101, -52, -103, 105, -85, -124, -78, 78, 13, 38, 43, 7, 103, -64, -85, -53, -49, -66, -82, 44, -54, 93, -77, 67, -61, -115, 113, 59, 122, 7, -111, 99, -98, -51, 90, 103, -41, -10, 7, 99, -91, 93, -68, -4, 64, 88, 89, -29, -100, 91, -36, 19, -101, 123, 77, 10, -54, 49, -70, 88, 90, -32, 6, 27, -54, 80, -122, -37, -31, 21, 59, -115, 55, -114, 121, -125, -96, -14, -11, -61, 17, -113, -8, 103, 18, 84, 91, 26, -88, -57, -59, 75, -16, -29, 112, 77, 118, -88, 9, 120, 98, 6, -19, -95, 36, 78, 10, 46, 5});
+    	eu.abc4trust.xml.SystemParameters sp = SystemParametersUtil.getDefaultSystemParameters_2048();
+    	EcryptSystemParametersWrapper spw = new EcryptSystemParametersWrapper(sp);        
+        BigInteger p, g, subgroupOrder;
+                try {
+                  p = spw.getDHModulus().getValue();
+                  g = spw.getDHGenerator1().getValue();
+                  subgroupOrder = spw.getDHSubgroupOrder().getValue();
+                } catch (ConfigurationException e1) {
+                  throw new RuntimeException(e1);
+                }
         SystemParameters system = new SystemParameters();
         system.p = p;
         system.g = g;
-        system.subgroupOrder = q;
+        system.subgroupOrder = subgroupOrder;
         return system;
     }
 
@@ -262,9 +270,11 @@ public class HardwareSmartcardTest {
 
         URI credentialId =  URI.create("credUri");
 
-        URI longURI1 = URI.create(""+StaticGroupParameters.p.multiply(StaticGroupParameters.p).multiply(StaticGroupParameters.p));
-        URI longURI2 = URI.create(""+StaticGroupParameters.Gd.multiply(StaticGroupParameters.Gd));
-        URI longURI3 = URI.create(""+StaticGroupParameters.p.multiply(StaticGroupParameters.Gd));
+        Random r = new Random(1234);
+    	
+    	URI longURI1 = URI.create(new BigInteger(2048*3, r).toString());
+    	URI longURI2 = URI.create(new BigInteger(2048*2, r).toString());
+    	URI longURI3 = URI.create(new BigInteger(2048*2, r).toString());
 
         CredentialSerializer serializer = new CredentialSerializerObjectGzip();
 
@@ -342,10 +352,10 @@ public class HardwareSmartcardTest {
         Set<URI> credentialIDs = new HashSet<URI>();
         Set<URI> scopeExclusivePseudonyms = new HashSet<URI>();
         ZkProofCommitment comm = s.prepareZkProof(pin, credentialIDs, scopeExclusivePseudonyms, false);
-        ZkProofResponse res = s.finalizeZkProof(pin, new byte[]{}, credentialIDs, scopeExclusivePseudonyms, comm.nonceCommitment);
-        assertTrue(ZkProofSystem.checkProof(comm, res, new byte[0]));
+        ZkProofResponse res = s.finalizeZkProof(pin, challenge, credentialIDs, scopeExclusivePseudonyms);
+        assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
         // There are no witnesses, so the challenge doesn't actually matter
-        assertTrue(ZkProofSystem.checkProof(comm, res, new byte[1]));
+        assertTrue(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
     }
 
     @Ignore
@@ -356,26 +366,36 @@ public class HardwareSmartcardTest {
         Set<URI> credentialIDs = new HashSet<URI>();
         Set<URI> scopeExclusivePseudonyms = new HashSet<URI>();
         ZkProofCommitment comm = s.prepareZkProof(pin, credentialIDs, scopeExclusivePseudonyms, true);
-        ZkProofResponse res = s.finalizeZkProof(pin, challenge, credentialIDs, scopeExclusivePseudonyms, comm.nonceCommitment);
-        assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-        assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+        ZkProofResponse res = s.finalizeZkProof(pin, challenge, credentialIDs, scopeExclusivePseudonyms);
+        assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+        assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
     }
 
+    @Ignore
+    @Test
+    public void fixPin(){
+    	HardwareSmartcard s = getSmartcard();
+    	int oldPin = 5678;
+    	int puk = 70952389;
+    	System.out.println(s.resetPinWithPuk(puk, pin));
+    	//System.out.println(s.changePin(oldPin, pin));
+    }
+    
     @Ignore
     @Test
     public void testScopeExclusivePseudonym() {
         HardwareSmartcard s = getSmartcard();
 
         // Scope exclusive pseudonym
-        URI scope = URI.create("Hello");
+        URI scope = URI.create("urn:patras:registration");
         Set<URI> scopeList = new HashSet<URI>();
         scopeList.add(scope);
 
         Set<URI> credentialIDs = new HashSet<URI>();
         ZkProofCommitment comm = s.prepareZkProof(pin, credentialIDs, scopeList, false);
-        ZkProofResponse res = s.finalizeZkProof(pin, challenge, credentialIDs, scopeList, comm.nonceCommitment);
-        assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-        assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+        ZkProofResponse res = s.finalizeZkProof(pin, challenge, credentialIDs, scopeList);
+        assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+        assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
     }
 
     @Ignore
@@ -392,9 +412,9 @@ public class HardwareSmartcardTest {
             Set<URI> scopeList = new HashSet<URI>();
             ZkProofCommitment comm = s.prepareZkProof(pin, credList, scopeList, false);
             assertNotNull(comm);
-            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, scopeList, comm.nonceCommitment);
-            assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-            assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, scopeList);
+            assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+            assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
         }
         // Second proof should work, since no attendance checks are done
         //        {
@@ -420,8 +440,8 @@ public class HardwareSmartcardTest {
 
         // Course counter should be disabled before issuance
         {
-            //int lectureId = 42;
-            //assertEquals(s.incrementCourseCounter(pin, key, issuerUri, lectureId), SmartcardStatusCode.NOT_MODIFIED);
+            int lectureId = 42;
+            assertEquals(s.incrementCourseCounter(pin, key, issuerUri, lectureId), SmartcardStatusCode.NOT_MODIFIED);
         }
 
         Set<URI> credList = new HashSet<URI>();
@@ -432,9 +452,9 @@ public class HardwareSmartcardTest {
             Set<URI> scopeList = new HashSet<URI>();
             ZkProofCommitment comm = s.prepareZkProof(pin, credList, scopeList, false);
             assertNotNull(comm);
-            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, scopeList, comm.nonceCommitment);
-            assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-            assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, scopeList);
+            assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+            //assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
         }
 
         // Once the credential is issued, no more proofs until attendance check
@@ -472,15 +492,21 @@ public class HardwareSmartcardTest {
             int lectureId = 43;
             assertEquals(s.incrementCourseCounter(pin, key, issuerUri, lectureId), SmartcardStatusCode.OK);
         }
+        
+        {
+        	for(int lectureId = 44; lectureId < 50; lectureId++){
+        		assertEquals(SmartcardStatusCode.OK, s.incrementCourseCounter(pin, key, issuerUri, lectureId));
+        	}
+        }
 
         // Now the proof works
         {
             Set<URI> scopeList = new HashSet<URI>();
             ZkProofCommitment comm = s.prepareZkProof(pin, credList, scopeList, false);
             assertNotNull(comm);
-            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, scopeList, comm.nonceCommitment);
-            assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-            assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, scopeList);
+            assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+            assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
         }
 
         s.deleteCredential(pin, credUri);
@@ -518,9 +544,9 @@ public class HardwareSmartcardTest {
         {
             ZkProofCommitment comm = s.prepareZkProof(pin, credList, pseuList, true);
             assertNotNull(comm);
-            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, pseuList, comm.nonceCommitment);
-            assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-            assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, pseuList);
+            assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+            assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
         }
 
         credList.remove(credUriA1);
@@ -532,9 +558,9 @@ public class HardwareSmartcardTest {
         {
             ZkProofCommitment comm = s.prepareZkProof(pin, credList, pseuList, true);
             assertNotNull(comm);
-            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, pseuList, comm.nonceCommitment);
-            assertTrue(ZkProofSystem.checkProof(comm, res, challenge, comm.nonceCommitment));
-            assertFalse(ZkProofSystem.checkProof(comm, res, new byte[1]));
+            ZkProofResponse res = s.finalizeZkProof(pin, challenge, credList, pseuList);
+            assertTrue(ZkProofSystem.checkProof(comm, res, challenge));
+            assertFalse(ZkProofSystem.checkProof(comm, res, BigInteger.ZERO));
         }
 
         // Now the attendance check kicks in

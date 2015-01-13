@@ -4,7 +4,7 @@
   <parent>
     <artifactId>pom</artifactId>
     <groupId>eu.abc4trust.ri</groupId>
-    <version>patras-1.0.14-SNAPSHOT</version>
+    <version>1.1.36</version>
   </parent>
   <artifactId>abce-interfaces</artifactId>
   <name>abce-interfaces</name>

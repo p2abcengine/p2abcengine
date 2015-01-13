@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,18 +34,16 @@ import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 
 public class StaticUriToIDMap {
 
-	public static boolean Patras;
+	public static boolean Patras = true;
 	
 	private Map<URI, Byte> patrasIssuers;
 	private Map<URI, Byte> soderhamnIssuersIdemix;
 	private Map<URI, Byte> soderhamnIssuersUProve;
 	private static StaticUriToIDMap instance;
 	public static final byte credUnivIdemixIssuer = 1,
-			credCourseIdemixIssuer = 2,
-			credUnivUProveIssuer = 3,
-			credCourseUProveIssuer = 4; 
+			credCourseUProveIssuer = 2,
+			credTombolaIdemixIssuer = 3;
 	
-	//TODO: Figure out a fix for Soderhamn. Currently this setup only runs UProve. 
 	public static final byte credSchoolIdemixIssuer = 1,
 	    credChildIdemixIssuer = 2,
 	    credGuardianIdemixIssuer = 3,
@@ -55,13 +57,13 @@ public class StaticUriToIDMap {
         credSubjectUProveIssuer = 5,
         credRoleUProveIssuer = 6;
 	    
+    public static final URI courseIssuerUID = URI.create("urn:patras:issuer:credCourse:uprove");
     
 	private StaticUriToIDMap(){
 	    // patras
 		URI credUnivIssuerIdemix = URI.create("urn:patras:issuer:credUniv:idemix");
-		URI credCourseIssuerIdemix = URI.create("urn:patras:issuer:credCourse:idemix");
-		URI credUnivIssuerUprove = URI.create("urn:patras:issuer:credUniv:uprove");
-		URI credCourseIssuerUprove = URI.create("urn:patras:issuer:credCourse:uprove");
+		URI credCourseIssuerUprove = courseIssuerUID;
+		URI credTombolaIssuerIdemix = URI.create("urn:patras:issuer:credTombola:idemix");
 
 		// soderhamn 
         URI credSchoolIssuerIdemix = URI.create("urn:soderhamn:issuer:credSchool:idemix");
@@ -84,9 +86,9 @@ public class StaticUriToIDMap {
 		soderhamnIssuersUProve = new HashMap<URI, Byte>();
 		// patras		
 		patrasIssuers.put(credUnivIssuerIdemix, credUnivIdemixIssuer);
-		patrasIssuers.put(credCourseIssuerIdemix, credCourseIdemixIssuer);
-		patrasIssuers.put(credUnivIssuerUprove, credUnivUProveIssuer);
 		patrasIssuers.put(credCourseIssuerUprove, credCourseUProveIssuer);
+		patrasIssuers.put(credTombolaIssuerIdemix, credTombolaIdemixIssuer);
+		
 		// soderhamn
 		soderhamnIssuersIdemix.put(credSchoolIssuerIdemix, credSchoolIdemixIssuer);
 		soderhamnIssuersIdemix.put(credChildIssuerIdemix, credChildIdemixIssuer);

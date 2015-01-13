@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -28,21 +30,21 @@ import java.util.List;
 
 public interface CredentialStorage {
 
-    byte[] getCredential(URI creduid) throws Exception;
+    byte[] getCredential(String username, URI creduid) throws Exception;
 
-    byte[] getPseudonymWithData(URI pseudonymUri) throws Exception;
+    byte[] getPseudonymWithData(String username, URI pseudonymUri) throws Exception;
 
-    List<URI> listCredentials() throws Exception;
+    List<URI> listCredentials(String username) throws Exception;
 
-    void addCredential(URI credUid, byte[] credBytes) throws IOException;
+    void addCredential(String username, URI credUid, byte[] credBytes) throws IOException;
 
-    void addPseudonymWithMetadata(URI pseudonymUri, byte[] pwmBytes)
+    void addPseudonymWithMetadata(String username, URI pseudonymUri, byte[] pwmBytes)
             throws IOException;
 
-    void deletePseudonymWithMetadata(URI pseudonymUri) throws Exception;
+    void deletePseudonymWithMetadata(String username, URI pseudonymUri) throws Exception;
 
-    void deleteCredential(URI credUid) throws Exception;
+    void deleteCredential(String username, URI credUid) throws Exception;
 
-    List<byte[]> listPseudonyms() throws Exception;
+    List<byte[]> listPseudonyms(String username) throws Exception;
 
 }

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -27,96 +31,81 @@ import java.util.List;
 
 import org.junit.Test;
 
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
+import eu.abc4trust.ri.servicehelper.issuer.CryptoTechnology;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
+import eu.abc4trust.smartcard.SoftwareSmartcard;
 
 public class ITSoderhamnPilot extends AbstractIT {
 
     public ITSoderhamnPilot() {
         System.out.println("ITIssuer");
     }
+    private static final String USERNAME = "defaultUser";
 
-    private void setupCryptoEngines(CryptoEngine cryptoEngine, CryptoEngine clientEngine,
+    private SoftwareSmartcard setupCryptoEngines(CryptoTechnology clientTechnology,
             String pupil) throws Exception {
-        this.initIssuer(cryptoEngine, clientEngine);
 
-        String storagePrefix = pupil.toLowerCase();
-        if(cryptoEngine == CryptoEngine.BRIDGED) {
-            storagePrefix += "_bridged";
-        }
-        storagePrefix += "_" + clientEngine.toString().toLowerCase();
-        this.initHelper(cryptoEngine, clientEngine, storagePrefix);
+      String storagePrefix = pupil.toLowerCase();
+        storagePrefix += "_" + clientTechnology.toString().toLowerCase();
+        URI scope = new URI("urn:soderhamn:registration");
+        return initHelper(clientTechnology, storagePrefix, "soderhamn", scope);
     }
 
 
-    private void issueSoederhamnCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, String pupil) throws Exception {
-        System.out.println("-- issueSoederhamnCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - pupil : " + pupil);
-        this.setupCryptoEngines(cryptoEngine, clientEngine, pupil);
+    private void issueSoederhamnCredentials(CryptoTechnology clientTechnology, String pupil) throws Exception {
+        System.out.println("-- issueSoederhamnCredentials - clientTechnology : " + clientTechnology + " - pupil : " + pupil);
+        SoftwareSmartcard smartcard = setupCryptoEngines(clientTechnology, pupil);
 
         String soderhamnScope = "urn:soderhamn:registration";
 
-        this.initPseudonym(clientEngine, soderhamnScope, 42);
+//        this.initPseudonym(clientTechnology, soderhamnScope, 42);
 
-        // issue university credential
-        this.runIssuance("startSchool", "issuanceKey?pupil=" + pupil, soderhamnScope);
+        // issue School credential
+        this.runIssuance("startSoderhamn", "SCHOOL_" + clientTechnology + "?pupil=" + pupil, soderhamnScope);
 
-        // issue course credential
-        this.runIssuance("startSubject", "issuanceKey?pupil=" + pupil, soderhamnScope);
+        // issue Subject credential
+        this.runIssuance("startSoderhamn", "SUBJECT_" + clientTechnology + "?pupil=" + pupil, soderhamnScope);
 
-        List<URI> list = UserHelper.getInstance().credentialManager.listCredentials();
+        List<URI> list = UserHelper.getInstance().credentialManager.listCredentials(USERNAME);
         System.out.println("# of credentials : " + list.size() + " : " + list);
 
     }
 
-    private void verifySoederhamnCredentials(CryptoEngine cryptoEngine, CryptoEngine clientEngine, String pupil) throws Exception {
-        System.out.println("-- issueSoederhamnCredentials - cryptoEngine : " + cryptoEngine + " - clientEngine : " + clientEngine + " - pupil : " + pupil);
-        this.setupCryptoEngines(cryptoEngine, clientEngine, pupil);
+    private void verifySoederhamnCredentials(CryptoTechnology clientTechnology, String pupil) throws Exception {
+        System.out.println("-- issueSoederhamnCredentials - clientTechnology : " + clientTechnology + " - pupil : " + pupil);
+        this.setupCryptoEngines(clientTechnology, pupil);
 
         // School credential
         System.out.println("Present Soderhamn Smartcard Pseudonym!");
         String soderhamnScope = "urn:soderhamn:registration";
-        this.runVerification(cryptoEngine, clientEngine, "presentationPolicySoderhamnSchool.xml", true, soderhamnScope);
+        this.runVerification(clientTechnology, "presentationPolicySoderhamnSchool.xml", true, soderhamnScope);
 
         // Subject credential
         String frenchScope = "urn:soderhamn:restrictedarea:french";
         System.out.println("Present Soderhamn Subject Credential - pseudonym being established!");
-        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyRASubjectMustBeFrench.xml", true, frenchScope);
+        this.runVerification(clientTechnology, "presentationPolicyRASubjectMustBeFrench.xml", true, frenchScope);
 
         // Subject pseudonym
         System.out.println("Present Soderhamn Subject Credential - pseudonym is used!");
-        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyRASubjectMustBeFrench.xml", true, frenchScope);
+        this.runVerification(clientTechnology, "presentationPolicyRASubjectMustBeFrench.xml", true, frenchScope);
 
         // Subject credential - english not satisfied
         String englishScope = "urn:soderhamn:restrictedarea:english";
         System.out.println("Present Soderhamn Subject Credential - Not Satisfied!!");
-        this.runVerification(cryptoEngine, clientEngine, "presentationPolicyRASubjectMustBeEnglish.xml", false, englishScope);
+        this.runVerification(clientTechnology, "presentationPolicyRASubjectMustBeEnglish.xml", false, englishScope);
 
     }
 
-    @Test
+//    @Test
     public void testPupil_Emil_Idemix() throws Exception {
-        this.copySystemParameters();
-        this.issueSoederhamnCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "Emil");
-        this.verifySoederhamnCredentials(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "Emil");
+        this.issueSoederhamnCredentials(CryptoTechnology.IDEMIX, "Emil");
+        this.verifySoederhamnCredentials(CryptoTechnology.IDEMIX, "Emil");
     }
 
-    @Test
+//    @Test
     public void testPupil_Emil_UProve() throws Exception {
-        this.issueSoederhamnCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, "Emil");
-        this.verifySoederhamnCredentials(CryptoEngine.UPROVE, CryptoEngine.UPROVE, "Emil");
-    }
-
-    @Test
-    public void testPupil_Emil_Bridged_Idemix() throws Exception {
-        this.copySystemParameters();
-        this.issueSoederhamnCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, "Emil");
-        this.verifySoederhamnCredentials(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX,"Emil");
-    }
-
-    // @Test
-    public void testPupil_Emil_Bridged_UProve() throws Exception {
-        this.issueSoederhamnCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, "Emil");
-        this.verifySoederhamnCredentials(CryptoEngine.BRIDGED, CryptoEngine.UPROVE, "Emil");
+        this.issueSoederhamnCredentials(CryptoTechnology.UPROVE, "Emil");
+        this.verifySoederhamnCredentials(CryptoTechnology.UPROVE, "Emil");
     }
 
 }

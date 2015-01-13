@@ -30,9 +30,9 @@
       Established="false" Alias="mainPseudonym" />
     <abc:Credential Alias="#passport">
       <abc:CredentialSpecAlternatives>
-        <abc:CredentialSpecUID>http://admin.ch/passport</abc:CredentialSpecUID>
+        <abc:CredentialSpecUID>http://admin.ch/passport/specification</abc:CredentialSpecUID>
         <abc:CredentialSpecUID>http://governo.it/passport</abc:CredentialSpecUID>
-        <abc:CredentialSpecUID>http://bundesregierung.de/passport</abc:CredentialSpecUID>
+        <abc:CredentialSpecUID>http://www.bundesregierung.de/passport</abc:CredentialSpecUID>
       </abc:CredentialSpecAlternatives>
       <abc:IssuerAlternatives>
         <abc:IssuerParametersUID RevocationInformationUID="http://admin.ch/passport/revocation/parameters">http://admin.ch/passport/issuancekey_v1.0</abc:IssuerParametersUID>

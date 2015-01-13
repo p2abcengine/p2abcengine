@@ -28,7 +28,7 @@
         I agree to the terms of service and cancellation policy.
       </abc:ApplicationData>
     </abc:Message>
-    <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com"
+    <abc:Pseudonym Exclusive="true" Scope="http://www.sweetdreamsuites.com"
       Established="false" Alias="#mainPseudonym" />
     <abc:Credential Alias="#studentcard">
       <abc:CredentialSpecAlternatives>
@@ -37,9 +37,9 @@
         <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
       </abc:CredentialSpecAlternatives>
       <abc:IssuerAlternatives>
-        <abc:IssuerParametersUID RevocationInformationUID="http://ethz.ch/studentid/revocation/information">http://ethz.ch/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
-        <abc:IssuerParametersUID RevocationInformationUID="http://msu.ru/studentid/revocation/information">http://msu.ru/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
-        <abc:IssuerParametersUID RevocationInformationUID="http://www.admin.edu/studentid/revocation/information">http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>http://ethz.ch/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>http://msu.ru/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
       </abc:IssuerAlternatives>
       </abc:Credential>
       <abc:Credential Alias="#passport">
@@ -54,17 +54,6 @@
         <abc:IssuerParametersUID RevocationInformationUID="http://bundesregierung.de/passport/revocation/parameters">http://bundesregierung.de/idkarte/schluessel</abc:IssuerParametersUID>
       </abc:IssuerAlternatives>
     </abc:Credential>
-
-<!--  Apparently something makes idemix break down when it gets this disclosed attribute       
-	  <abc:DisclosedAttribute AttributeType="StudentNumber"
-        DataHandlingPolicy="http://www.sweetdreamsuites.com/policies/studentcards">
-        <abc:InspectorAlternatives>
-          <abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
-          <abc:InspectorPublicKeyUID>http://admin.ch/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
-        </abc:InspectorAlternatives>
-        <abc:InspectionGrounds>In case of no free cancellation and no show the student number should be Disclosed to the hotel.</abc:InspectionGrounds>
-      </abc:DisclosedAttribute> -->
-
     <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:string-equal">
     	<abc:Attribute CredentialAlias="#studentcard" AttributeType="Name" />
     	<abc:Attribute CredentialAlias="#passport" AttributeType="Name" />
@@ -77,14 +66,16 @@
 	    <abc:Attribute CredentialAlias="#studentcard" AttributeType="Issued" /> 
 	    <abc:ConstantValue>1900-10-06Z</abc:ConstantValue>
     </abc:AttributePredicate> 
+    <!--  Not equal is currently not implemented 
     <abc:AttributePredicate Function="urn:abc4trust:1.0:function:date-not-equal"> 
 	    <abc:Attribute CredentialAlias="#studentcard" AttributeType="Issued" /> 
 	    <abc:ConstantValue>1910-10-06Z</abc:ConstantValue>
-    </abc:AttributePredicate> 
+    </abc:AttributePredicate>
     <abc:AttributePredicate Function="urn:abc4trust:1.0:function:string-not-equal"> 
 	    <abc:Attribute CredentialAlias="#studentcard" AttributeType="LastName" /> 
         <abc:ConstantValue>Last Name</abc:ConstantValue> 
     </abc:AttributePredicate>
+    -->
     <abc:VerifierDrivenRevocation>
       <abc:RevocationParametersUID>http://www.sweetdreamsuites.com/passport/revocation/parameters</abc:RevocationParametersUID>
       <abc:Attribute AttributeType="PassportNumber" CredentialAlias="#passport"/>

@@ -21,6 +21,12 @@
       <abc:IssuerAlternatives>
         <abc:IssuerParametersUID>http://ticketcompany/MyFavoriteSoccerTeam/issuance:idemix</abc:IssuerParametersUID>
       </abc:IssuerAlternatives>
+      <abc:DisclosedAttribute AttributeType="MemberNumber" >
+      	<abc:InspectorAlternatives>
+      		<abc:InspectorPublicKeyUID>http://ticketcompany/inspection</abc:InspectorPublicKeyUID>
+      	</abc:InspectorAlternatives>
+      	<abc:InspectionGrounds>Reveal member number for lottery.</abc:InspectionGrounds>
+      </abc:DisclosedAttribute>
     </abc:Credential>
      <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-equal">
       <abc:Attribute CredentialAlias="#ticket" AttributeType="Matchday" />

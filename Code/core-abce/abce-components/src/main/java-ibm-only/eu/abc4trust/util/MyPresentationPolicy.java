@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -28,16 +27,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import eu.abc4trust.abce.internal.TokenManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.abce.internal.user.evidenceGeneration.EvidenceGenerationOrchestration;
+import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.user.AbstractPseudonymSerializer;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
@@ -52,6 +54,7 @@ import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialInPolicy;
 import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives.IssuerParametersUID;
 import eu.abc4trust.xml.CredentialInToken;
+import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuerParameters;
@@ -106,6 +109,13 @@ public class MyPresentationPolicy {
         policy.getVerifierDrivenRevocation())) {
       logger.warning("Verifier Driven Revocation don't match");
       return false;
+    }
+    if(policy.isAllowSimpleProof() == false && ptd.isUsesSimpleProof()){
+      logger.warning("Policy does not allow simple proofs.");
+      return false;
+    }
+    if(ptd.isUsesSimpleProof() && ! checkIfSimpleProofAdmissible()) {
+      logger.warning("Policy is too complex for simple proof flag.");
     }
     
     if (tk != null) {
@@ -290,7 +300,8 @@ public class MyPresentationPolicy {
       URI credentialSpecUID, KeyManager keyManager) {
     try {
       IssuerParameters ip = keyManager.getIssuerParameters(issuerParametersUID);
-      return ip.getCredentialSpecUID().equals(credentialSpecUID);
+      CredentialSpecification spec = keyManager.getCredentialSpecification(credentialSpecUID);
+      return ip.getMaximalNumberOfAttributes() >= spec.getAttributeDescriptions().getAttributeDescription().size();
     } catch (KeyManagerException e) {
       throw new RuntimeException(e);
     }
@@ -588,14 +599,14 @@ public class MyPresentationPolicy {
     return policy.getPolicyUID();
   }
 
-  public List<ArrayList<MyCredentialDescription>> findCredentialAssignment(
+  public List<ArrayList<MyCredentialDescription>> findCredentialAssignment(String username, 
       CredentialManager credentialManager, KeyManager km)
           throws CredentialManagerException, KeyManagerException {
     List<List<MyCredentialDescription>> credentialsForPolicy =
         new ArrayList<List<MyCredentialDescription>>();
 
     for (CredentialInPolicy c : policy.getCredential()) {
-      credentialsForPolicy.add(getCredentialsMatchingSpec(credentialManager, km, c));
+      credentialsForPolicy.add(getCredentialsMatchingSpec(username, credentialManager, km, c));
     }
 
     LinkedList<ArrayList<MyCredentialDescription>> credentialAssignments = null;
@@ -716,7 +727,7 @@ public class MyPresentationPolicy {
 
       if (!satisfiesPredicate(candidateAssignment, credentialAliasList, attributePredicates)) {
         iter.remove();
-        logger.info("Removed " + candidateAssignment + " (predicate)");
+//        logger.info("Removed " + candidateAssignment + " (predicate)");
       }
     }
   }
@@ -758,7 +769,7 @@ public class MyPresentationPolicy {
     return true;
   }
 
-  private LinkedList<MyCredentialDescription> getCredentialsMatchingSpec(
+  private LinkedList<MyCredentialDescription> getCredentialsMatchingSpec(String username, 
       CredentialManager credentialManager, KeyManager km, CredentialInPolicy c)
           throws CredentialManagerException, KeyManagerException {
     List<URI> credentialSpecs = c.getCredentialSpecAlternatives().getCredentialSpecUID();
@@ -768,7 +779,7 @@ public class MyPresentationPolicy {
     }
 
     List<CredentialDescription> credDescMatchingIssuer =
-        credentialManager.getCredentialDescription(issuerParameters, credentialSpecs);
+        credentialManager.getCredentialDescription(username, issuerParameters, credentialSpecs);
 
     LinkedList<MyCredentialDescription> candidateCredentials =
         new LinkedList<MyCredentialDescription>();
@@ -806,6 +817,7 @@ public class MyPresentationPolicy {
     populateCredentialsInTokenDescription(ptd, assignment, credentialAliasList);
     ptd.setMessage(policy.getMessage());
     ptd.setPolicyUID(policy.getPolicyUID());
+    ptd.setUsesSimpleProof(policy.isAllowSimpleProof() && checkIfSimpleProofAdmissible());
     for (PseudonymInPolicy policyPseudonym : policy.getPseudonym()) {
       PseudonymInToken pseudonym = of.createPseudonymInToken();
       ptd.getPseudonym().add(pseudonym);
@@ -819,6 +831,45 @@ public class MyPresentationPolicy {
 
     ptd.setTokenUID(contextGenerator.getUniqueContext(URI.create("abc4t://token")));
     return ptd;
+  }
+
+  static final Set<URI> admissiblePredicatesForSimpleProof = new HashSet<URI>();
+  static {
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:boolean-equal"));
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:date-equal"));
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:integer-equal"));
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:date-equal"));
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:time-equal"));
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:dateTime-equal"));
+    admissiblePredicatesForSimpleProof.add(URI.create("urn:oasis:names:tc:xacml:1.0:function:anyURI-equal"));
+  }
+  private boolean checkIfSimpleProofAdmissible() {
+    if(policy.getPseudonym().size() != 0) {
+      logger.warning("Policy has pseudonyms: simple proofs not admissible.");
+      return false;
+    }
+    if(policy.getCredential().size() != 1) {
+      logger.warning("Policy has not exactly 1 credential: simple proofs not admissible.");
+      return false;
+    }
+    for(AttributeInPolicy a: policy.getCredential().get(0).getDisclosedAttribute()) {
+      if(a.getInspectorAlternatives() != null) {
+        logger.warning("Policy has inspectors: simple proofs not admissible.");
+        return false;
+      }
+    }
+    if(policy.getVerifierDrivenRevocation().size() != 0) {
+      logger.warning("Policy has verifier driven revocation: simple proofs not admissible.");
+      return false;
+    }
+    for(AttributePredicate a: policy.getAttributePredicate()) {
+      if(! admissiblePredicatesForSimpleProof.contains(a.getFunction())) {
+        logger.warning("Policy has attribute predicate not admissible for simple proofs.");
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private void populateVerifierDrivenRevocation(PresentationTokenDescription ptd) {
@@ -913,11 +964,11 @@ public class MyPresentationPolicy {
     return ret;
   }
 
-  public List<List<PseudonymWithMetadata>> computePseudonymChoice(
+  public List<List<PseudonymWithMetadata>> computePseudonymChoice(String username, 
       CredentialManager credentialManager, ContextGenerator contextGenerator,
-      EvidenceGenerationOrchestration evidenceOrchestration) {
+      EvidenceGenerationOrchestration evidenceOrchestration) throws CryptoEngineException {
     try {
-      List<SecretDescription> secrets = credentialManager.listSecrets();
+      List<SecretDescription> secrets = credentialManager.listSecrets(username);
       List<List<PseudonymWithMetadata>> ret = new ArrayList<List<PseudonymWithMetadata>>();
       for (PseudonymInPolicy pseudonym : policy.getPseudonym()) {
         String scope = pseudonym.getScope();
@@ -928,7 +979,7 @@ public class MyPresentationPolicy {
         }
 
         List<PseudonymWithMetadata> list =
-            credentialManager.listPseudonyms(scope, pseudonym.isExclusive());
+            credentialManager.listPseudonyms(username, scope, pseudonym.isExclusive());
         
         list = filterPseudonymsByValue(list, pseudonym.getPseudonymValue());
         
@@ -965,7 +1016,7 @@ public class MyPresentationPolicy {
                 FriendlyDescription desc = of.createFriendlyDescription();
                 desc.setLang(lang);
                 desc.setValue(String.format(trans.get(lang), now));
-                System.err.println(desc.getValue());
+//                System.err.println(desc.getValue());
                 newPseudonym.getPseudonymMetadata().getFriendlyPseudonymDescription().add(desc);
               }
             } else {
@@ -984,7 +1035,7 @@ public class MyPresentationPolicy {
             newPseudonym.getPseudonym().setExclusive(pseudonym.isExclusive());
             if(pseudonym.getPseudonymValue() != null && pseudonym.isExclusive()) {
               // Ignore scope exclusive pseudonyms where the pseudonym value doesn't match
-              PseudonymWithMetadata newpwm = evidenceOrchestration.createPseudonym(newPseudonym.getPseudonym().getPseudonymUID(), pseudonym.getScope(), pseudonym.isExclusive(), sd.getSecretUID());
+              PseudonymWithMetadata newpwm = evidenceOrchestration.createPseudonym(username, newPseudonym.getPseudonym().getPseudonymUID(), pseudonym.getScope(), pseudonym.isExclusive(), sd.getSecretUID());
               if(!Arrays.equals(newpwm.getPseudonym().getPseudonymValue(), pseudonym.getPseudonymValue())) {
                 continue;
               }

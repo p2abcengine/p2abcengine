@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -22,36 +26,17 @@
 
 package eu.abc4trust.util;
 
-
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.JAXBElement;
-
-import org.datacontract.schemas._2004._07.abc4trust_uprove.IssuerParametersComposite;
-import org.w3c.dom.Element;
-
-import com.ibm.zurich.idmx.showproof.Identifier.ProofMode;
-import com.ibm.zurich.idmx.utils.StructureStore;
-
-import eu.abc4trust.cryptoEngine.idemix.util.CommittedValue;
-import eu.abc4trust.cryptoEngine.idemix.util.IdemixConstants;
-import eu.abc4trust.cryptoEngine.idemix.util.RevocationProofData;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
-import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.util.Constants.OperationType;
 import eu.abc4trust.util.attributeEncoding.MyAttributeEncodingFactory;
 import eu.abc4trust.util.attributeTypes.EnumAllowedValues;
@@ -61,22 +46,12 @@ import eu.abc4trust.xml.AttributeDescription;
 import eu.abc4trust.xml.AttributeInToken;
 import eu.abc4trust.xml.AttributePredicate;
 import eu.abc4trust.xml.AttributePredicate.Attribute;
-import eu.abc4trust.xml.CarriedOverAttribute;
-import eu.abc4trust.xml.CommittedAttribute;
-import eu.abc4trust.xml.CommittedKey;
 import eu.abc4trust.xml.CredentialInToken;
-import eu.abc4trust.xml.CredentialInTokenWithCommitments;
 import eu.abc4trust.xml.CredentialSpecification;
-import eu.abc4trust.xml.CredentialTemplate;
-import eu.abc4trust.xml.CryptoParams;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.Message;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationTokenDescription;
-import eu.abc4trust.xml.PresentationTokenDescriptionWithCommitments;
-import eu.abc4trust.xml.PseudonymInToken;
-import eu.abc4trust.xml.RevocationInformation;
-import eu.abc4trust.xml.UnknownAttributes;
 import eu.abc4trust.xml.util.XmlUtils;
 
 
@@ -84,12 +59,11 @@ import eu.abc4trust.xml.util.XmlUtils;
  * Policy parser, helper for Identity Mixer integration.
  */
 public final class PolicyTranslator{
-
-
+	
+	//TODO: add null checks!!!
+	
     private final Map<String, CredentialSpecification> credentialSpecList;
     private final PresentationTokenDescription ptd;
-    private final CredentialTemplate credTemplate;
-    private final BigInteger nonce;
     private final String messageToSign;
     private final Map<String, List<MyAttributeReference>> credentialAttrsList;
     private final Map<String, MyAttributeReference> attrRefsCache;
@@ -105,48 +79,14 @@ public final class PolicyTranslator{
     private       List<MyPredicate> myPredicates;
     private final Map<MyPredicate, List<CredentialInToken>> predicateCredInToken;
     private final HashMap<String,CredentialInToken> aliasCredInTokenList;
-    private Map<URI,MyAttributeReference> newCredAttrRefs = null;
-    private URI newCredSpecUID = null;
-    private URI newCredSecretName = null;
-    private URI newCredIssuerParametersUID = null;
-    private Map<String, List<CommittedAttribute>> aliasCommittedAttributes = null;
-    private Map<String, CommittedKey> aliasCommittedKeys = null;
-    private Map<String, URI> commitmentToIssuerMap = null;
-    private final List<MyAttributeReference> committedAttrs;
 
     private List<MyAttributeReference> oneOfAttrs = null;
-    private List<CommittedValue> committedRevocationHandles = null;
-    private List<CommittedValue> committedInspectableValues = null;
     //Friednly descriptions
     private final Map<String, List<FriendlyDescription>> credAliasFriedlyDescrList;
     private Map<MyAttributeReference, List<FriendlyDescription>> attrRefFriedlyDescrList;
 
-    // Revocation.
-    private final Map<URI, RevocationInformation> revInfoUidToRevInfo;
-    private final Collection<RevocationProofData> revocationProofData;
-
     public PolicyTranslator(PresentationTokenDescription ptd,
             Map<String, CredentialSpecification> aliasCredSpecs) {
-        this(ptd, null, aliasCredSpecs, null);
-    }
-
-    public PolicyTranslator(PresentationTokenDescriptionWithCommitments ptd,
-            Map<String, CredentialSpecification> aliasCredSpecs, KeyManager keyMan) {
-        this(ptd, null, aliasCredSpecs, null, keyMan);
-    }
-
-    public PolicyTranslator(PresentationTokenDescription ptd,
-            CredentialTemplate ct,
-            Map<String, CredentialSpecification> aliasCredSpecs,
-            URI smartcardSecretUid) {
-        /* try{
-        ObjectFactory of = new ObjectFactory();
-        System.out.println("\n\n"+this+" Policytranslator translating the following description:\n");
-        String xml =
-        	XmlUtils.toXml(of.createPresentationTokenDescription(ptd), false);
-        System.out.println(xml+"\n\n");
-
-        }catch(Exception e){e.printStackTrace();} */
 
         this.ptd = ptd;
 
@@ -155,7 +95,6 @@ public final class PolicyTranslator{
         this.myPredicates = new ArrayList<MyPredicate>();
         this.allDisclosedAttrs = new ArrayList<MyAttributeReference>();
         this.explicitlyDisclosedAttrs = new ArrayList<MyAttributeReference>();
-        this.committedAttrs = new ArrayList<MyAttributeReference>();
         this.allAttrsAndValues = new HashMap<MyAttributeReference, MyAttributeValue>();
         this.attrRefEqivClasses = new HashSet<Set<MyAttributeReference>>();
         this.revealedAttrRefEqivClasses = new HashSet<Set<MyAttributeReference>>();
@@ -173,24 +112,6 @@ public final class PolicyTranslator{
         //       this.aliasCredInTokenWithCommitmentsList = new HashMap<String, CredentialInTokenWithCommitments>();
         this.inspectableAttrs = new ArrayList<MyAttributeReference>();
         this.allDisclosedAttrsAndValues = new HashMap<MyAttributeReference, MyAttributeValue>();
-
-        this.revInfoUidToRevInfo = new HashMap<URI, RevocationInformation>();
-        this.revocationProofData = new LinkedList<RevocationProofData>();
-
-        //get nonce from the verifier
-        if ((ptd.getMessage()!=null)&&(ptd.getMessage().getNonce()!=null)){
-            byte[] nonceBytes = ptd.getMessage().getNonce();
-            this.nonce = new BigInteger(nonceBytes);
-        } else {
-            this.nonce = null;
-        }
-
-        /* if (nonceBytes == null) {
-            throw new RuntimeException(
-                    "Nonce is not specified. Please provide a nonce in the presentation policy message.");
-        }
-
-         */
 
         //parse attributes that are revealed explicitly and under inspector pk
         this.parseAllExplicitlyDisclosedAndInspectableAttributes();
@@ -217,281 +138,7 @@ public final class PolicyTranslator{
         this.credAliasFriedlyDescrList = this.composeCredAliasFriendlyDescrList(aliasCredSpecs);
         this.attrRefFriedlyDescrList = this.composeAttrRefsFriendlyDescrList(aliasCredSpecs, credentialAttrsList);
 
-
-        //for credential template generate a list of attr references, reusing ones for carry-over
-        this.credTemplate = ct;
-
-        if (this.credTemplate!=null){
-            this.newCredSpecUID = ct.getCredentialSpecUID();
-            // TODO(jdn): what is the secretName?
-            this.newCredSecretName = smartcardSecretUid;
-            this.newCredIssuerParametersUID = ct.getIssuerParametersUID();
-            this.newCredAttrRefs = this.createNewCredAttrRefs();
-        }
-
-        //TODO: handling ONEOF restriction for disclosed attributes
-
     };
-
-
-    // First strip any commitments from the PTD and use the standard constructor.
-    // Then add commitments and their relevat information
-    public PolicyTranslator(PresentationTokenDescriptionWithCommitments ptdwc,
-            CredentialTemplate ct,
-            Map<String, CredentialSpecification> aliasCredSpecs,
-            URI smartcardSecretUid,
-            KeyManager keyManager) {
-
-        this(CommitmentStripper.stripCommitmentsAndUProveFromPTD(ptdwc, keyManager), ct, aliasCredSpecs, smartcardSecretUid);
-        this.aliasCommittedAttributes = new HashMap<String, List<CommittedAttribute>>();
-        this.aliasCommittedKeys = new HashMap<String, CommittedKey>();
-        this.commitmentToIssuerMap = new HashMap<String, URI>();
-        this.committedRevocationHandles = new LinkedList<CommittedValue>();
-        this.committedInspectableValues = new LinkedList<CommittedValue>();
-
-        CryptoParams cryptoEvidence = ptdwc.getCryptoEvidence();
-        if (cryptoEvidence != null) {
-            List<Object> any = cryptoEvidence.getAny();
-            if (!any.isEmpty()) {
-                for(Object o: any){
-                    if(o instanceof JAXBElement){
-                        try{
-                            @SuppressWarnings("unchecked")
-                            byte[] bytes = ((JAXBElement<byte[]>)o).getValue();
-                            ByteArrayInputStream bin = new ByteArrayInputStream(bytes);
-                            ObjectInputStream in = new ObjectInputStream(bin);
-
-                            Object[] input = new Object[2];
-                            input[0]= in.readObject();
-                            input[1] = in.readObject();
-                            try{
-                                @SuppressWarnings("unchecked")
-                                Map<URI, RevocationInformation> t1 = (HashMap<URI, RevocationInformation>) input[1];
-                                this.revInfoUidToRevInfo.putAll(t1);
-                            }catch(Exception e){
-                                throw new RuntimeException(e);
-                            }
-                            try{
-                                @SuppressWarnings("unchecked")
-                                Collection<RevocationProofData> collection = (Collection<RevocationProofData>) input[0];
-                                this.revocationProofData.addAll(collection);
-                            }catch(Exception e){
-                                throw new RuntimeException(e);
-                            }
-                        }catch(Exception e){
-                            System.err.println("Failed to deserialize revocation proof data");
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
-        }
-
-        this.committedRevocationHandles.addAll(this.handleUProveRevocation(ptdwc, keyManager));
-        List<CommittedValue> inspectables = this.handleUProveInspectables(ptdwc, keyManager);
-        this.committedInspectableValues.addAll(inspectables);
-
-        for(CommittedValue cv: inspectables){
-            MyAttributeReference ref = new MyAttributeReference(URI.create(cv.getAlias()), URI.create(cv.getAttributeType()));
-            this.inspectableAttrs.add(ref);
-            this.attrRefsCache.put(cv.getAlias()+cv.getAttributeType(), ref);
-            if(cv.getInspectorPublicKey()!=null) {
-                this.attrRefToInspectorKey.put(ref, cv.getInspectorPublicKey());
-            }
-            for(CredentialInTokenWithCommitments citwc: ptdwc.getCredential()){
-                if(citwc.getCredentialSpecUID().equals(cv.getCredSpecUID())){
-                    for(AttributeInToken ait: citwc.getDisclosedAttribute()){
-                        if(ait.getAttributeType().toString().equals(cv.getAttributeType())){
-                            this.attrRefToInspectorKey.put(ref, ait.getInspectorPublicKeyUID());
-                        }
-                    }
-                }
-            }
-            this.inspectableAttrValues.put(ref, cv.getCommitmentValue());
-        }
-        //
-        for(CredentialInTokenWithCommitments cit: ptdwc.getCredential()){
-            if(cit.getCommittedAttribute().size() >0){
-                this.aliasCommittedAttributes.put(cit.getAlias().toString(), cit.getCommittedAttribute());
-                //make a map from xx to issuerparametersuid
-                for(CommittedAttribute ca: cit.getCommittedAttribute()){
-                    this.commitmentToIssuerMap.put(cit.getAlias().toString()+ca.getAttributeType().toString(), cit.getIssuerParametersUID());
-                    MyAttributeReference ref = new MyAttributeReference(cit.getAlias(), ca.getAttributeType());
-                    this.committedAttrs.add(ref);
-                }
-            }
-            if(cit.getCommittedKey() != null) {
-                this.aliasCommittedKeys.put(cit.getAlias().toString(), cit.getCommittedKey());
-            }
-        }
-        Set<MyAttributeReference> disclosedAttrAndValuesSetCopy = new HashSet<MyAttributeReference>();
-        disclosedAttrAndValuesSetCopy.addAll(this.allDisclosedAttrsAndValues.keySet());
-        for(MyAttributeReference mar: disclosedAttrAndValuesSetCopy){
-            if(this.committedAttrs.contains(mar)) {
-                this.allDisclosedAttrsAndValues.remove(mar);
-            }
-        }
-
-    };
-
-    private List<CommittedValue> handleUProveRevocation(PresentationTokenDescriptionWithCommitments ptdwc, KeyManager keyManager){
-        List<CommittedValue> ret = new ArrayList<CommittedValue>();
-        for(CredentialInTokenWithCommitments citwc: ptdwc.getCredential()){
-            try{
-                // Check if current credential is idemix or uprove
-                if(!keyManager.getIssuerParameters(citwc.getIssuerParametersUID()).getAlgorithmID().equals(CryptoUriUtil.getUproveMechanism())) {
-                    continue;
-                }
-
-                if(keyManager.getCredentialSpecification(citwc.getCredentialSpecUID()).isRevocable()){
-                    CommittedValue cv = new CommittedValue();
-                    CommittedAttribute ca = null;
-
-                    for(CommittedAttribute c: citwc.getCommittedAttribute()){
-                        if(c.getAttributeType().equals(URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"))){
-                            ca = c;
-                            continue;
-                        }
-                    }
-
-                    for(AttributeInToken da: citwc.getDisclosedAttribute()){
-                        if(da.getAttributeType().equals(URI.create("http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"))){
-                            cv.setInspectorPublicKey(da.getInspectorPublicKeyUID());
-                            continue;
-                        }
-                    }
-
-                    cv.setAlias(citwc.getAlias().toString());
-                    cv.setCredSpecUID(citwc.getCredentialSpecUID());
-                    cv.setAttributeType(ca.getAttributeType().toString());
-
-
-                    IssuerParametersComposite ipc = (IssuerParametersComposite)StructureStore.getInstance().get(citwc.getIssuerParametersUID());
-                    byte[] b = ipc.getG().getValue().getBase64Binary().get(0);
-                    byte[] unsigned = new byte[b.length+1];
-                    System.arraycopy(b, 0, unsigned, 1, b.length);
-                    cv.getBases().add(new BigInteger(unsigned));
-                    b = ipc.getG().getValue().getBase64Binary().get(1);
-                    unsigned = new byte[b.length+1];
-                    System.arraycopy(b, 0, unsigned, 1, b.length);
-                    cv.getBases().add(new BigInteger(unsigned));
-                    cv.setModulus(UProveUtils.getModulus(ipc.getGq().getValue()));
-
-                    // so far is the same for both user and verifier
-                    // If there is openinginformation, we are constructing the proofs, and we can assume there also is a committedvalue
-                    if(ca.getOpeningInformation().getAny().size()>0){
-                        // 		Find the exponents ie. tildeO and the committedvalue
-                        b = DatatypeConverter.parseBase64Binary(((Element)ca.getOpeningInformation().getAny().get(0)).getTextContent());
-                        unsigned = new byte[b.length+1];
-                        System.arraycopy(b, 0, unsigned, 1, b.length);
-                        BigInteger tildeO =new BigInteger(unsigned);
-                        @SuppressWarnings("unchecked")
-                        JAXBElement<byte[]> commVal = (JAXBElement<byte[]>)ca.getCommittedValue().getAny().get(0);
-                        BigInteger x = new BigInteger(commVal.getValue());
-                        cv.setCommitmentValue(x);
-                        cv.getExponents().add(x);
-                        cv.getExponents().add(tildeO);
-                    }
-                    ret.add(cv);
-                }
-            }catch(Exception e){
-                throw new RuntimeException(e);
-            }
-        }
-        return ret;
-    }
-
-    private List<CommittedValue> handleUProveInspectables(PresentationTokenDescriptionWithCommitments ptdwc, KeyManager keyManager){
-        List<CommittedValue> ret = new ArrayList<CommittedValue>();
-        for(CredentialInTokenWithCommitments citwc: ptdwc.getCredential()){
-            try{
-                // Check if current credential is idemix or uprove
-                if(!keyManager.getIssuerParameters(citwc.getIssuerParametersUID()).getAlgorithmID().equals(CryptoUriUtil.getUproveMechanism())) {
-                    continue;
-                }
-
-                for(AttributeInToken ait : citwc.getDisclosedAttribute()){
-
-                    CommittedAttribute ca = null;
-                    for(CommittedAttribute c: citwc.getCommittedAttribute()){
-                        if(c.getAttributeType().equals(ait.getAttributeType())){
-                            ca = c;
-                            continue;
-                        }
-                    }
-                    CommittedValue cv = new CommittedValue();
-                    cv.setAlias(citwc.getAlias().toString());
-                    cv.setCredSpecUID(citwc.getCredentialSpecUID());
-                    cv.setAttributeType(ca.getAttributeType().toString());
-                    cv.setInspectorPublicKey(ait.getInspectorPublicKeyUID());
-
-                    IssuerParametersComposite ipc = (IssuerParametersComposite)StructureStore.getInstance().get(citwc.getIssuerParametersUID());
-
-                    byte[] b = ipc.getG().getValue().getBase64Binary().get(0);
-                    byte[] unsigned = new byte[b.length+1];
-                    System.arraycopy(b, 0, unsigned, 1, b.length);
-                    cv.getBases().add(new BigInteger(unsigned));
-                    b = ipc.getG().getValue().getBase64Binary().get(1);
-                    unsigned = new byte[b.length+1];
-                    System.arraycopy(b, 0, unsigned, 1, b.length);
-                    cv.getBases().add(new BigInteger(unsigned));
-                    cv.setModulus(UProveUtils.getModulus(ipc.getGq().getValue()));
-
-                    // so far is the same for both user and verifier
-                    // If there is openinginformation, we are constructing the proofs, and we can assume there also is a committedvalue
-                    if(ca.getOpeningInformation().getAny().size()>0){
-                        // 		Find the exponents ie. tildeO and the committedvalue
-                        b = DatatypeConverter.parseBase64Binary(((Element)ca.getOpeningInformation().getAny().get(0)).getTextContent());
-                        unsigned = new byte[b.length+1];
-                        System.arraycopy(b, 0, unsigned, 1, b.length);
-                        BigInteger tildeO =new BigInteger(unsigned);
-                        @SuppressWarnings("unchecked")
-                        JAXBElement<byte[]> commVal = (JAXBElement<byte[]>)ca.getCommittedValue().getAny().get(0);
-                        BigInteger x = new BigInteger(commVal.getValue());
-                        cv.setCommitmentValue(x);
-                        cv.getExponents().add(x);
-                        cv.getExponents().add(tildeO);
-                    }
-                    ret.add(cv);
-                }
-            }catch(Exception e){
-                throw new RuntimeException(e);
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * Creates a list of attribute references for the attributes from a credential that is being issued
-     * @return
-     */
-    private Map<URI,MyAttributeReference> createNewCredAttrRefs() {
-        Map<URI,MyAttributeReference> ret = new HashMap<URI, MyAttributeReference>();
-
-        MyAttributeReference mar = null;
-
-        CredentialSpecification newCredSpec = this.credentialSpecList.get(IdemixConstants.tempNameOfNewCredential);
-        Map<String, MyAttributeReference> carriedOverMap = new HashMap<String, MyAttributeReference>();
-
-        UnknownAttributes unknownAttributes = this.credTemplate.getUnknownAttributes();
-        if (unknownAttributes != null) {
-            for (CarriedOverAttribute coa : unknownAttributes.getCarriedOverAttribute()){
-                MyAttributeReference refOfSourceAttribute = this.attrRefsCache.get(coa.getSourceCredentialInfo().getAlias().toString()+coa.getSourceCredentialInfo().getAttributeType().toString());
-                carriedOverMap.put(IdemixConstants.tempNameOfNewCredential+coa.getTargetAttributeType().toString(), refOfSourceAttribute);  //change the key for attRef for the carry over attribute
-            }
-        }
-
-        for(AttributeDescription attrDescr: newCredSpec.getAttributeDescriptions().getAttributeDescription()){
-            String keyOfAttrForNewCred =  IdemixConstants.tempNameOfNewCredential+attrDescr.getType().toString();
-            if (carriedOverMap.containsKey(keyOfAttrForNewCred)){
-                mar = carriedOverMap.get(keyOfAttrForNewCred); // if carry over - replace with a ref to old attribute
-            } else {
-                mar = this.attrRefsCache.get(keyOfAttrForNewCred);  // get a reference for a new attribute
-            }
-            ret.put(attrDescr.getType(),mar);
-        }
-        return ret;
-    }
 
 
     /**
@@ -566,7 +213,7 @@ public final class PolicyTranslator{
      * Finalizes the Map<CredentialAlias, List<MyCredentialReferences>>
      * Helper for creating Idemix Proof Spec
      */
-    private void  completeCredentialDeclarations(){
+    private void completeCredentialDeclarations(){
 
         for(String credAlias: this.credentialSpecList.keySet()){  //contains a cred spec for a credential that will be issued in the case if credTemplate is not null
             List<MyAttributeReference> oldRefsList = this.credentialAttrsList.get(credAlias);
@@ -892,6 +539,8 @@ public final class PolicyTranslator{
     	return ret;
     }
 
+    
+    //Return stuff
     /**
 	* @return the credAliasFriedlyDescrList
 	*/
@@ -903,129 +552,21 @@ public final class PolicyTranslator{
 		return attrRefFriedlyDescrList;
 	}
 
-    public boolean containsCommitments(){
-        return this.aliasCommittedAttributes !=null;
-    }
-
-    public List<MyAttributeReference> getAllDisclosedAttributeReferences(){
-        return this.allDisclosedAttrs;
-    }
-
-    public List<MyAttributeReference> getExplicitlyDisclosedAttributeReferences(){
-        return this.explicitlyDisclosedAttrs;
-    }
-
-    public Set<Set<MyAttributeReference>> getRevealedAttrRefEqivClasses(){
-        return this.revealedAttrRefEqivClasses;
-    }
-
-    public Set<Set<MyAttributeReference>> getAttrRefEqivClasses(){
-        return this.attrRefEqivClasses;
-    }
-
     public List<MyPredicate> getAllPredicates(){
         return this.myPredicates;
-    }
-
-    public BigInteger getNonce() {
-        return this.nonce;
-    }
-
-    public Map<MyPredicate, List<CredentialInToken>> getPredicateCredsInTokenMap() {
-        return this.predicateCredInToken;
-    }
-
-
-    public Map<String, List<MyAttributeReference>> getCredentialsAttributesList() {
-        return this.credentialAttrsList;
     }
 
     public Map<MyAttributeReference, MyAttributeValue> getAllDisclosedAttributesAndValues() {
         return this.allDisclosedAttrsAndValues;
     }
 
-    public Map<String, CredentialInToken> getCredentialList() {
-        return this.aliasCredInTokenList;
-    }
-
     public Map<String, CredentialSpecification> getCredSpecList() {
         return this.credentialSpecList;
-    }
-
-    public List<PseudonymInToken> getPseudonyms(){
-        return this.ptd.getPseudonym();
-    }
-
-    public List<MyAttributeReference> getInspectableAttrs() {
-        return this.inspectableAttrs;
-    }
-
-    public List<MyAttributeReference> getOneOfAttrs() {
-        return this.oneOfAttrs;
     }
 
     public String getMessageToSign(){
         return this.messageToSign;
     }
 
-    public Map<URI,MyAttributeReference> getNewCredAttrRefs() {
-        return this.newCredAttrRefs;
-    }
-
-    public URI getNewCredSpecUID() {
-        return this.newCredSpecUID;
-    }
-
-    public String getNewCredSecretName() {
-        if (this.newCredSecretName != null) {
-            return this.newCredSecretName.toString();
-        }
-        return null;// "foobar-secret";
-    }
-
-    public URI getNewCredIssuerParametersUID() {
-        return this.newCredIssuerParametersUID;
-    }
-
-    public Map<String, CommittedKey> getAliasCommittedKeys(){
-        return this.aliasCommittedKeys;
-    }
-
-
-    public Map<String, List<CommittedAttribute>> getAliasCommittedAttributes(){
-        return this.aliasCommittedAttributes;
-    }
-
-    public Map<String, URI> getCommitmentToIssuerMap(){
-        return this.commitmentToIssuerMap;
-    }
-
-    public Map<MyAttributeReference, URI> getAttributeToInspectorKeyMap(){
-        return this.attrRefToInspectorKey;
-    }
-
-    public Map<MyAttributeReference, BigInteger> getInspectableAttrValues(){
-        return this.inspectableAttrValues;
-    }
-
-    public List<MyAttributeReference> getCommittedAttributes(){
-        return this.committedAttrs;
-    }
-
-    public Map<URI, RevocationInformation> getRevocationInformation() {
-        return this.revInfoUidToRevInfo;
-    }
-
-    public Collection<RevocationProofData> getRevocationProofData() {
-        return this.revocationProofData;
-    }
-
-    public List<CommittedValue> getCommittedRevocationHandles() {
-        return this.committedRevocationHandles;
-    }
-
-    public List<CommittedValue> getCommittedInspectableValues() {
-        return this.committedInspectableValues;
-    }
 
 }

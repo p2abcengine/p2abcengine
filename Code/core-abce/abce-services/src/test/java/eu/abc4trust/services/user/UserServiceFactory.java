@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -40,14 +44,14 @@ import org.xml.sax.SAXException;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource.Builder;
 
-import edu.rice.cs.plt.tuple.Pair;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory;
+import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuanceReturn;
@@ -56,7 +60,7 @@ import eu.abc4trust.returnTypes.UiIssuanceArguments;
 import eu.abc4trust.returnTypes.UiIssuanceReturn;
 import eu.abc4trust.returnTypes.UiPresentationArguments;
 import eu.abc4trust.returnTypes.UiPresentationReturn;
-import eu.abc4trust.services.issuer.AbstractTestFactory;
+import eu.abc4trust.services.AbstractTestFactory;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.ABCEBoolean;
 import eu.abc4trust.xml.Attribute;
@@ -79,9 +83,7 @@ public class UserServiceFactory extends AbstractTestFactory {
 
     static ObjectFactory of = new ObjectFactory();
 
-    final String baseUrl = "http://localhost:9000/abce-services/user";
-
-    // final String baseUrl = "http://localhost:9200/user";
+    final String baseUrl = "http://localhost:9200/abce-services/user";
 
     public Pair<CredentialDescription, URI> issueCredential(
             CredentialSpecification credentialSpecification,
@@ -95,7 +97,6 @@ public class UserServiceFactory extends AbstractTestFactory {
         keyManager.storeCredentialSpecification(
                 credentialSpecification.getSpecificationUID(),
                 credentialSpecification);
-        keyManager.storeSystemParameters(systemParameters);
 
         keyManager.storeIssuerParameters(issuerParameters.getParametersUID(),
                 issuerParameters);
@@ -158,6 +159,9 @@ public class UserServiceFactory extends AbstractTestFactory {
                     .getIssuanceMessage());
 
             boolean userLastMessage = (userIm.cd != null);
+            if(!userLastMessage){
+            	userIssuanceMessage = userIm.im;
+            }
             assertTrue(issuerIssuanceMessage.isLastMessage() == userLastMessage);
         }
 
@@ -220,8 +224,6 @@ public class UserServiceFactory extends AbstractTestFactory {
         String requestString = "/storeSystemParameters/";
         Builder resource = this.getHttpBuilder(requestString, this.baseUrl);
 
-        // systemParameters = SystemParametersUtil.serialize(systemParameters);
-
         ABCEBoolean b = resource.post(ABCEBoolean.class,
                 of.createSystemParameters(systemParameters));
         assertTrue(b.isValue());
@@ -258,12 +260,6 @@ public class UserServiceFactory extends AbstractTestFactory {
             String requestString = "/storeIssuerParameters/" + uid;
             Builder resource = this.getHttpBuilder(requestString, this.baseUrl);
 
-            // SystemParameters systemParameters = issuerParameters
-            // .getSystemParameters();
-            // SystemParameters systemParameters = SystemParametersUtil
-            // .serialize(issuerParameters.getSystemParameters());
-            // issuerParameters.setSystemParameters(systemParameters);
-
             ABCEBoolean b = resource.put(ABCEBoolean.class,
                     of.createIssuerParameters(issuerParameters));
 
@@ -274,40 +270,41 @@ public class UserServiceFactory extends AbstractTestFactory {
 
     }
 
-    public URI issuanceProtocol(String engineSuffix,
+    public Pair<CredentialDescription, URI> issuanceProtocol(String engineSuffix,
             CredentialSpecification credentialSpecification,
             String issuerParametersUid,
             IssuancePolicyAndAttributes issuancePolicyAndAttributes)
                     throws CryptoEngineException,
                     IOException, JAXBException, SAXException, KeyManagerException {
 
-        Injector issuerInjector = Guice.createInjector(BridgingModuleFactory
-                .newModule(new Random(1987), UProveUtils.UPROVE_COMMON_PORT));
+        Injector issuerInjector = Guice.createInjector(IntegrationModuleFactory
+                .newModule(new Random(1987)));
 
         IssuerAbcEngine issuerAbcEngine = issuerInjector
                 .getInstance(IssuerAbcEngine.class);
+        KeyManager issuerKeyManager = issuerInjector
+        		.getInstance(KeyManager.class);
 
-        SystemParameters systemParameters = issuerAbcEngine
-                .setupSystemParameters(80,
-                        URI.create("urn:abc4trust:1.0:algorithm:idemix"));
+        SystemParameters systemParameters = SystemParametersUtil.getDefaultSystemParameters_1024();
 
-        URI hash = CryptoUriUtil.getHashSha256();
-
-        URI algorithmId = URI.create("urn:abc4trust:1.0:algorithm:"
-                + engineSuffix);
-
-        IssuerParameters issuerParameters = issuerAbcEngine
-                .setupIssuerParameters(credentialSpecification,
-                        systemParameters, URI.create(issuerParametersUid),
-                        hash, algorithmId, null,
-                        new LinkedList<FriendlyDescription>());
-
+        issuerKeyManager.storeSystemParameters(systemParameters);
+        
+        URI cryptoMechanism = CryptoUriUtil.getIdemixMechanism();
+        if(engineSuffix.equals("uprove")){
+          cryptoMechanism = CryptoUriUtil.getUproveMechanism();
+        }
+        
+        IssuerParameters issuerParameters = issuerAbcEngine.
+            setupIssuerParameters(systemParameters, 10, 
+          cryptoMechanism, URI.create(issuerParametersUid), null, 
+          new LinkedList<FriendlyDescription>());
+        
         Pair<CredentialDescription, URI> p = this.issueCredential(
                 credentialSpecification,
                 systemParameters, issuerParametersUid,
                 issuerParameters, issuerInjector, issuancePolicyAndAttributes);
-        assertNotNull(p.first());
-        return p.first().getCredentialUID();
+        assertNotNull(p.first);
+        return p;
     }
 
     public UiPresentationArguments createPresentationToken(

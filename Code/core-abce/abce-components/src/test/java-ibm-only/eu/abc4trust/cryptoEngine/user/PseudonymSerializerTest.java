@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -73,24 +72,32 @@ public class PseudonymSerializerTest {
   @Test
   public void testConsistency() throws Exception {
     List<PwmWithName> clist = new ArrayList<PwmWithName>();
-    clist.add(new PwmWithName("patras/uprove-pseudonym.xml"));
+    clist.add(new PwmWithName("credCompressor/idemix3-standard-pseudonym.xml"));
+    // clist.add(new PwmWithName("credCompressor/idemix3-exclusive-pseudonym.xml"));
     
     List<PseudonymSerializer> cslist = getClasses();
     cslist.add(new PseudonymSerializerBest(new CardStorage()));
     
+    boolean ok = true;
     for(PwmWithName cn: clist) {
       System.out.print(cn.name + ": ");
       for(PseudonymSerializer cs: cslist) {
-        int size = checkSerializeAndUnserialize(cs, cn.cred, cn.name);
-        System.out.print(cs.magicHeader()+"="+size+"   ");
+        try {
+          int size = checkSerializeAndUnserialize(cs, cn.cred, cn.name);
+          System.out.print(cs.magicHeader()+"="+size+"   ");
+        } catch(Exception e) {
+          System.out.println("FAIL");
+          ok = false;
+        }
       }
       System.out.println();
     }
+    assertTrue(ok);
   }
   
   @Test
   public void testInconsistency() throws Exception {
-    PwmWithName c = new PwmWithName("patras/uprove-pseudonym.xml");
+    PwmWithName c = new PwmWithName("credCompressor/idemix3-standard-pseudonym.xml");
     for(PseudonymSerializer cs1: getClasses()) {
       for(PseudonymSerializer cs2: getClasses()) {
         byte[] ser = cs1.serializePseudonym(c.cred);
@@ -116,7 +123,7 @@ public class PseudonymSerializerTest {
     // TODO: there is no real comparison function for credentials...
     ObjectFactory of = new ObjectFactory();
     assertEquals("Serializer: " + cs.getClass().getName() + "  -- Cred: " + cname ,
-                 XmlUtils.toXml(of.createPseudonymWithMetadata(copy)),
+                 XmlUtils.toXml(of.createPseudonymWithMetadata(c)),
                  XmlUtils.toXml(of.createPseudonymWithMetadata(copy)));
     return ser.length;
   }
@@ -131,7 +138,6 @@ public class PseudonymSerializerTest {
       cred=
           (PseudonymWithMetadata) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
                   "/eu/abc4trust/sampleXml/" + path), true);
-      cred.getPseudonym().setExclusive(false);
     }
   }
 }

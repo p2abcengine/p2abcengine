@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export MAVEN_OPTS='-Xmx2024m -Xms256m -XX:MaxPermSize=1024m'
+
 #Stop script if an error occurs
 set -e
 
@@ -32,3 +34,9 @@ mvn -P revocation-service install -DskipTests
 
 echo "Running: mvn -P selfcontained-revocation-service clean install -DskipTests"
 mvn -P selfcontained-revocation-service install -DskipTests
+
+echo "Running: mvn -P identity-service install -DskipTests"
+mvn -P identity-service install -DskipTests
+
+echo "Running: mvn -P selfcontained-identity-serivce install -DskipTests"
+mvn -P selfcontained-identity-service install -DskipTests

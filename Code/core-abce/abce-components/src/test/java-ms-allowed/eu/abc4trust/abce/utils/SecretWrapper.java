@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -28,21 +30,20 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import org.w3c.dom.Element;
+import com.ibm.zurich.idmix.abc4trust.facades.SmartcardParametersFacade;
+import com.ibm.zurich.idmx.buildingBlock.systemParameters.EcryptSystemParametersWrapper;
+import com.ibm.zurich.idmx.exception.ConfigurationException;
 
-import com.ibm.zurich.idmx.key.IssuerPublicKey;
-import com.ibm.zurich.idmx.utils.GroupParameters;
-import com.ibm.zurich.idmx.utils.Parser;
-
+import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.smartcard.BasicSmartcard;
-import eu.abc4trust.smartcard.CredentialBases;
 import eu.abc4trust.smartcard.RSAKeyPair;
 import eu.abc4trust.smartcard.RSASignatureSystem;
 import eu.abc4trust.smartcard.RSASignatureSystemTest;
 import eu.abc4trust.smartcard.RSAVerificationKey;
 import eu.abc4trust.smartcard.Smartcard;
 import eu.abc4trust.smartcard.SmartcardBlob;
+import eu.abc4trust.smartcard.SmartcardParameters;
 import eu.abc4trust.smartcard.SmartcardStatusCode;
 import eu.abc4trust.smartcard.SoftwareSmartcard;
 import eu.abc4trust.xml.IssuerParameters;
@@ -70,8 +71,7 @@ public class SecretWrapper {
         this.secret = secret;
     }
 
-    public SecretWrapper(CryptoEngine cryptoEngine, Random random,
-            SystemParameters systemParameters) {
+    public SecretWrapper(Random random, SystemParameters systemParameters) throws ConfigurationException {
         this.useSoftwareSmartcard = true;
 
         URI deviceUri = URI.create("secret://software-smartcard-"
@@ -81,17 +81,21 @@ public class SecretWrapper {
         random.nextBytes(deviceID_bytes);
         short deviceID = ByteBuffer.wrap(deviceID_bytes).getShort();
 
-        GroupParameters groupParameters = (GroupParameters) systemParameters
-                .getAny().get(1);
+        EcryptSystemParametersWrapper spw = new EcryptSystemParametersWrapper(systemParameters);
 
         SmartcardSystemParameters scSysParams = new SmartcardSystemParameters();
 
-        BigInteger p = groupParameters.getCapGamma();
-        BigInteger g = groupParameters.getG();
-        BigInteger subgroupOrder = groupParameters.getRho();
-        int zkChallengeSizeBytes = 256 / 8;
-        int zkStatisticalHidingSizeBytes = 80 / 8;
-        int deviceSecretSizeBytes = 256 / 8;
+        BigInteger p, g, subgroupOrder;
+        try {
+          p = spw.getDHModulus().getValue();
+          g = spw.getDHGenerator1().getValue();
+          subgroupOrder = spw.getDHSubgroupOrder().getValue();
+        } catch (ConfigurationException e1) {
+          throw new RuntimeException(e1);
+        }
+        int zkChallengeSizeBytes = spw.getHashLength() / 8;
+        int zkStatisticalHidingSizeBytes = spw.getStatisticalInd() / 8;
+        int deviceSecretSizeBytes = spw.getAttributeLength() / 8;
         int signatureNonceLengthBytes = 128 / 8;
         int zkNonceSizeBytes = 256 / 8;
         int zkNonceOpeningSizeBytes = 256 / 8;
@@ -135,16 +139,15 @@ public class SecretWrapper {
         }
     }
 
-    public void addIssuerParameters(IssuerParameters issuerParameters) {
+    public void addIssuerParameters(IssuerParameters issuerParameters, SystemParameters sp) {
         if (this.useSoftwareSmartcard) {
-            IssuerPublicKey isPK = (IssuerPublicKey) Parser.getInstance()
-                    .parse((Element) issuerParameters.getCryptoParams()
-                            .getAny().get(0));
-            //
-            BigInteger R0 = isPK.getCapR()[0];
-            BigInteger S = isPK.getCapS();
-            BigInteger n = isPK.getN();
-            CredentialBases credBases = new CredentialBases(R0, S, n);
+          SmartcardParametersFacade spf = new SmartcardParametersFacade(sp, issuerParameters);
+          SmartcardParameters credBases;
+          try {
+            credBases = spf.getSmartcardParameters();
+          } catch (CryptoEngineException e) {
+            throw new RuntimeException(e);
+          }
 
             this.softwareSmartcard.getNewNonceForSignature();
             URI parametersUri = issuerParameters.getParametersUID();

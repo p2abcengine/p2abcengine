@@ -26,7 +26,7 @@
         <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0/idemix</abc:IssuerParametersUID>
         <abc:IssuerParametersUID>http://my.country/identitycard/issuancekey_v1.0/uprove</abc:IssuerParametersUID>
       </abc:IssuerAlternatives>
-       <abc:DisclosedAttribute AttributeType="LastName" >
+       <abc:DisclosedAttribute AttributeType="Birthday" >
       	<abc:InspectorAlternatives>
       		<abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
       	</abc:InspectorAlternatives>

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -34,32 +38,31 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 
-import eu.abc4trust.cryptoEngine.uprove.user.ReloadStorageManager;
-import eu.abc4trust.cryptoEngine.uprove.user.UProveCryptoEngineUserImpl;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.PseudonymSerializer;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 
 public class SoftwareSmartcard implements Smartcard, Serializable {
-
+    static Logger log = Logger.getLogger(SoftwareSmartcard.class.getName());
+    
 
     private static final long serialVersionUID = 1L;
 
     private static final int MAX_CREDENTIALS = 8;
     private static final int MAX_ISSUERS = 6;
-    private static final int MAX_BLOBS = 38;
+    private static final int MAX_BLOBS = 50;
     private static final int MAX_URI_LEN_BYTES = 64;
-    private static final int MAX_BLOB_LEN_BYTES = HardwareSmartcard.MAX_BLOB_BYTES;
+    private static final int MAX_BLOB_LEN_BYTES = 512;
     private static final int MAX_PIN_TRIALS = 3;
     private static final int MAX_PUK_TRIALS = 10;
     private static final String URI_ENCODING = "UTF-8";
@@ -237,7 +240,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         if (pinstatus != SmartcardStatusCode.OK) {
             return pinstatus;
         }
-        System.out.println("======= Delete credential "+ credentialUri);
+        log.info("======= Delete credential "+ credentialUri);
 
         if (! this.credentials.containsKey(credentialUri)) {
             return SmartcardStatusCode.NOT_FOUND;
@@ -249,13 +252,13 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 
     @Override
     public void removeCredentialUri(int pin, URI uri){
-        if(uri.toString().startsWith(UProveCryptoEngineUserImpl.UProveCredential)){
-            URI reloadURI = URI.create(uri.toString()+ReloadStorageManager.URI_POSTFIX);
+        if(uri.toString().startsWith(HardwareSmartcard.CREDENTIAL_PREFIX)){
+            URI reloadURI = URI.create(uri.toString()+HardwareSmartcard.UPROVE_RELOAD_URI_POSTFIX);
             if(reloadURI.toString().contains(":") && !reloadURI.toString().contains("_")){
                 reloadURI = URI.create(reloadURI.toString().replaceAll(":", "_")); //change all ':' to '_'
             }
             this.deleteBlob(pin, reloadURI);
-            System.out.println("deleted the reload blob of the credential: " + reloadURI);
+            log.info("deleted the reload blob of the credential: " + reloadURI);
         }
         int i = 1;
         while(true){
@@ -590,7 +593,6 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         }
         ZkProofWitness wit = this.getZkProofWitness(credentialIds, includeDevicePublicKeyProof);
         this.zkProofState = ZkProofSystem.firstMove(spec, wit, rand);
-        this.zkProofState.commitment.nonceCommitment = this.zkProofState.nonce;//Utils.computeCommitment(this.zkProofState.nonceOpening);
 
         for(URI credentialId: credentialIds) {
             // Mark all credentials as being issued
@@ -606,23 +608,19 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
     }
 
     @Override
-    public ZkProofResponse finalizeZkProof(int pin, byte[] challengeHashPreimage, Set<URI> credentialIds,
-            Set<URI> scopeExclusivePseudonyms, byte[] nonce) {
+    public ZkProofResponse finalizeZkProof(int pin, BigInteger challenge, Set<URI> credentialIds,
+            Set<URI> scopeExclusivePseudonyms) {
         SmartcardStatusCode pinstatus = this.authenticateWithPin(pin);
         if (pinstatus != SmartcardStatusCode.OK) {
             return null;
         }
 
-        if((this.zkProofState == null) || (this.zkProofState.nonce == null)) {
+        if(this.zkProofState == null) {
             return null;
         }
-        if(!Arrays.equals(this.zkProofState.nonce, nonce)){
-            System.err.println("Nonce given is not the same as the nonce created at prepareZkProof");
-            return null;
-        }
-
+        
         ZkProofResponse response =
-                ZkProofSystem.secondMove(this.zkProofState, challengeHashPreimage, nonce, rand);
+                ZkProofSystem.secondMove(this.zkProofState, challenge, rand);
 
         this.zkProofState = null;
         return response;
@@ -652,28 +650,11 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 
         SmartcardBackup backup = new SmartcardBackup();
 
-        //first, the deviceinfo: pin, puk and deviceKey (sk)
-        byte[] deviceKey = this.deviceSecret.toByteArray();
-        ByteBuffer deviceInfo = ByteBuffer.allocate(4+8+deviceKey.length);
-        deviceInfo.put(this.pinToByteArr(this.pin));
-        deviceInfo.put(this.pukToByteArr(this.puk));
-        deviceInfo.put(deviceKey);
 
-        backup.deviceUri = this.getDeviceURI(pin);
-
-        //key = trunc (SHA256(#masterbackupkey k password k label); 16)
         sha256.update(this.macKey);
         sha256.update(Utils.passwordToByteArr(password));
-        byte[] tmp = sha256.digest(new byte[]{1}); //for device info label is 1
+        byte[] tmp = sha256.digest(new byte[]{2}); //for counter info label is 2
         byte[] key = new byte[16];
-        System.arraycopy(tmp, 0, key, 0, 16);
-
-        backup.macDevice = SmartcardCrypto.backup(deviceInfo.array(), key, this.deviceID, rand);
-
-        sha256.update(this.macKey);
-        sha256.update(Utils.passwordToByteArr(password));
-        tmp = sha256.digest(new byte[]{2}); //for counter info label is 2
-        key = new byte[16];
         System.arraycopy(tmp, 0, key, 0, 16);
 
         //Then the counters
@@ -689,73 +670,6 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         }
         byte[] toBackup = coursesInfo.array();
         backup.macCounters = SmartcardCrypto.backup(toBackup, key, this.deviceID, rand);
-
-        //Then the credentials (credentialID || issuerID || status || prescount || v)
-        //Since we use URI's on softwaresmartcard, we store first the length(2 bytes) of the URI, then the uri.
-        sha256.update(this.macKey);
-        sha256.update(Utils.passwordToByteArr(password));
-        tmp = sha256.digest(new byte[]{3}); //for credentials the label is 3
-        key = new byte[16];
-        System.arraycopy(tmp, 0, key, 0, 16);
-
-        byte credID = 1;
-        for(URI uri : this.credentials.keySet()){
-            try {
-                CredentialOnSmartcard cred = this.credentials.get(uri);
-                String s = cred.credentialUid.toASCIIString();
-                byte[] credUid = s.getBytes("US-ASCII");
-
-                s = cred.parametersUri.toASCIIString();
-                byte[] issuerUid = s.getBytes("US-ASCII");
-
-                ByteBuffer credInfo = ByteBuffer.allocate(2+credUid.length+2+issuerUid.length+1+cred.v.toByteArray().length);
-
-                credInfo.put(ByteBuffer.allocate(2).putShort((short)credUid.length).array());
-                credInfo.put(credUid);
-                credInfo.put(ByteBuffer.allocate(2).putShort((short)issuerUid.length).array());
-                credInfo.put(issuerUid);
-                if(cred.issued){
-                    credInfo.put(new byte[]{1});
-                }else{
-                    credInfo.put(new byte[]{0});
-                }
-                //credInfo.put(cred.presCount); //does not exist in software smartcard
-                credInfo.put(cred.v.toByteArray());
-                backup.macCredentials.put(credID, SmartcardCrypto.backup(credInfo.array(), key, this.deviceID, rand));
-                credID++;
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        backup.deviceID = this.deviceID;
-
-        //Create AES key using the PIN and Password of the user
-        final byte[] IV = new byte[16];
-        rand.nextBytes(IV);
-        backup.IV = IV;
-        Cipher cipher = HardwareSmartcard.getAESKey(HardwareSmartcard.salt, password, IV, true);
-
-        //finally we backup the blobstore
-        Map<URI, SmartcardBlob> blobs = this.getBlobs(pin);
-        Map<URI, byte[]> encBlobs = new HashMap<URI, byte[]>();
-        try{
-            for(URI uri : blobs.keySet()){
-                byte[] blob = blobs.get(uri).blob;
-                encBlobs.put(uri, cipher.doFinal(blob));
-            }
-        }catch(Exception e){
-            throw new RuntimeException("Could not encrypt blobstore", e);
-        }
-        backup.blobstore = encBlobs;
-        //
-        //        //backup blobstore
-        //        Map<URI, byte[]> blobs = new HashMap<URI, byte[]>();
-        //        for(URI uri: this.blobstore.keySet()){
-        //            blobs.put(uri, this.blobstore.get(uri).blob);
-        //        }
-        //        backup.blobstore.putAll(blobs);
 
         return backup;
     }
@@ -787,14 +701,6 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
             return null;
         }
 
-        SmartcardBlob deviceUriBlob = new SmartcardBlob();
-        try {
-            deviceUriBlob.blob = backup.deviceUri.toASCIIString().getBytes("US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("US-ASCII not supported exception.", e);
-        }
-        this.storeBlob(pin, Smartcard.device_name, deviceUriBlob);
-
         MessageDigest sha256 = null;
         try {
             sha256 = MessageDigest.getInstance("SHA-256");
@@ -819,97 +725,9 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
             int courseID = counterData.getInt();
             int lectureCount = counterData.getInt();
             int lastLectureID = counterData.getInt();
-            System.out.println("counter id: " + courseID + " issuer: "+this.getIssuerUriFromID(courseID));
+            log.info("counter id: " + courseID + " issuer: "+this.getIssuerUriFromID(courseID));
             this.issuerParameters.get(this.getIssuerUriFromID(courseID)).course.applyBackup(courseID, lectureCount, lastLectureID);
         }
-
-        //key = trunc (SHA256(#masterbackupkey k password k label); 16)
-        sha256.update(this.macKey);
-        sha256.update(Utils.passwordToByteArr(password));
-        tmp = sha256.digest(new byte[]{1}); //for device info label is 1
-        key = new byte[16];
-        System.arraycopy(tmp, 0, key, 0, 16);
-
-        byte[][] deviceInfo = SmartcardCrypto.restore(backup.macDevice, key);
-        byte[] deviceID = deviceInfo[0];
-        byte[] deviceData = deviceInfo[1];
-        if(ByteBuffer.wrap(deviceID).getShort() != this.deviceID){
-            return SmartcardStatusCode.BAD_REQUEST;
-        }
-        ByteBuffer buf = ByteBuffer.wrap(deviceData);
-        byte[] temp = new byte[4];
-        buf.get(temp);
-        String spin = ""+(char)temp[0]+(char)temp[1]+(char)temp[2]+(char)temp[3];
-        this.pin = Integer.parseInt(spin);
-        if(this.pin != pin){
-            return SmartcardStatusCode.FORBIDDEN;
-        }
-        temp = new byte[8];
-        buf.get(temp);
-        String spuk = ""+(char)temp[0]+(char)temp[1]+(char)temp[2]+(char)temp[3]+(char)temp[4]+(char)temp[5]+(char)temp[6]+(char)temp[7];
-        this.puk = Integer.parseInt(spuk);
-        byte[] devSecretBytes = new byte[buf.remaining()];
-        buf.get(devSecretBytes);
-        this.deviceSecret = new BigInteger(devSecretBytes);
-
-        //Then the credential information:
-        sha256.update(this.macKey);
-        sha256.update(Utils.passwordToByteArr(password));
-        tmp = sha256.digest(new byte[]{3}); //for credentials the label is 3
-        key = new byte[16];
-        System.arraycopy(tmp, 0, key, 0, 16);
-        for(byte[] archive : backup.macCredentials.values()){
-            try{
-                byte[][] credInfo = SmartcardCrypto.restore(archive, key);
-                deviceID = credInfo[0];
-                if(ByteBuffer.wrap(deviceID).getShort() != this.deviceID){
-                    return SmartcardStatusCode.BAD_REQUEST;
-                }
-                ByteBuffer credData = ByteBuffer.wrap(credInfo[1]);
-                short credUidLength = credData.getShort();
-                byte[] credUid = new byte[credUidLength];
-                credData.get(credUid);
-                URI credURI = URI.create(new String(credUid, "US-ASCII"));
-
-                short issuerUidLength = credData.getShort();
-                byte[] issuerUid = new byte[issuerUidLength];
-                credData.get(issuerUid);
-                URI issuerURI = URI.create(new String(issuerUid, "US-ASCII"));
-
-                byte[] vBytes = new byte[credData.remaining()];
-                credData.get(vBytes);
-                BigInteger v = new BigInteger(vBytes);
-
-                CredentialOnSmartcard cred = new CredentialOnSmartcard(credURI, issuerURI, v);
-                this.credentials.put(credURI, cred);
-            }catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-        }
-
-        //restoring the blob-store, but remove the current blob-store first (in particular remove the pseudonym that no longer works.)
-        this.blobstore.clear();
-
-        try{
-            for(URI uri : backup.blobstore.keySet()){
-                //decrypt blobs before putting them in.
-                byte[] encedBlob = backup.blobstore.get(uri);
-                Cipher cipher = HardwareSmartcard.getAESKey(HardwareSmartcard.salt, password, backup.IV, false);
-                byte[] blob  = cipher.doFinal(encedBlob);
-                SmartcardBlob SCBlob = new SmartcardBlob();
-                SCBlob.blob = blob;
-                this.storeBlob(pin, uri, SCBlob);
-            }
-        }catch(Exception e){
-            throw new RuntimeException("Could not decrypt blobs", e);
-        }
-
-        //        //Finally restore blobstore
-        //        for(URI uri: backup.blobstore.keySet()){
-        //            SmartcardBlob blob = new SmartcardBlob();
-        //            blob.blob = backup.blobstore.get(uri);
-        //            this.blobstore.put(uri, blob);
-        //        }
 
         return SmartcardStatusCode.OK;
     }
@@ -937,22 +755,16 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
             return null;
         }
         TrustedIssuerParameters tos = this.issuerParameters.get(cos.parametersUri);
-
-        if(tos.groupParams.isIdemixGroupParameters()){
-            // R0^deviceSecret * S^v (mod n)
-            CredentialBases credBases = (CredentialBases) tos.groupParams;
-            BigInteger R0 = credBases.R0;
-            BigInteger S = credBases.S;
-            BigInteger n = credBases.n;
-            BigInteger v = cos.v;
-            return R0.modPow(this.deviceSecret, n).multiply(S.modPow(v, n)).mod(n);
-        }else{
-            UProveParams uproveParams = (UProveParams)tos.groupParams;
-            BigInteger g = uproveParams.g;
-            BigInteger p = uproveParams.p;
-            return g.modPow(this.deviceSecret, p);
+        SmartcardParameters sp = tos.groupParams;
+        BigInteger base1 = sp.getBaseForDeviceSecret();
+        BigInteger base2 = sp.getBaseForCredentialSecretOrNull();
+        BigInteger p = sp.getModulus();
+        if (base2 != null) {
+          BigInteger v = cos.v;
+          return base1.modPow(this.deviceSecret, p).multiply(base2.modPow(v, p)).mod(p);
+        } else {
+          return base1.modPow(this.deviceSecret, p);
         }
-
     }
 
     private ZkProofSpecification getZkProofSpec(int pin, Set<URI> courseIds,
@@ -965,7 +777,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         ZkProofSpecification zkps = new ZkProofSpecification(this.params);
 
         zkps.parametersForPseudonyms = this.params;
-        zkps.credentialBases = new HashMap<URI, GroupParameters>();
+        zkps.credentialBases = new HashMap<URI, SmartcardParameters>();
         zkps.credFragment = new HashMap<URI, BigInteger>();
         for(URI courseId: courseIds) {
             if (! this.credentials.containsKey(courseId)) {
@@ -1036,7 +848,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
     @Override
     public SmartcardStatusCode storeCredential(int pin, URI credentialId, Credential cred, CredentialSerializer serializer){
         byte[] credBytes = serializer.serializeCredential(cred);
-        System.out.println("CredBytes length: " + credBytes.length);
+        log.fine("CredBytes length: " + credBytes.length);
         int nextCredBlobUri = 1;
         SmartcardStatusCode returnCode = SmartcardStatusCode.OK;
 
@@ -1055,9 +867,9 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
                 done = true; //We know we are done as we put the last bytes in the blob.
             }
             URI credUri = URI.create(credentialId.toASCIIString()+"_"+nextCredBlobUri++);
-            System.out.println("storing a blob of size: " + blob.blob.length + " with uri: " + credUri.toASCIIString());
+            log.fine("storing a blob of size: " + blob.blob.length + " with uri: " + credUri.toASCIIString());
             returnCode = this.storeBlob(pin, credUri, blob);
-            System.out.println("Return from storeBlob: " + returnCode);
+            log.fine("Return from storeBlob: " + returnCode);
             if(returnCode != SmartcardStatusCode.OK){
                 return returnCode;
             }
@@ -1069,7 +881,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
     @Override
     public SmartcardStatusCode storePseudonym(int pin, URI pseudonymId, PseudonymWithMetadata pseudo, PseudonymSerializer serializer){
         byte[] pseudoBytes = serializer.serializePseudonym(pseudo);
-        System.out.println("PseudoBytes length: " + pseudoBytes.length);
+        log.fine("PseudoBytes length: " + pseudoBytes.length);
         int nextPseudoBlobUri = 1;
         SmartcardStatusCode returnCode = SmartcardStatusCode.OK;
 
@@ -1088,7 +900,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
                 done = true; //We know we are done as we put the last bytes in the blob.
             }
             URI credUri = URI.create(pseudonymId.toASCIIString()+"_"+nextPseudoBlobUri++);
-            System.out.println("storing a blob of size: " + blob.blob.length + " with uri: " + credUri.toASCIIString());
+            log.fine("storing a blob of size: " + blob.blob.length + " with uri: " + credUri.toASCIIString());
             returnCode = this.storeBlob(pin, credUri, blob);
             if(returnCode != SmartcardStatusCode.OK){
                 return returnCode;
@@ -1107,14 +919,14 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
     private PseudonymWithMetadata getPseudonym(int pin, URI pseudonymId, int nextPseuBlobUriId,
             ByteArrayOutputStream accumulatedPseuBytes, PseudonymSerializer serializer){
         URI nextPseuBlobUri = URI.create(pseudonymId.toASCIIString()+"_"+nextPseuBlobUriId);
-        System.out.println("getting this uri: " + nextPseuBlobUri.toASCIIString());
+        log.fine("getting this uri: " + nextPseuBlobUri.toASCIIString());
         SmartcardBlob scBlob = this.getBlob(pin, nextPseuBlobUri);
         if(scBlob == null){
             return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymId);
         }
         byte[] blob = scBlob.blob;
         accumulatedPseuBytes.write(blob, 0, blob.length);
-        System.out.println("Accumulated this many bytes: "  + accumulatedPseuBytes.size());
+        log.fine("Accumulated this many bytes: "  + accumulatedPseuBytes.size());
         if(blob.length < MAX_BLOB_LEN_BYTES){
             return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymId);
         }else{
@@ -1144,14 +956,14 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
     private Credential getCredential(int pin, URI credentialId, int nextCredBlobUriId,
             ByteArrayOutputStream accumulatedCredBytes, CredentialSerializer serializer){
         URI nextCredBlobUri = URI.create(credentialId.toASCIIString()+"_"+nextCredBlobUriId);
-        System.out.println("getting this uri: " + nextCredBlobUri.toASCIIString());
+        log.info("getting this uri: " + nextCredBlobUri.toASCIIString());
         SmartcardBlob scBlob = this.getBlob(pin, nextCredBlobUri);
         if(scBlob == null){
             return serializer.unserializeCredential(accumulatedCredBytes.toByteArray(), credentialId, this.getDeviceURI(pin));
         }
         byte[] blob = scBlob.blob;
         accumulatedCredBytes.write(blob, 0, blob.length);
-        System.out.println("Accumulated this many bytes: "  + accumulatedCredBytes.size());
+        log.fine("Accumulated this many bytes: "  + accumulatedCredBytes.size());
         if(blob.length < MAX_BLOB_LEN_BYTES){
             //return new CredentialSerializerGzipXml().unserializeCredential(accumulatedCredBytes.toByteArray());
             return serializer.unserializeCredential(accumulatedCredBytes.toByteArray(), credentialId, this.getDeviceURI(pin));
@@ -1169,6 +981,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         }
         TrustedIssuerParameters iparams = this.getIssuerParameters(pin, issuerParameters);
         if (iparams == null) {
+            log.warning("IssuerParameters not found : " + issuerParameters + " - installed " + this.issuerParameters.keySet());
             return SmartcardStatusCode.NOT_FOUND;
         }
         if (! this.uriLengthOk(credentialUri)) {
@@ -1183,7 +996,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 
         CredentialOnSmartcard cos = new CredentialOnSmartcard(credentialUri, issuerParameters,
                 rand, iparams.groupParams.getModulus().bitLength(), this.params.zkStatisticalHidingSizeBytes);
-        System.out.println("Puts a cred into SC cred store: " + credentialUri);
+        log.fine("Puts a cred into SC cred store: " + credentialUri);
         this.credentials.put(credentialUri, cos);
 
         return SmartcardStatusCode.OK;
@@ -1191,7 +1004,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
 
     @Override
     public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey,
-            URI parametersUri, int keyIDForCounter, CredentialBases credBases,
+            URI parametersUri, int keyIDForCounter, SmartcardParameters credBases,
             RSAVerificationKey courseKey, int minimumAttendance) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Utils.addToStream(baos, Utils.NEW_ISSUER_WITH_ATTENDANCE);
@@ -1220,7 +1033,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         this.issuerParameters.put(parametersUri, param);
         return SmartcardStatusCode.OK;
     }
-
+/*
     @Override
     public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey,
             URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
@@ -1252,10 +1065,10 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         this.issuerParameters.put(parametersUri, param);
         return SmartcardStatusCode.OK;
     }
-
+*/
     @Override
     public SmartcardStatusCode addIssuerParameters(RSAKeyPair rootKey,
-            URI parametersUri, CredentialBases credBases) {
+            URI parametersUri, SmartcardParameters credBases) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Utils.addToStream(baos, Utils.NEW_ISSUER_SIMPLE);
         Utils.addToStream(baos, parametersUri);
@@ -1278,7 +1091,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         this.issuerParameters.put(parametersUri, param);
         return SmartcardStatusCode.OK;
     }
-
+/*
     @Override
     public SmartcardStatusCode addUProveIssuerParameters(RSAKeyPair rootKey,
             URI parametersUri, UProveParams uProveParams) {
@@ -1304,6 +1117,7 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         this.issuerParameters.put(parametersUri, param);
         return SmartcardStatusCode.OK;
     }
+    */
 
     @Override
     public TrustedIssuerParameters getIssuerParameters(int pin, URI paramsUri) {
@@ -1356,14 +1170,14 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         if (pinstatus != SmartcardStatusCode.OK) {
             return false;
         }
-        System.out.println("Trying to fetch "+credentialUri.toString());
+        log.info("Trying to fetch "+credentialUri.toString());
 
-        System.out.println('\n');
+        log.fine("\n");
         CredentialOnSmartcard cos = this.credentials.get(credentialUri);
         for(URI cred : this.credentials.keySet()){
-            System.out.println("Credentials on smartcard available: " + cred);
+            log.fine("Credentials on smartcard available: " + cred);
         }
-        System.out.println('\n');
+        log.fine("\n");
         return cos != null;
     }
 
@@ -1372,7 +1186,6 @@ public class SoftwareSmartcard implements Smartcard, Serializable {
         Course course = this.getCourse(pin, issuerId);
         return course.getLectureCount();
     }
-
     public String getHashOfDeviceSecret() {
         MessageDigest md;
         try {

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -46,7 +50,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public List<CredentialDescription> getCredentialDescription(
+    public List<CredentialDescription> getCredentialDescription(String username, 
             List<URI> issuers, List<URI> credspecs)
                     throws CredentialManagerException;
 
@@ -58,7 +62,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public CredentialDescription getCredentialDescription(URI creduid)
+    public CredentialDescription getCredentialDescription(String username, URI creduid)
             throws CredentialManagerException;
 
     /**
@@ -69,7 +73,7 @@ public interface CredentialManager {
      * @param md
      * @throws CredentialManagerException
      */
-    public void attachMetadataToPseudonym(Pseudonym p, PseudonymMetadata md)
+    public void attachMetadataToPseudonym(String username, Pseudonym p, PseudonymMetadata md)
             throws CredentialManagerException;
 
     /**
@@ -81,20 +85,9 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public Credential getCredential(URI creduid)
+    public Credential getCredential(String username, URI creduid)
             throws CredentialManagerException;
-
-    /**
-     * This method returns the full stored pseudonym and attached metadata (both
-     * cryptographic and non-cryptographic) for the given pseudonym p.
-     * 
-     * @param p
-     * @return
-     * @throws CredentialManagerException
-     */
-    public PseudonymWithMetadata getPseudonymWithMetadata(Pseudonym p)
-            throws CredentialManagerException;
-
+    
     /**
      * This method stores the given pseudonym and the attached cryptographic
      * metadata in the credential store.
@@ -102,7 +95,7 @@ public interface CredentialManager {
      * @param pwm
      * @throws CredentialManagerException
      */
-    public void storePseudonym(PseudonymWithMetadata pwm)
+    public void storePseudonym(String username, PseudonymWithMetadata pwm)
             throws CredentialManagerException;
 
     /**
@@ -126,7 +119,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public boolean hasBeenRevoked(URI creduid, URI revparsuid,
+    public boolean hasBeenRevoked(String username, URI creduid, URI revparsuid,
             List<URI> revokedatts) throws CredentialManagerException;
 
     /**
@@ -150,7 +143,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public boolean hasBeenRevoked(URI creduid, URI revparsuid,
+    public boolean hasBeenRevoked(String username, URI creduid, URI revparsuid,
             List<URI> revokedatts, URI revinfouid)
                     throws CredentialManagerException;
 
@@ -165,7 +158,7 @@ public interface CredentialManager {
      * 
      * @throws CredentialManagerException
      */
-    public void updateNonRevocationEvidence()
+    public void updateNonRevocationEvidence(String username)
  throws CredentialManagerException;
 
     /**
@@ -187,7 +180,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public URI storeCredential(Credential cred)
+    public URI storeCredential(String username, Credential cred)
             throws CredentialManagerException;
     
     /**
@@ -199,7 +192,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public void updateCredential(Credential cred) throws CredentialManagerException;
+    public void updateCredential(String username, Credential cred) throws CredentialManagerException;
     
     /**
      * This method returns an array of the unique identifiers of all stored
@@ -208,7 +201,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public List<URI> listCredentials() throws CredentialManagerException;
+    public List<URI> listCredentials(String username) throws CredentialManagerException;
 
     /**
      * This method deletes the credential with the given identifier from the
@@ -219,7 +212,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public boolean deleteCredential(URI creduid)
+    public boolean deleteCredential(String username, URI creduid)
             throws CredentialManagerException;
 
     /**
@@ -232,7 +225,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public List<PseudonymWithMetadata> listPseudonyms(String scope, boolean onlyExclusive)
+    public List<PseudonymWithMetadata> listPseudonyms(String username, String scope, boolean onlyExclusive)
             throws CredentialManagerException;
 
     /**
@@ -243,7 +236,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public PseudonymWithMetadata getPseudonym(URI pseudonymUid)
+    public PseudonymWithMetadata getPseudonym(String username, URI pseudonymUid)
             throws CredentialManagerException;
 
     /**
@@ -252,7 +245,7 @@ public interface CredentialManager {
      * @param pseudonymUid
      * @throws CredentialManagerException
      */
-    public boolean deletePseudonym(URI pseudonymUid) throws CredentialManagerException;
+    public boolean deletePseudonym(String username, URI pseudonymUid) throws CredentialManagerException;
 
 
     /**
@@ -264,7 +257,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public void storeSecret(Secret cred)
+    public void storeSecret(String username, Secret cred)
             throws CredentialManagerException;
 
     /**
@@ -274,7 +267,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public List<SecretDescription> listSecrets() throws CredentialManagerException;
+    public List<SecretDescription> listSecrets(String username) throws CredentialManagerException;
 
     /**
      * This method deletes the secret with the given identifier from the
@@ -285,7 +278,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public boolean deleteSecret(URI secuid)
+    public boolean deleteSecret(String username, URI secuid)
             throws CredentialManagerException;
 
     /**
@@ -296,7 +289,7 @@ public interface CredentialManager {
      * @return
      * @throws CredentialManagerException
      */
-    public Secret getSecret(URI secuid)
+    public Secret getSecret(String username, URI secuid)
  throws CredentialManagerException;
 
     /**
@@ -308,6 +301,6 @@ public interface CredentialManager {
      * @param md
      * @throws CredentialManagerException
      */
-    public void updateSecretDescription(SecretDescription desc)
+    public void updateSecretDescription(String username, SecretDescription desc)
             throws CredentialManagerException;
 }

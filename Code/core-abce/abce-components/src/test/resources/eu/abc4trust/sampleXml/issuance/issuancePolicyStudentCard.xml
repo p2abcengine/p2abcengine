@@ -5,8 +5,10 @@
 <abc:IssuancePolicy Version="1.0" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
     xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
-  <abc:PresentationPolicy PolicyUID="http://ethz.ch/studentid/issuance/policy"/>
-  <abc:CredentialTemplate>
+  <abc:PresentationPolicy PolicyUID="http://ethz.ch/studentid/issuance/policy">
+      <abc:Pseudonym Exclusive="true" Scope="http://www.admin.edu/studentid" Established="false" Alias="#nym"/>
+  </abc:PresentationPolicy>
+  <abc:CredentialTemplate SameKeyBindingAs="#nym">
     <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
     <abc:IssuerParametersUID>http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
     <abc:UnknownAttributes/>

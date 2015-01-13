@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -23,14 +27,13 @@
 package eu.abc4trust.smartcard;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import com.google.inject.Inject;
-
-import edu.rice.cs.plt.collect.ImmutableMap;
 
 /**
  * CardStorage
@@ -118,7 +121,7 @@ public class CardStorage {
 
     public Map<URI, BasicSmartcard> getSmartcards() {
         synchronized (this.lock) {
-            return new ImmutableMap<URI, BasicSmartcard>(this.cards);
+        	return Collections.unmodifiableMap(new HashMap<URI, BasicSmartcard>(this.cards));
         }
     }
 

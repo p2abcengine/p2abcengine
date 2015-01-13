@@ -9,7 +9,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
   xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
   <abc:PresentationTokenDescription PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard"
-    TokenUID="abc4t://token/3">
+    TokenUID="abc4t://token/3" UsesSimpleProof="false">
     <abc:Message>
       <abc:Nonce>SGVsbG9Xb3JsZAo=</abc:Nonce>
       <abc:FriendlyPolicyName lang="en">Policy: Standard Booking</abc:FriendlyPolicyName>

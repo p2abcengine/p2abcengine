@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -56,6 +60,15 @@ public class PolicySelector implements IdentitySelection {
         this.chosenInspectors = new LinkedList<URI>();
         this.selectedPseudonymNumber = selectedPseudonymNumber;
     }
+    
+    public PolicySelector(boolean debug, int selectedPolicyNumber,
+                          int selectedPseudonymNumber, URI selectedCredential) {
+                      this.debug = debug;
+                      this.selectedCredential = selectedCredential;
+                      this.chosenPresentationToken = selectedPolicyNumber;
+                      this.chosenInspectors = new LinkedList<URI>();
+                      this.selectedPseudonymNumber = selectedPseudonymNumber;
+                  }
 
     public PolicySelector(boolean debug, URI selectedCredential,
             int selectedPseudonymNumber) {
@@ -79,6 +92,15 @@ public class PolicySelector implements IdentitySelection {
         this.chosenPresentationToken = selectedPolicyNumber;
         this.chosenInspectors = chosenInspectors;
         this.selectedPseudonymNumber = selectedPseudonymNumber;
+    }
+    
+    public PolicySelector(int selectedPolicyNumber, List<URI> chosenInspectors,
+                          int selectedPseudonymNumber, URI selectedCredential) {
+      this.debug = false;
+      this.chosenPresentationToken = selectedPolicyNumber;
+      this.chosenInspectors = chosenInspectors;
+      this.selectedCredential = selectedCredential;
+      this.selectedPseudonymNumber = selectedPseudonymNumber;
     }
 
     public SptdReturn selectPresentationTokenDescription(Map<URI, PolicyDescription> policies,

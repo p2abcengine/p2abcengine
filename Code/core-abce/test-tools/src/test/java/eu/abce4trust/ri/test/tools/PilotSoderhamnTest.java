@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -84,10 +88,10 @@ public class PilotSoderhamnTest {
         } else {
             fileStoragePrefix = "test-tools/target/soderhamn/verifier_";
         }
-
+        // TODO FIX!
         //    String systemParamsResource = null;
-        VerificationHelper.resetInstance();
-        VerificationHelper.initInstance(CryptoEngine.IDEMIX, this./*systemParamsResource, */issuerParamsResourceList, this.credSpecResourceList, this.inspectorPublicKeyResourceList, this.revocationAuthorityParametersResourceList, fileStoragePrefix, this.presentationPolicyResources);
+//        VerificationHelper.resetInstance();
+//        VerificationHelper.initInstance(null, issuerParamsResourceList, this.credSpecResourceList, this.inspectorPublicKeyResourceList, this.revocationAuthorityParametersResourceList, fileStoragePrefix, this.presentationPolicyResources);
     }
 
     public VerificationCall getVerificationCall(String resource) throws Exception {

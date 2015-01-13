@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -31,6 +35,7 @@ import eu.abc4trust.xml.IssuanceLogEntry;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
+import eu.abc4trust.xml.IssuanceTokenDescription;
 
 public interface IssuanceManagerIssuer {
     /**
@@ -142,5 +147,14 @@ public interface IssuanceManagerIssuer {
      */
     public IssuanceLogEntry getIssuanceLogEntry(URI issuanceEntryUid)
             throws Exception;
+
+    /**
+     * This method looks for an IssuanceTokenDescription inside the issuance message. This method
+     * returns the issuance token, or NULL if none could be found. It is guaranteed that this method
+     * returns a non-null value before a new credential is actually issued, so that the upper layers
+     * may abort the issuance protocol if a certain condition is not satisfied (such as the absence of
+     * a registered pseudonym).
+     */
+    public IssuanceTokenDescription extractIssuanceTokenDescription(IssuanceMessage issuanceMessage);
 
 }

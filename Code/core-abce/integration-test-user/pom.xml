@@ -4,7 +4,7 @@
   <parent>
     <artifactId>pom</artifactId>
     <groupId>eu.abc4trust.ri</groupId>
-    <version>patras-1.0.14-SNAPSHOT</version>
+    <version>1.1.36</version>
   </parent>
   <artifactId>integration-test-user</artifactId>
   <packaging>war</packaging>
@@ -13,14 +13,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>eu.abc4trust.ri</groupId>
-      <artifactId>abc4trust-xml</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>eu.abc4trust.ri</groupId>
-      <artifactId>abce-interfaces</artifactId>
-    </dependency>
     <dependency>
       <groupId>eu.abc4trust.ri</groupId>
       <artifactId>abce-components</artifactId>
@@ -32,6 +24,11 @@
     <dependency>
       <groupId>eu.abc4trust.ri</groupId>
       <artifactId>abce-components</artifactId>
+      <type>test-jar</type>
+    </dependency>
+    <dependency>
+      <groupId>eu.abc4trust.ri</groupId>
+      <artifactId>service-helper</artifactId>
       <type>test-jar</type>
     </dependency>
     <!-- Jersey -->
@@ -63,8 +60,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <inherited>true</inherited>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
       <plugin>

@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -31,16 +33,6 @@ import java.util.Random;
 
 public class ZkProofSystem {
   
-  private static int sizeOfCourseRandomnessInBits(URI courseId, ZkProofSpecification spec) {
-    BigInteger n = spec.credentialBases.get(courseId).getModulus();
-    int credentialRandomizerSizeInBits =
-        CredentialOnSmartcard.sizeOfCourseRandomizerInBits(n.bitLength(),
-                                                           spec.zkStatisticalHidingSizeBytes);
-    int courseSecretRandomnessLengthBits = credentialRandomizerSizeInBits +
-        8 * ( spec.zkChallengeSizeBytes + spec.zkStatisticalHidingSizeBytes );
-    return courseSecretRandomnessLengthBits;
-  }
-  
   private static int sizeOfDeviceSecretRandomizerInBits(ZkProofSpecification spec) {
     int len = 8 * (spec.deviceSecretSizeBytes +
         spec.zkChallengeSizeBytes + spec.zkStatisticalHidingSizeBytes);
@@ -55,7 +47,8 @@ public class ZkProofSystem {
     zkps.randomnessForDeviceSecret = new BigInteger(sizeOfDeviceSecretRandomizerInBits(spec), rand);
     zkps.randomnessForCourses = new HashMap<URI, BigInteger>();
     for(URI courseId: spec.credentialBases.keySet()) {
-      BigInteger r = new BigInteger(sizeOfCourseRandomnessInBits(courseId, spec), rand);
+      int rvalueSize = sizeOfDeviceSecretRandomizerInBits(spec);
+      BigInteger r = new BigInteger(rvalueSize, rand);
       zkps.randomnessForCourses.put(courseId, r);
     }
     
@@ -63,26 +56,30 @@ public class ZkProofSystem {
     //zkps.nonceOpening = Utils.newNonceCommitment(spec.zkNonceSizeBytes,
     //                                             spec.zkNonceOpeningSizeBytes, rand);
 
-    zkps.nonce = new byte[spec.zkNonceSizeBytes];
-    rand.nextBytes(zkps.nonce);
+//    zkps.nonce = new byte[spec.zkNonceSizeBytes];
+//    rand.nextBytes(zkps.nonce);
     
     // Compute commitments
     zkps.commitment = new ZkProofCommitment();
     for(URI courseId: spec.credentialBases.keySet()) {
       BigInteger rx = zkps.randomnessForDeviceSecret;
-      GroupParameters gp = spec.credentialBases.get(courseId);
-      if(gp.isIdemixGroupParameters()){
-    	  CredentialBases cb = (CredentialBases)gp;
-	      BigInteger R0 = cb.R0;
-	      BigInteger S = cb.S;	      
-	      BigInteger n = cb.n;      
+      SmartcardParameters gp = spec.credentialBases.get(courseId);
+      if(gp.getBaseForCredentialSecretOrNull() != null){
+	      BigInteger R0 = gp.getBaseForDeviceSecret();
+	      BigInteger S = gp.getBaseForCredentialSecretOrNull();
+	      BigInteger n = gp.getModulus();
 	      BigInteger rv = zkps.randomnessForCourses.get(courseId);
 	      
 	      // A = R0^rx * S^rv (mod n)
 	      BigInteger A = R0.modPow(rx, n).multiply(S.modPow(rv, n)).mod(n);
 	      zkps.commitment.commitmentForCreds.put(courseId, A);
       }else{
-    	  throw new RuntimeException("Only applicable for IDEMIX group parameters. This is UPROVE");
+        BigInteger R0 = gp.getBaseForDeviceSecret();
+        BigInteger n = gp.getModulus();
+        
+        // A = R0^rx * S^rv (mod n)
+        BigInteger A = R0.modPow(rx, n);
+        zkps.commitment.commitmentForCreds.put(courseId, A);
       }
     }
     for(URI scope: spec.scopeExclusivePseudonymValues.keySet()) {
@@ -112,24 +109,9 @@ public class ZkProofSystem {
     return zkps;
   }
   
-  public static ZkProofResponse secondMove(ZkProofState state, byte[] challengeHashPreimage,
-                                           byte[] zkNonce, Random rand) {
+  public static ZkProofResponse secondMove(ZkProofState state, BigInteger challenge, Random rand) {
     ZkProofResponse zkpr = new ZkProofResponse();
     
-    ByteArrayOutputStream fullChallengePreimage = new ByteArrayOutputStream();
-    try {
-    	fullChallengePreimage.write(new byte[]{0x01});
-    	fullChallengePreimage.write(zkNonce);
-    	fullChallengePreimage.write(challengeHashPreimage);
-	} catch (IOException e) {
-		throw new RuntimeException(e);
-	}
-        
-    
-    // Note: we assume inner hash already depends on ZkProofCommitment and ZkProofSpecification
-    int challengeSizeBytes = state.commitment.spec.zkChallengeSizeBytes;
-    BigInteger challenge =
-        Utils.hashToBigIntegerWithSize(fullChallengePreimage.toByteArray(), challengeSizeBytes);
     {
       BigInteger rx = state.randomnessForDeviceSecret;
       BigInteger x = state.witnesses.deviceSecret;
@@ -149,26 +131,8 @@ public class ZkProofSystem {
   }
   
   public static boolean checkProof(ZkProofCommitment com, ZkProofResponse res,
-                                   byte[] challengeHashPreimage,
-                                   byte[] zkNonce) {
-    ByteArrayOutputStream realChallenge = new ByteArrayOutputStream();
-    try {
-		realChallenge.write(new byte[]{0x01});
-		realChallenge.write(zkNonce);
-		realChallenge.write(challengeHashPreimage);
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}   
-    return checkProof(com, res, realChallenge.toByteArray());
-  }
-  
-  public static boolean checkProof(ZkProofCommitment com, ZkProofResponse res,
-                                   byte[] fullChallengePreimage) {
+                                   BigInteger c) {
 	  ZkProofSpecification spec = com.spec;  	  
-    // Note: we assume inner hash already depends on ZkProofCommitment and ZkProofSpecification
-    int challengeSizeBytes = com.spec.zkChallengeSizeBytes;
-    BigInteger c = Utils.hashToBigIntegerWithSize(fullChallengePreimage, challengeSizeBytes);
     
     // Check size of responses
     if (res.responseForDeviceSecret.bitLength() > 1 + sizeOfDeviceSecretRandomizerInBits(spec)) {
@@ -176,33 +140,34 @@ public class ZkProofSystem {
     }
     for(URI courseId: spec.credentialBases.keySet()) {
       BigInteger zv = res.responseForCourses.get(courseId);
-      if (zv.bitLength() > 1 + sizeOfCourseRandomnessInBits(courseId, spec)) {
+      int rvalueSize = sizeOfDeviceSecretRandomizerInBits(spec);
+      if (zv.bitLength() > 1 + rvalueSize) {
         return false;
       }
     }
     
     // Check commitments
     
-    for(URI courseId: spec.credentialBases.keySet()) {
-      BigInteger A = com.commitmentForCreds.get(courseId); //g1^(kx)*g2^(kv)
+    for (URI courseId : spec.credentialBases.keySet()) {
+      BigInteger A = com.commitmentForCreds.get(courseId); // g1^(kx)*g2^(kv)
       BigInteger T = spec.credFragment.get(courseId); //
-      
-      if(spec.credentialBases.get(courseId).isIdemixGroupParameters()){
-    	  CredentialBases credBases = (CredentialBases)spec.credentialBases.get(courseId);
-	      BigInteger R0 = credBases.R0;
-	      BigInteger S = credBases.S;
-	      BigInteger n = credBases.n;
-	      
-	      BigInteger zx = res.responseForDeviceSecret;
-	      BigInteger zv = res.responseForCourses.get(courseId);	
-	      
-	      // A =? T^c * R0^zx * S^zv (mod n)
-	      BigInteger AA = T.modPow(c, n).multiply(R0.modPow(zx, n).multiply(S.modPow(zv, n))).mod(n);
-	      if ( ! AA.equals(A)) {
-	        return false;
-	      }
-	      } else{
-    	  
+
+      SmartcardParameters credBases = spec.credentialBases.get(courseId);
+      if (credBases.getBaseForCredentialSecretOrNull() != null) {
+        BigInteger R0 = credBases.getBaseForDeviceSecret();
+        BigInteger S = credBases.getBaseForCredentialSecretOrNull();
+        BigInteger n = credBases.getModulus();
+
+        BigInteger zx = res.responseForDeviceSecret;
+        BigInteger zv = res.responseForCourses.get(courseId);
+
+        // A =? T^c * R0^zx * S^zv (mod n)
+        BigInteger AA = T.modPow(c, n).multiply(R0.modPow(zx, n).multiply(S.modPow(zv, n))).mod(n);
+        if (!AA.equals(A)) {
+          return false;
+        }
+      } else {
+        // Do nothing
       }
     }
     for(URI scope: spec.scopeExclusivePseudonymValues.keySet()) {

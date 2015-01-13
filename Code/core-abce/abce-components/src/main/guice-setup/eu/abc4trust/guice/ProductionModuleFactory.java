@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -25,73 +27,102 @@ package eu.abc4trust.guice;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
+import eu.abc4trust.db.DatabaseConnectionFactory;
+import eu.abc4trust.db.JdbcPersistentStorage;
+import eu.abc4trust.guice.abcEngine.FileBackedKeyManager;
+import eu.abc4trust.guice.abcEngine.NewKeyManagerModule;
 import eu.abc4trust.guice.abcEngine.RealAbcEngineModule;
 import eu.abc4trust.guice.configuration.AbceConfiguration;
 import eu.abc4trust.guice.configuration.AbceConfigurationModule;
 import eu.abc4trust.guice.configuration.DefaultAbceConfigurationModule;
-import eu.abc4trust.guice.credCompressor.CredentialCompressorListModule;
-import eu.abc4trust.guice.cryptoEngine.BridgedCryptoEngineWithIdemixIssuerModule;
-import eu.abc4trust.guice.cryptoEngine.BridgedCryptoEngineWithUproveIssuerModule;
-import eu.abc4trust.guice.cryptoEngine.IdemixCryptoEngineModule;
+import eu.abc4trust.guice.configuration.StorageModule;
+import eu.abc4trust.guice.cryptoEngine.Idemix3CryptoEngineModule;
 import eu.abc4trust.guice.cryptoEngine.MockCryptoEngineModule;
-import eu.abc4trust.guice.cryptoEngine.UproveCryptoEngineModule;
 import eu.abc4trust.guice.ui.MockUiModule;
 
 public class ProductionModuleFactory {
 
-    public enum CryptoEngine {
-        IDEMIX(new IdemixCryptoEngineModule()),
-        UPROVE(new UproveCryptoEngineModule()),
-        BRIDGED(new BridgedCryptoEngineWithIdemixIssuerModule()),
-        BRIDGED_WITH_IDEMIX_ISSUER(new BridgedCryptoEngineWithIdemixIssuerModule()),
-        BRIDGED_WITH_UPROVE_ISSUER(new BridgedCryptoEngineWithUproveIssuerModule()),
-        MOCK(new MockCryptoEngineModule());
+  public enum CryptoEngine {
+    IDEMIX(new Idemix3CryptoEngineModule()), UPROVE(new Idemix3CryptoEngineModule()), MOCK(
+        new MockCryptoEngineModule());
 
-        private final Module module;
+    private final Module module;
 
-        CryptoEngine(Module module) {
-            this.module = module;
-        }
-
-        Module getModule() {
-            return this.module;
-        }
+    CryptoEngine(Module module) {
+      this.module = module;
     }
 
-    public static Module newModule() {
-        return newModule(CryptoEngine.IDEMIX, new DefaultAbceConfigurationModule());
+    Module getModule() {
+      return this.module;
     }
+  }
 
-    public static Module newModule(CryptoEngine ce) {
-        return newModule(ce, new DefaultAbceConfigurationModule());
-    }
 
-    public static Module newModule(AbceConfiguration configuration, CryptoEngine ce) {
-        return newModule(ce, new AbceConfigurationModule(configuration));
-    }
+  /**
+   * Uses the old key manager (without multiuser support but with smartcard support).
+   * 
+   * @return
+   */
+  @Deprecated
+  public static Module newModule(AbceConfiguration configuration, CryptoEngine ce) {
+    return Modules.combine(new AbceConfigurationModule(configuration), new RealAbcEngineModule(),
+        new FileBackedKeyManager(), new MockUiModule(), ce.getModule());
+  }
 
-    private static Module newModule(CryptoEngine ce, Module configurationModule) {
-        /*
-         * Note the "Singleton" scope means that you can create only one instance of the class
-         * per injector. In this way we make sure that Guice creates only one of each class.
-         * 
-         * If you want several disjoint instances, you should create a new injector.
-         * For example:
-         *     Injector injector1 = Guice.createInjector(ProductionModuleFactory.newModule());
-         *     UserAbcEngine engine1 = injector1.getInstance(UserAbcEngine.class);
-         *     UserAbcEngine engine2 = injector1.getInstance(UserAbcEngine.class);
-         *     Injector injector3 = Guice.createInjector(ProductionModuleFactory.newModule());
-         *     UserAbcEngine engine3 = injector3.getInstance(UserAbcEngine.class);
-         * engine1 and engine2 point to the same object (and object graph),
-         * while engine3 is a different object (and object graph).
-         * Furthermore all objects in engine1 and engine3 are different (for example the
-         * KeyManager will be different).
-         */
-        return Modules.combine(configurationModule,
-                new RealAbcEngineModule(),
-                new MockUiModule(),
-                new CredentialCompressorListModule(),
-                ce.getModule());
-    }
+  /**
+   * Uses the old key manager (without multiuser support but with smartcard support).
+   * 
+   * @return
+   */
+  @Deprecated
+  public static Module newModuleWithFilePersistence() {
+    return Modules.combine(new DefaultAbceConfigurationModule(), new RealAbcEngineModule(),
+        new FileBackedKeyManager(), new MockUiModule(), CryptoEngine.IDEMIX.getModule());
+  }
+
+  /**
+   * Uses the new key manager using a database-backed storage. Revocation not yet ready & smartcards
+   * are not supported
+   * 
+   * @return
+   */
+  public static Module newModuleWithPersistance() {
+    return newModule(new StorageModule(true));
+  }
+
+  /**
+   * Uses the new key manager using in-memory storage (which is not retained when the injector
+   * exits). Revocation not yet ready & smartcards are not supported
+   * 
+   * @return
+   */
+  public static Module newModuleWithoutPersistance() {
+    return newModule(new StorageModule(false));
+  }
+
+  /**
+   * Uses the new key manager using in-memory storage (which is not retained when the injector
+   * exits). Revocation not yet ready & smartcards are not supported
+   * 
+   * @return
+   */
+  public static Module newModule() {
+    return newModuleWithoutPersistance();
+  }
+
+  /**
+   * Uses the new key manager using a custom database-backed storage. Revocation not yet ready &
+   * smartcards are not supported
+   * 
+   * @return
+   */
+  public static Module newModule(DatabaseConnectionFactory dbc) {
+    return newModule(new StorageModule(new JdbcPersistentStorage(dbc)));
+  }
+
+  private static Module newModule(Module storageModule) {
+    return Modules.combine(storageModule, new RealAbcEngineModule(), new NewKeyManagerModule(),
+        new MockUiModule(), new Idemix3CryptoEngineModule());
+  }
 
 }

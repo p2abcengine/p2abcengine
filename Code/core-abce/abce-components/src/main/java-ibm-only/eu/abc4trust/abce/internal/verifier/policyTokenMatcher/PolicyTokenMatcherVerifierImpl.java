@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -36,6 +37,7 @@ import eu.abc4trust.util.MyPresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PresentationTokenDescription;
+import eu.abc4trust.xml.VerifierParameters;
 
 public class PolicyTokenMatcherVerifierImpl implements PolicyTokenMatcherVerifier {
 
@@ -64,16 +66,23 @@ public class PolicyTokenMatcherVerifierImpl implements PolicyTokenMatcherVerifie
     public PresentationTokenDescription verifyTokenAgainstPolicy(PresentationPolicyAlternatives p,
  PresentationToken t, boolean store)
             throws TokenVerificationException, CryptoEngineException {
-
-        PresentationTokenDescription tokenDesc = t.getPresentationTokenDescription();
-        if (! this.matchPresentationTokenDescriptionAgainstPolicy(p, tokenDesc)) {
+    	
+    	PresentationTokenDescription tokenDesc = t.getPresentationTokenDescription();
+    	if (!verifyTokenDescriptionAgainstPolicyAlternatives(p, tokenDesc)){
             String errorMessage = "The presented token does not satisfy the policy";
             TokenVerificationException ex = new TokenVerificationException();
             ex.errorMessages.add(errorMessage);
             throw ex;
-        }
+    	}
+    	return verifyToken(t, p.getVerifierParameters(), store);
+    }
+    
+    @Override
+    public PresentationTokenDescription verifyToken(PresentationToken t, VerifierParameters vp, boolean store)
+            throws TokenVerificationException, CryptoEngineException {
 
-        if(! this.evidenceOrch.verifyToken(t)) {
+        PresentationTokenDescription tokenDesc = t.getPresentationTokenDescription();
+        if(! this.evidenceOrch.verifyToken(t, vp)) {
             String errorMessage = "The crypto evidence in the presentation token is not valid";
             TokenVerificationException ex = new TokenVerificationException();
             ex.errorMessages.add(errorMessage);
@@ -87,5 +96,14 @@ public class PolicyTokenMatcherVerifierImpl implements PolicyTokenMatcherVerifie
 
         return tokenDesc;
     }
-
+    
+    @Override
+    public boolean verifyTokenDescriptionAgainstPolicyAlternatives(PresentationPolicyAlternatives p,
+    		PresentationTokenDescription ptd) {
+        try {
+			return this.matchPresentationTokenDescriptionAgainstPolicy(p, ptd);
+		} catch (TokenVerificationException e) {
+			return false;
+		}   	
+    }
 }

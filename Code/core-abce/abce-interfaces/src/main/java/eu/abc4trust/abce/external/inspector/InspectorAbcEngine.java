@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -20,14 +24,29 @@
 //* under the License.                                                *
 //*/**/****************************************************************
 
+// * Licensed Materials - Property of IBM, Miracle A/S, and *
+// * Alexandra Instituttet A/S *
+// * eu.abc4trust.pabce.1.0 *
+// * (C) Copyright IBM Corp. 2012. All Rights Reserved. *
+// * (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved. *
+// * (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All *
+// * Rights Reserved. *
+// * US Government Users Restricted Rights - Use, duplication or *
+// * disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
+// */**/****************************************************************
+
 package eu.abc4trust.abce.external.inspector;
 
 import java.net.URI;
 import java.util.List;
 
+import eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManagerException;
+import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.SystemParameters;
 
 public interface InspectorAbcEngine {
   /**
@@ -41,9 +60,11 @@ public interface InspectorAbcEngine {
    * @param mechanism
    * @param uid
    * @return
-   * @throws Exception 
+   * @throws CredentialManagerException 
+   * @throws Exception
    */
-  public InspectorPublicKey setupInspectorPublicKey(int keyLength, URI mechanism, URI uid) throws Exception;
+  public InspectorPublicKey setupInspectorPublicKey(SystemParameters sp, URI mechanism, URI uid,
+      List<FriendlyDescription> friendlyInspectorDescription) throws CryptoEngineException, CredentialManagerException;
 
   /**
    * This method takes as input a presentation token with inspectable attributes and returns the
@@ -51,7 +72,7 @@ public interface InspectorAbcEngine {
    * 
    * @param t
    * @return
- * @throws Exception 
+   * @throws Exception
    */
-  public List<Attribute> inspect(PresentationToken t) throws Exception;
+  public List<Attribute> inspect(PresentationToken t) throws CryptoEngineException;
 }

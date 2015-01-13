@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -24,12 +28,12 @@ package eu.abc4trust.abce.integrationtests;
 
 import static eu.abc4trust.abce.internal.revocation.RevocationConstants.REVOCATION_HANDLE_STR;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,35 +43,30 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
 
-import edu.rice.cs.plt.tuple.Pair;
+import eu.abc4trust.abce.external.inspector.InspectorAbcEngine;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.abce.external.verifier.VerifierAbcEngine;
-import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory.IssuerCryptoEngine;
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
-import eu.abc4trust.abce.testharness.PolicySelector;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspector;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.revocationProxy.revauth.RevocationProxyAuthority;
-import eu.abc4trust.ui.idSelection.IdentitySelectionPrinter;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
-import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
@@ -77,19 +76,20 @@ import eu.abc4trust.xml.Reference;
 import eu.abc4trust.xml.RevocationAuthorityParameters;
 import eu.abc4trust.xml.RevocationInformation;
 import eu.abc4trust.xml.SystemParameters;
+import eu.abc4trust.xml.VerifierParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class HotelBookingTest {
+  private static final String USERNAME = "defaultUser";
 
     private static final String PRESENTATION_POLICY_ALTERNATIVES_HOTEL = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyAlternativesHotelBooking.xml";
     private static final String ISSUANCE_POLICY_REVOCABLE_CREDIT_CARD = "/eu/abc4trust/sampleXml/issuance/issuancePolicyRevocableCreditCard.xml";
-    private static final String CREDENTIAL_SPECIFICATION_REVOCABLE_CREDITCARD = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationRevocableCreditcard.xml";
     private static final String ISSUANCE_POLICY_PASSPORT = "/eu/abc4trust/sampleXml/issuance/issuancePolicyPassport.xml";
-    private static final String CREDENTIAL_SPECIFICATION_PASSPORT = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationPassport.xml";
-
-
     private static final String ISSUANCE_POLICY_STUDENT_CARD = "/eu/abc4trust/sampleXml/issuance/issuancePolicyStudentCard.xml";
+    private static final String CREDENTIAL_SPECIFICATION_REVOCABLE_CREDITCARD = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationRevocableCreditcard.xml";
+    private static final String CREDENTIAL_SPECIFICATION_PASSPORT = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationPassport.xml";
     private static final String CREDENTIAL_SPECIFICATION_STUDENT_CARD = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationStudentCardForHotelBooking.xml";
+
     private static final URI STATUS = URI.create("#status");
     private static final int SECURITY_CODE = 42;
     private static final int CARD_NUMBER = 555;
@@ -97,487 +97,297 @@ public class HotelBookingTest {
     private static final String NAME = "John";
     private static final String LASTNAME = "Doe";
 
+    private static final URI revParamsUid = IntegrationTestUtil.REVOCATION_PARAMETERS_UID;
     private static final URI INSPECTOR_URI = URI.create("http://thebestbank.com/inspector/pub_key_v1");
 
     private static final Logger logger = Logger
             .getLogger(HotelBookingTest.class.getCanonicalName());
+    
+    private static URI revocationTechnology = null;
 
     @Test
-    @Ignore
-    public void hotelTestWithBridging() throws Exception {
-        // The Guice injector is configured to return the same instance for
-        // every invocation with the same class type. So the storage of
-        // credentials is all done as side-effects.
-        IssuerCryptoEngine cryptoEngine = IssuerCryptoEngine.IDEMIX;
+    public void hotelBookingTestIdemix() throws Exception{
+      revocationTechnology = Helper.getRevocationTechnologyURI("cl");
+      URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+      int keyLength = 1024;
 
-        Injector revocationInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
+      Entities entities = new Entities();
 
-        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
-                .getInstance(RevocationProxyAuthority.class);
+      entities.addEntity("CREDITCARD", cl_technology, true);
+      entities.addEntity("STUDENTCARD", cl_technology, false);
+      entities.addEntity("PASSPORT", cl_technology, false);
+      entities.addEntity("USER");
+      entities.addEntity("VERIFIER");
+      entities.addEntity("INSPECTOR");
 
-        Injector governmentInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-        Injector universityInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-        Injector bankInjector = Guice.createInjector(BridgingModuleFactory.newModule(
-                new Random(1986), IssuerCryptoEngine.UPROVE, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
-        Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(
-                new Random(1987), UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
-        Injector hotelInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-        Injector inspectorInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-
-
-        // Create URIs.
-        int keyLength = 2048;
-        URI cryptoMechanism = new URI("urn:abc4trust:1.0:algorithm:bridging");
-
-        this.runTestWithEngines(governmentInjector, universityInjector,
-                bankInjector, userInjector, hotelInjector, inspectorInjector, keyLength,
-                cryptoMechanism, revocationInjector);
+      runHotelBookingScenario(keyLength, entities);
     }
-
-
+    
     @Test
-    public void hotelTestWithIdemix() throws Exception {
+    public void hotelBookingTestUProve() throws Exception{
+      revocationTechnology = Helper.getRevocationTechnologyURI("cl");
+      URI brands_technology = Helper.getSignatureTechnologyURI("brands");
+      int keyLength = 1024;
 
-        // The Guice injector is configured to return the same instance for
-        // every invocation with the same class type. So the storage of
-        // credentials is all done as side-effects.
-        CryptoEngine cryptoEngine = CryptoEngine.IDEMIX;
+      Entities entities = new Entities();
 
-        Injector revocationInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        CryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
+      entities.addEntity("CREDITCARD", brands_technology, true);
+      entities.addEntity("STUDENTCARD", brands_technology, false);
+      entities.addEntity("PASSPORT", brands_technology, false);
+      entities.addEntity("USER");
+      entities.addEntity("VERIFIER");
+      entities.addEntity("INSPECTOR");
 
-        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
-                .getInstance(RevocationProxyAuthority.class);
-
-        Injector governmentInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-        Injector universityInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-        Injector bankInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1986),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
-        Injector userInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1987),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-        Injector hotelInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
-        Injector inspectorInjector = Guice.createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
-
-        // Create URIs.
-        int keyLength = 1024;
-        URI cryptoMechanism = new URI("urn:abc4trust:1.0:algorithm:idemix");
-
-        this.runTestWithEngines(governmentInjector, universityInjector,
-                bankInjector, userInjector, hotelInjector, inspectorInjector, keyLength,
-                cryptoMechanism, revocationInjector);
+      runHotelBookingScenario(keyLength, entities);
     }
-
+    
     @Test
-    @Ignore //The tests involve inspection, which require bridging, hence UProve only will fail
-    public void hotelTestWithUProve() throws Exception {
-        // The Guice injector is configured to return the same instance for
-        // every invocation with the same class type. So the storage of
-        // credentials is all done as side-effects.
-        CryptoEngine cryptoEngine = CryptoEngine.UPROVE;
+    public void hotelBookingTestWithBridging() throws Exception{
+      revocationTechnology = Helper.getRevocationTechnologyURI("cl");
+      URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+      URI brands_technology = Helper.getSignatureTechnologyURI("brands");
+      int keyLength = 1024;
 
-        Injector revocationInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        cryptoEngine, UProveUtils.UPROVE_COMMON_PORT));
+      Entities entities = new Entities();
 
-        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
-                .getInstance(RevocationProxyAuthority.class);
+      entities.addEntity("CREDITCARD", cl_technology, true);
+      entities.addEntity("STUDENTCARD", brands_technology, false);
+      entities.addEntity("PASSPORT", cl_technology, false);
+      entities.addEntity("USER");
+      entities.addEntity("VERIFIER");
+      entities.addEntity("INSPECTOR");
 
-        Injector governmentInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        UProveUtils.UPROVE_COMMON_PORT));
-        Injector universityInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        UProveUtils.UPROVE_COMMON_PORT));
-        Injector bankInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1986), UProveUtils.UPROVE_COMMON_PORT, revocationProxyAuthority));
-        Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1987), UProveUtils.UPROVE_COMMON_PORT));
-        Injector hotelInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        UProveUtils.UPROVE_COMMON_PORT));
+      runHotelBookingScenario(keyLength, entities);
+    }
+    
+    private void runHotelBookingScenario(int keyLength, Entities entities) throws Exception{      
+      Injector revocationInjector = setupRevocationInjector(keyLength);
+      RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+          .getInstance(RevocationProxyAuthority.class);
+      
+      RevocationAuthorityParameters revocationAuthorityParameters = 
+          setupRevocationAuthorityParameters(keyLength, revocationInjector);
+      
+      // Setup system by generating entities and system parameters
+      Collection<Injector> injectors = createEntities(entities, revocationProxyAuthority);
+      SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
 
-        // Create URIs.
-        int keyLength = 1024;
-        URI cryptoMechanism = new URI("urn:abc4trust:1.0:algorithm:uprove");
+      List<Object> parametersList = new ArrayList<Object>();
 
-        this.runTestWithEngines(governmentInjector, universityInjector,
-                bankInjector, userInjector, hotelInjector, null, keyLength,
-                cryptoMechanism, revocationInjector);
+      // Setup creditcard issuer
+      URI credentialTechnology = entities.getTechnology("CREDITCARD");
+      URI issuerParametersUID =
+          getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_REVOCABLE_CREDIT_CARD);      
+      parametersList.add(setupIssuer(entities.getInjector("CREDITCARD"), systemParameters,
+        credentialTechnology, issuerParametersUID, revParamsUid, 10));
+      
+      // Setup creditcard issuer
+      credentialTechnology = entities.getTechnology("STUDENTCARD");
+      issuerParametersUID =
+          getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_STUDENT_CARD);
+      parametersList.add(setupIssuer(entities.getInjector("STUDENTCARD"), systemParameters,
+        credentialTechnology, issuerParametersUID, null, 10));
+      
+      // Setup creditcard issuer
+      credentialTechnology = entities.getTechnology("PASSPORT");
+      issuerParametersUID =
+          getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_PASSPORT);
+      parametersList.add(setupIssuer(entities.getInjector("PASSPORT"), systemParameters,
+        credentialTechnology, issuerParametersUID, null, 10));
+      
+      // Parameters for verifier parameters
+      credentialTechnology = Helper.getSignatureTechnologyURI("cl");
+      issuerParametersUID = URI.create("vp:rangeProof");
+      parametersList.add(setupIssuer(entities.getInjector("STUDENTCARD"), systemParameters,
+        credentialTechnology, issuerParametersUID, null, 0));
+      
+      // setup inspector public key.
+      InspectorAbcEngine inspectorEngine =
+          entities.getInjector("INSPECTOR").getInstance(InspectorAbcEngine.class);
+      InspectorPublicKey inspectorPubKey =
+              inspectorEngine.setupInspectorPublicKey(systemParameters,
+                      CryptoUriUtil.getIdemixMechanism(),
+                      HotelBookingTest.INSPECTOR_URI,
+                      null);
+      
+      parametersList.add(inspectorPubKey);
+      
+      // Store all issuer parameters to all key managers
+      entities.storePublicParametersToKeyManagers(parametersList);
+      
+      //store credentialSpecifications
+      storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_REVOCABLE_CREDITCARD);
+      storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_STUDENT_CARD);
+      storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PASSPORT);      
+      
+      addRevocationToIssuers(entities, revocationAuthorityParameters);
+      
+      Injector governmentInjector = entities.getInjector("PASSPORT");
+      Injector userInjector = entities.getInjector("USER");
+      Injector studentInjector = entities.getInjector("STUDENTCARD");
+      Injector bankInjector = entities.getInjector("CREDITCARD");
+      Injector hotelInjector = entities.getInjector("VERIFIER");
+      Injector inspectorInjector = entities.getInjector("INSPECTOR");
+      
+      IssuanceHelper issuanceHelper = new IssuanceHelper();
+      
+      VerifierParameters verifierParameter = entities.getInjector("USER").getInstance(VerifierAbcEngine.class).createVerifierParameters(systemParameters);
+
+      
+      // Step 1. Get passport.
+      logger.info("Get passport.");
+      URI passportCredentialUID = this.issueAndStorePassport(governmentInjector, userInjector,
+              issuanceHelper, verifierParameter).getCredentialUID();
+
+      // Step 2. Get student id.
+      logger.info("Get student id.");
+      URI studentcardCredentialUID = this.issueAndStoreStudentId(studentInjector, userInjector,
+              issuanceHelper, verifierParameter).getCredentialUID();
+
+
+      // Step 3. Get credit card using id and student card
+      logger.info("Get credit card.");
+      this.issueAndStoreCreditCard(bankInjector, userInjector,
+              issuanceHelper, verifierParameter);
+
+      // Step 4a. Book a hotel room using passport and credit card. This uses
+      // the first alternative of the presentation policy.
+      logger.info("Verify.");
+      PresentationToken pt = this.bookHotelRoomUsingPassportAndCreditcard(
+              issuanceHelper, hotelInjector, userInjector, revParamsUid, verifierParameter, passportCredentialUID);
+
+      // Step 4b. Book a hotel room using passport and credit card. This uses
+      // the second alternative of the presentation policy.
+      pt = this.bookHotelRoomUsingStudentcardPassportAndCreditcard(
+              hotelInjector, userInjector, issuanceHelper, revParamsUid, verifierParameter, studentcardCredentialUID);
+
+      // Step 5. Inspect credit card data because of no-show.
+      if (inspectorInjector != null) {
+          this.inspectCreditCard(bankInjector, inspectorInjector, pt);
+      }
+      
+      // Step 4c. Booking a hotel room using passport and credit card fails
+      // because customer is blacklisted by hotel.
+      // Not implemented yet.
+      //this.failBookingHotelRoomUsingPassportAndCreditcard(hotelInjector,
+      //        userInjector, issuanceHelper, verifierParameter);
+    }
+    
+    private Injector setupRevocationInjector(int keyLength) throws Exception{
+      // Generate revocation parameters.      
+      Injector revocationInjector = Guice
+              .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+                      CryptoEngine.IDEMIX));
+      
+      KeyManager revocationKeyManager = revocationInjector.getInstance(KeyManager.class);
+      SystemParameters systemParameters = null;
+      if(keyLength == 1024){
+        systemParameters = SystemParametersUtil.getDefaultSystemParameters_1024();
+      }else{
+        systemParameters = SystemParametersUtil.getDefaultSystemParameters_2048();
+      }
+      revocationKeyManager.storeSystemParameters(systemParameters);             
+      
+      return revocationInjector;    
+    }
+    
+    private RevocationAuthorityParameters setupRevocationAuthorityParameters(int keyLength, 
+                                                                             Injector revocationInjector) 
+                                                                                 throws Exception{
+      RevocationAbcEngine revocationEngine = revocationInjector.getInstance(RevocationAbcEngine.class);
+      URI revParamsUid = IntegrationTestUtil.REVOCATION_PARAMETERS_UID;
+      Reference revocationInfoReference = new Reference();
+      revocationInfoReference.setReferenceType(URI.create("https"));
+      revocationInfoReference.getReferences().add(URI.create("https://example.org"));
+      Reference nonRevocationEvidenceReference = new Reference();
+      nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
+      nonRevocationEvidenceReference.getReferences().add(URI.create("https://example.org"));
+      Reference nonRrevocationUpdateReference = new Reference();
+      nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
+      nonRrevocationUpdateReference.getReferences().add(
+              URI.create("https://example.org"));
+      
+      
+      RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
+              .setupRevocationAuthorityParameters(keyLength,
+                      revocationTechnology, revParamsUid, revocationInfoReference,
+                      nonRevocationEvidenceReference, nonRrevocationUpdateReference);
+      return revocationAuthorityParameters;
+    }
+    
+    private void addRevocationToIssuers(Entities entities, RevocationAuthorityParameters revAuthParams) 
+        throws KeyManagerException{
+      for(Injector injector: entities.getInjectors()){
+        KeyManager keyManager = injector.getInstance(KeyManager.class);
+        keyManager.storeRevocationAuthorityParameters(IntegrationTestUtil.REVOCATION_PARAMETERS_UID, revAuthParams);
+      }
+    }
+    
+    private Collection<Injector> createEntities(Entities entities, RevocationProxyAuthority revProxy) {
+      
+      // Assert that required entities are present
+      assert (entities.contains("CREDITCARD"));
+      assert (entities.contains("STUDENTCARD"));
+      assert (entities.contains("PASSPORT"));
+      assert (entities.contains("USER"));
+      assert (entities.contains("VERIFIER"));
+      assert (entities.contains("INSPECTOR"));
+      assert (!entities.contains("REVOCATION")); //do not contain revocation - should be separate
+
+      entities.initInjectors(revProxy);
+
+      return entities.getInjectors();
+    }
+    
+    private void storeCredentialSpecificationToKeyManagers(Collection<Injector> injectors,
+                                                           String pathToCredentialSpecification) throws KeyManagerException,
+                                                           UnsupportedEncodingException, JAXBException, SAXException {
+
+      // Load credential specifications.
+      CredentialSpecification universityCredSpec =
+          (CredentialSpecification) XmlUtils.getObjectFromXML(
+            this.getClass().getResourceAsStream(pathToCredentialSpecification), true);
+
+      // Store credential specifications.
+      URI universitySpecificationUID = universityCredSpec.getSpecificationUID();
+      for (Injector injector : injectors) {
+        KeyManager keyManager = injector.getInstance(KeyManager.class);
+        keyManager.storeCredentialSpecification(universitySpecificationUID, universityCredSpec);
+      }
+    }
+    
+    private URI getIssuanceParametersUIDFromIssuancePolicy(String pathToIssuancePolicy)
+        throws UnsupportedEncodingException, JAXBException, SAXException {
+      // Load issuance policy
+      IssuancePolicy issuancePolicy =
+          (IssuancePolicy) XmlUtils.getObjectFromXML(
+            this.getClass().getResourceAsStream(pathToIssuancePolicy), true);
+
+      // Get issuer parameters UID from credential template
+      return issuancePolicy.getCredentialTemplate().getIssuerParametersUID();
+    }
+    
+    private IssuerParameters setupIssuer(Injector issuerInjector, SystemParameters systemParameters,
+                                         URI credentialTechnology, URI issuanceParametersUID, URI revocationId,
+                                         int maximalNumberOfAttributes) throws CryptoEngineException {
+      // Generate issuer parameters.
+      IssuerAbcEngine issuerEngine = issuerInjector.getInstance(IssuerAbcEngine.class);
+
+      IssuerParameters issuerParameters =
+          issuerEngine.setupIssuerParameters(systemParameters,
+            maximalNumberOfAttributes, credentialTechnology, issuanceParametersUID, revocationId,
+            null);
+
+      return issuerParameters;
     }
 
-    private void runTestWithEngines(Injector governmentInjector,
-            Injector universityInjector,
-            Injector bankInjector,
-            Injector userInjector,
-            Injector hotelInjector,
-            Injector inspectorInjector,
-            int keyLength,
-            URI cryptoMechanism,
-            Injector revocationInjector)
-                    throws URISyntaxException, KeyManagerException, JAXBException,
-                    UnsupportedEncodingException, SAXException, Exception {
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-
-        IssuerAbcEngine governmentEngine = governmentInjector
-                .getInstance(IssuerAbcEngine.class);
-        IssuerAbcEngine universityEngine = universityInjector
-                .getInstance(IssuerAbcEngine.class);
-        IssuerAbcEngine bankEngine = bankInjector
-                .getInstance(IssuerAbcEngine.class);
-        CryptoEngineInspector inspectorEngine = null;
-        if (inspectorInjector != null) {
-            inspectorEngine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-        }
-
-
-        KeyManager governmentKeyManager = governmentInjector
-                .getInstance(KeyManager.class);
-        KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
-        KeyManager universityKeyManager = universityInjector
-                .getInstance(KeyManager.class);
-        KeyManager bankKeyManager = bankInjector.getInstance(KeyManager.class);
-        KeyManager hotelKeyManager = hotelInjector
-                .getInstance(KeyManager.class);
-
-        KeyManager inspectorKeyManager = null;
-        if (inspectorInjector != null) {
-            inspectorKeyManager = inspectorInjector.getInstance(KeyManager.class);
-        }
-        KeyManager revocationKeyManager = null;
-        if (revocationInjector != null) {
-            revocationKeyManager = revocationInjector.getInstance(KeyManager.class);
-        }
-
-        @SuppressWarnings("unused")
-        CredentialManager credManager = userInjector
-        .getInstance(CredentialManager.class);
-
-        // Generate system parameters.
-        SystemParameters systemParameters = null;
-        SystemParameters uproveParams = null;
-
-        if(cryptoMechanism.equals(new URI("urn:abc4trust:1.0:algorithm:bridging"))){
-            URI idemix = new URI("urn:abc4trust:1.0:algorithm:idemix");
-            URI uprove = new URI("urn:abc4trust:1.0:algorithm:uprove");
-            systemParameters = governmentEngine
-                    .setupSystemParameters(keyLength, idemix);
-
-            governmentKeyManager.storeSystemParameters(systemParameters);
-            userKeyManager.storeSystemParameters(systemParameters);
-            universityKeyManager.storeSystemParameters(systemParameters);
-
-
-            hotelKeyManager.storeSystemParameters(systemParameters);
-            if (inspectorKeyManager != null) {
-                inspectorKeyManager.storeSystemParameters(systemParameters);
-            }
-            uproveParams= bankEngine.setupSystemParameters(keyLength, uprove);
-            bankKeyManager.storeSystemParameters(uproveParams);
-            revocationKeyManager.storeSystemParameters(systemParameters);
-        } else {
-
-            systemParameters = governmentEngine
-                    .setupSystemParameters(keyLength, cryptoMechanism);
-
-            governmentKeyManager.storeSystemParameters(systemParameters);
-            userKeyManager.storeSystemParameters(systemParameters);
-            universityKeyManager.storeSystemParameters(systemParameters);
-            bankKeyManager.storeSystemParameters(systemParameters);
-            hotelKeyManager.storeSystemParameters(systemParameters);
-            if (inspectorKeyManager != null) {
-                inspectorKeyManager.storeSystemParameters(systemParameters);
-            }
-            if (revocationKeyManager != null) {
-                revocationKeyManager.storeSystemParameters(systemParameters);
-            }
-
-        }
-
-        // Setup issuance policies.
-        IssuancePolicy passportIssuancePolicy = (IssuancePolicy) this
-                .loadResources(ISSUANCE_POLICY_PASSPORT);
-
-        URI passportIssuancePolicyUid = passportIssuancePolicy
-                .getCredentialTemplate().getIssuerParametersUID();
-
-        IssuancePolicy studentCardIssuancePolicy = (IssuancePolicy) this
-                .loadResources(ISSUANCE_POLICY_STUDENT_CARD);
-        URI studentCardIssuancePolicyUid = studentCardIssuancePolicy
-                .getCredentialTemplate().getIssuerParametersUID();
-
-        IssuancePolicy creditCardIssuancePolicy = (IssuancePolicy) this
-                .loadResources(ISSUANCE_POLICY_REVOCABLE_CREDIT_CARD);
-        URI creditCardIssuancePolicyUid = creditCardIssuancePolicy
-                .getCredentialTemplate().getIssuerParametersUID();
-
-        // Load credential specifications.
-        CredentialSpecification passportCredSpec = (CredentialSpecification) this
-                .loadResources(CREDENTIAL_SPECIFICATION_PASSPORT);
-        CredentialSpecification credentialSpecificationStudent = (CredentialSpecification) this
-                .loadResources(CREDENTIAL_SPECIFICATION_STUDENT_CARD);
-
-        CredentialSpecification credentialSpecificationCreditcard = (CredentialSpecification) this
-                .loadResources(CREDENTIAL_SPECIFICATION_REVOCABLE_CREDITCARD);
-
-        // Store credential specifications.
-        governmentKeyManager.storeCredentialSpecification(
-                passportCredSpec.getSpecificationUID(), passportCredSpec);
-
-        userKeyManager.storeCredentialSpecification(
-                passportCredSpec.getSpecificationUID(), passportCredSpec);
-
-        hotelKeyManager.storeCredentialSpecification(
-                passportCredSpec.getSpecificationUID(), passportCredSpec);
-
-        inspectorKeyManager.storeCredentialSpecification(
-                passportCredSpec.getSpecificationUID(), passportCredSpec);
-
-
-        universityKeyManager.storeCredentialSpecification(
-                credentialSpecificationStudent.getSpecificationUID(),
-                credentialSpecificationStudent);
-
-        userKeyManager.storeCredentialSpecification(
-                credentialSpecificationStudent.getSpecificationUID(),
-                credentialSpecificationStudent);
-
-        bankKeyManager.storeCredentialSpecification(
-                credentialSpecificationStudent.getSpecificationUID(),
-                credentialSpecificationStudent);
-
-        hotelKeyManager.storeCredentialSpecification(
-                credentialSpecificationStudent.getSpecificationUID(),
-                credentialSpecificationStudent);
-
-        inspectorKeyManager.storeCredentialSpecification(
-                credentialSpecificationStudent.getSpecificationUID(),
-                credentialSpecificationStudent);
-
-        bankKeyManager.storeCredentialSpecification(
-                credentialSpecificationCreditcard.getSpecificationUID(),
-                credentialSpecificationCreditcard);
-
-        userKeyManager.storeCredentialSpecification(
-                credentialSpecificationCreditcard.getSpecificationUID(),
-                credentialSpecificationCreditcard);
-
-        hotelKeyManager.storeCredentialSpecification(
-                credentialSpecificationCreditcard.getSpecificationUID(),
-                credentialSpecificationCreditcard);
-
-        inspectorKeyManager.storeCredentialSpecification(
-                credentialSpecificationCreditcard.getSpecificationUID(),
-                credentialSpecificationCreditcard);
-
-        // Generate revocation parameters.
-        RevocationAbcEngine revocationEngine = revocationInjector
-                .getInstance(RevocationAbcEngine.class);
-        Reference revocationInfoReference = new Reference();
-        revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getReferences().add(URI.create("example.org"));
-        Reference nonRevocationEvidenceReference = new Reference();
-        nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
-        Reference nonRrevocationUpdateReference = new Reference();
-        nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
-
-        // Generate issuer parameters.
-        URI hash = new URI("urn:abc4trust:1.0:hashalgorithm:sha-256");
-        URI revParamsUid = new URI("revocationUID3");
-
-        IssuerParameters governementPassportIssuerParameters = null;
-        IssuerParameters universityStudentCardIssuerParameters = null;
-        IssuerParameters bankCreditcardIssuerParameters = null;
-        RevocationAuthorityParameters revocationAuthorityParameters = null;
-        URI revocationId = new URI("revocationUID1");
-
-        if(cryptoMechanism.equals(new URI("urn:abc4trust:1.0:algorithm:bridging"))){
-
-            governementPassportIssuerParameters = governmentEngine
-                    .setupIssuerParameters(passportCredSpec, systemParameters,
-                            passportIssuancePolicyUid, hash, CryptoUriUtil.getIdemixMechanism(), revocationId, null);
-
-            revocationId = new URI("revocationUID2");
-            universityStudentCardIssuerParameters = universityEngine
-                    .setupIssuerParameters(credentialSpecificationStudent,
-                            systemParameters, studentCardIssuancePolicyUid, hash,
-                            URI.create("uprove"), revParamsUid, null);
-
-
-            revocationAuthorityParameters = revocationEngine
-                    .setupRevocationAuthorityParameters(keyLength, cryptoMechanism,
-                            revParamsUid, revocationInfoReference,
-                            nonRevocationEvidenceReference,
-                            nonRrevocationUpdateReference);
-
-
-
-            revocationId = new URI("revocationUID3");
-            bankCreditcardIssuerParameters = bankEngine.setupIssuerParameters(
-                    credentialSpecificationCreditcard, uproveParams,
-                    creditCardIssuancePolicyUid, hash, CryptoUriUtil.getUproveMechanism(), revocationId, null);
-        } else {
-            governementPassportIssuerParameters = governmentEngine
-                    .setupIssuerParameters(passportCredSpec, systemParameters,
-                            passportIssuancePolicyUid, hash, cryptoMechanism, revocationId, null);
-
-            revocationId = new URI("revocationUID2");
-            universityStudentCardIssuerParameters = universityEngine
-                    .setupIssuerParameters(
-                            credentialSpecificationStudent, systemParameters,
-                            studentCardIssuancePolicyUid, hash, cryptoMechanism, revocationId, null);
-
-            revocationId = new URI("revocationUID3");
-            bankCreditcardIssuerParameters = bankEngine
-                    .setupIssuerParameters(
-                            credentialSpecificationCreditcard, systemParameters,
-                            creditCardIssuancePolicyUid, hash, cryptoMechanism, revocationId, null);
-
-        }
-
-        // set human readable names
-        FriendlyDescription f = new FriendlyDescription();
-        f.setLang("en");
-        f.setValue("Swiss Government");
-        governementPassportIssuerParameters.getFriendlyIssuerDescription().add(f);
-        f = new FriendlyDescription();
-        f.setLang("en");
-        f.setValue("ACME University");
-        universityStudentCardIssuerParameters.getFriendlyIssuerDescription().add(f);
-        f = new FriendlyDescription();
-        f.setLang("en");
-        f.setValue("The Best Bank Inc.");
-        bankCreditcardIssuerParameters.getFriendlyIssuerDescription().add(f);
-
-        // store issuance parameters for government and user.
-        governmentKeyManager.storeIssuerParameters(passportIssuancePolicyUid,
-                governementPassportIssuerParameters);
-        userKeyManager.storeIssuerParameters(passportIssuancePolicyUid,
-                governementPassportIssuerParameters);
-        hotelKeyManager.storeIssuerParameters(passportIssuancePolicyUid,
-                governementPassportIssuerParameters);
-
-        // store parameters for university and user:
-        universityKeyManager.storeIssuerParameters(
-                studentCardIssuancePolicyUid,
-                universityStudentCardIssuerParameters);
-        userKeyManager.storeIssuerParameters(studentCardIssuancePolicyUid,
-                universityStudentCardIssuerParameters);
-        hotelKeyManager.storeIssuerParameters(studentCardIssuancePolicyUid,
-                universityStudentCardIssuerParameters);
-        bankKeyManager.storeIssuerParameters(studentCardIssuancePolicyUid,
-                universityStudentCardIssuerParameters);
-
-        // store issuance parameters for bank and user:
-        bankKeyManager.storeIssuerParameters(creditCardIssuancePolicyUid,
-                bankCreditcardIssuerParameters);
-        userKeyManager.storeIssuerParameters(creditCardIssuancePolicyUid,
-                bankCreditcardIssuerParameters);
-        hotelKeyManager.storeIssuerParameters(creditCardIssuancePolicyUid,
-                bankCreditcardIssuerParameters);
-
-        bankKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-        userKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-        hotelKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-        governmentKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-
-        // setup inspector public key.
-        InspectorPublicKey inspectorPubKey =
-                inspectorEngine.setupInspectorPublicKey(1024,
-                        CryptoUriUtil.getIdemixMechanism(),
-                        HotelBookingTest.INSPECTOR_URI);
-        f = new FriendlyDescription();
-        f.setLang("en");
-        f.setValue("The Best Bank Inc.");
-        inspectorPubKey.getFriendlyInspectorDescription().add(f);
-        inspectorKeyManager.storeInspectorPublicKey(HotelBookingTest.INSPECTOR_URI, inspectorPubKey);
-        userKeyManager.storeInspectorPublicKey(
-                HotelBookingTest.INSPECTOR_URI, inspectorPubKey);
-        hotelKeyManager.storeInspectorPublicKey(
-                HotelBookingTest.INSPECTOR_URI, inspectorPubKey);
-        bankKeyManager.storeInspectorPublicKey(
-                HotelBookingTest.INSPECTOR_URI, inspectorPubKey);
-
-        // Step 1. Get passport.
-        logger.info("Get passport.");
-        this.issueAndStorePassport(governmentInjector, userInjector,
-                issuanceHelper);
-
-        // Step 2. Get student id.
-        logger.info("Get student id.");
-        this.issueAndStoreStudentId(universityInjector, userInjector,
-                issuanceHelper);
-
-
-        // Step 3. Get credit card using id and student card
-        logger.info("Get credit card.");
-        this.issueAndStoreCreditCard(bankInjector, userInjector,
-                issuanceHelper);
-
-        // Step 4a. Book a hotel room using passport and credit card. This uses
-        // the first alternative of the presentation policy.
-        logger.info("Verify.");
-        PresentationToken pt = this.bookHotelRoomUsingPassportAndCreditcard(
-                issuanceHelper, hotelInjector, userInjector, revParamsUid);
-
-        // Step 4b. Book a hotel room using passport and credit card. This uses
-        // the second alternative of the presentation policy.
-        pt = this.bookHotelRoomUsingStudentcardPassportAndCreditcard(
-                hotelInjector, userInjector, issuanceHelper, revParamsUid);
-
-        // Step 4c. Booking a hotel room using passport and credit card fails
-        // because customer is blacklisted by hotel.
-        // Not implemented yet.
-        this.failBookingHotelRoomUsingPassportAndCreditcard(hotelInjector,
-                userInjector, issuanceHelper);
-
-        // Step 5. Inspect credit card data because of no-show.
-        if (inspectorInjector != null) {
-            this.inspectCreditCard(bankInjector, inspectorInjector, pt);
-        }
-
-    }
-
-
-    private Object loadResources(String issuancePolicyPassport)
-            throws JAXBException, UnsupportedEncodingException, SAXException {
-        return XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                issuancePolicyPassport), true);
-    }
-
-    private void issueAndStorePassport(Injector governmentInjector,
-            Injector userInjector, IssuanceHelper issuanceHelper)
+    private CredentialDescription issueAndStorePassport(Injector governmentInjector,
+            Injector userInjector, IssuanceHelper issuanceHelper, VerifierParameters verifierParameter)
                     throws Exception {
         Map<String, Object> passportAtts = this.populatePassportAttributes();
-        issuanceHelper.issueCredential(governmentInjector, userInjector,
+        return issuanceHelper.issueCredential(USERNAME, governmentInjector, userInjector,
                 CREDENTIAL_SPECIFICATION_PASSPORT, ISSUANCE_POLICY_PASSPORT,
-                passportAtts);
+                passportAtts, verifierParameter);
     }
 
     private Map<String, Object> populatePassportAttributes() {
@@ -593,14 +403,14 @@ public class HotelBookingTest {
         return att;
     }
 
-    private void issueAndStoreStudentId(Injector univsersityInjector,
-            Injector userInjector, IssuanceHelper issuanceHelper)
+    private CredentialDescription  issueAndStoreStudentId(Injector univsersityInjector,
+            Injector userInjector, IssuanceHelper issuanceHelper, VerifierParameters verifierParameter)
                     throws Exception {
         Map<String, Object> atts = this
                 .populateStudentIdIssuerAttributes();
-        issuanceHelper.issueCredential(univsersityInjector, userInjector,
+        return issuanceHelper.issueCredential(USERNAME, univsersityInjector, userInjector,
                 CREDENTIAL_SPECIFICATION_STUDENT_CARD,
-                ISSUANCE_POLICY_STUDENT_CARD, atts);
+                ISSUANCE_POLICY_STUDENT_CARD, atts, verifierParameter);
     }
 
     private Map<String, Object> populateStudentIdIssuerAttributes() {
@@ -617,19 +427,19 @@ public class HotelBookingTest {
     }
 
     private void issueAndStoreCreditCard(Injector bankInjector,
-            Injector userInjector, IssuanceHelper issuanceHelper)
+            Injector userInjector, IssuanceHelper issuanceHelper, VerifierParameters verifierParameter)
                     throws Exception {
         Map<String, Object> atts = this.populateCreditCardIssuerAttributes();
-        issuanceHelper.issueCredential(bankInjector, userInjector,
+        issuanceHelper.issueCredential(USERNAME, bankInjector, userInjector,
                 CREDENTIAL_SPECIFICATION_REVOCABLE_CREDITCARD,
-                ISSUANCE_POLICY_REVOCABLE_CREDIT_CARD, atts);
+                ISSUANCE_POLICY_REVOCABLE_CREDIT_CARD, atts, verifierParameter);
     }
 
     private Map<String, Object> populateCreditCardIssuerAttributes()
             throws Exception {
         Map<String, Object> atts = new HashMap<String, Object>();
         atts.put(REVOCATION_HANDLE_STR,
-                "http://admin.ch/passport/revocation/parameters");
+                new BigInteger("123123123"));
         atts.put("CardType", SWISS_EXPRESS);
         atts.put("Status", STATUS);
         atts.put("SecurityCode", SECURITY_CODE);
@@ -639,24 +449,28 @@ public class HotelBookingTest {
 
     private PresentationToken bookHotelRoomUsingPassportAndCreditcard(
             IssuanceHelper issuanceHelper, Injector hotelInjector,
-            Injector userInjector, URI revParamsUid) throws Exception {
-        int presentationTokenChoice = 0;
+            Injector userInjector, URI revParamsUid, VerifierParameters verifierParameter,
+            URI passportCredentialUID) throws Exception {
+        
+        
+        // find passport credential uid and use that instead of presentationTokenChoice 
         return this.bookHotel(issuanceHelper, hotelInjector, userInjector,
-                presentationTokenChoice, presentationTokenChoice, revParamsUid);
+                passportCredentialUID, revParamsUid, verifierParameter);
     }
 
     private PresentationToken bookHotelRoomUsingStudentcardPassportAndCreditcard(
             Injector hotelInjector, Injector userInjector,
-            IssuanceHelper issuanceHelper, URI revParamsUid) throws Exception {
-        int presentationTokenChoice = 1;
+            IssuanceHelper issuanceHelper, URI revParamsUid, VerifierParameters verifierParameter,
+            URI studentcardCredentialUID) throws Exception {
+        
         return this.bookHotel(issuanceHelper, hotelInjector, userInjector,
-                presentationTokenChoice, presentationTokenChoice, revParamsUid);
+                studentcardCredentialUID, revParamsUid, verifierParameter);
     }
 
     private PresentationToken bookHotel(IssuanceHelper issuanceHelper,
             Injector hotelInjector, Injector userInjector,
-            final int presentationTokenChoice, int pseudonymChoice,
-            URI revParamsUid)
+            final URI credentialChoice,
+            URI revParamsUid, VerifierParameters verifierParameter)
                     throws Exception {
         List<URI> chosenInspectors = new LinkedList<URI>();
         chosenInspectors.add(HotelBookingTest.INSPECTOR_URI);
@@ -671,25 +485,26 @@ public class HotelBookingTest {
                 revocationInformation = null;
             }
         }
-
+        
         Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                .createPresentationToken(userInjector, userInjector,
-                        PRESENTATION_POLICY_ALTERNATIVES_HOTEL,
-                        revocationInformation,
-                        new IdentitySelectionPrinter(
-                                new PolicySelector(presentationTokenChoice,
-                                        chosenInspectors, pseudonymChoice)));
+                .createSpecificPresentationToken(USERNAME, userInjector,
+                        PRESENTATION_POLICY_ALTERNATIVES_HOTEL, credentialChoice,
+                        revocationInformation, verifierParameter);
 
-        return issuanceHelper.verify(hotelInjector, p.second(), p.first());
+        return issuanceHelper.verify(hotelInjector, p.second, p.first);
+
     }
 
     private void failBookingHotelRoomUsingPassportAndCreditcard(
             Injector hotelInjector, Injector userInjector,
-            IssuanceHelper issuanceHelper) throws Exception {
+            IssuanceHelper issuanceHelper, VerifierParameters verifierParameter) throws Exception {
+      // TODO(enr): Fix this
+      org.junit.Assert.fail();
+      /*
         int presentationTokenChoice = 0;
         int pseudonymChoice = 1;
         Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                .createPresentationToken(userInjector, userInjector,
+                .createPresentationToken(USERNAME, userInjector, userInjector,
                         PRESENTATION_POLICY_ALTERNATIVES_HOTEL,
                         new IdentitySelectionPrinter(
                                 new PolicySelector(presentationTokenChoice,
@@ -700,6 +515,7 @@ public class HotelBookingTest {
         // his passport number is on the Hotel blacklist.
         // assertNull(pt);
         assertNotNull(pt);
+        */
     }
 
     private void inspectCreditCard(Injector bankInjector,

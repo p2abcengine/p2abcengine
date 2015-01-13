@@ -1,0 +1,2 @@
+If you are using a JVM that implements javax.smartcardio you may remove this folder from
+the build path.

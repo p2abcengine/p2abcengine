@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"
+  Version="1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+  xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+  <abc:PresentationPolicy PolicyUID="http://www.sweetdreamsuites.com/policies/booking/standard">
+    <abc:Message>
+     <abc:Nonce>SGVsbG9Xb3JsZBo=</abc:Nonce>
+      <abc:FriendlyPolicyName lang="en">Policy: Got ID card</abc:FriendlyPolicyName>
+      <abc:FriendlyPolicyName lang="da">Policy: Har ID kort</abc:FriendlyPolicyName>
+      <abc:FriendlyPolicyDescription lang="en">Prove ownership of id card.</abc:FriendlyPolicyDescription>
+      <abc:FriendlyPolicyDescription lang="da">Bevis ejerskab af id kort.</abc:FriendlyPolicyDescription>
+      <abc:ApplicationData>
+        I agree to the terms of service and cancellation policy.
+      </abc:ApplicationData>
+    </abc:Message>
+    
+    <abc:Credential Alias="#studentcard">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>http://www.admin.edu/studentid/specification</abc:CredentialSpecUID>
+        <abc:CredentialSpecUID>http://msu.ru/studentid/specification</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID RevocationInformationUID="http://ethz.ch/studentid/revocation/information">http://ethz.ch/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+        <abc:IssuerParametersUID RevocationInformationUID="http://msu.ru/studentid/revocation/information">http://www.admin.edu/studentid/issuancekey_v1.0</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+            <abc:DisclosedAttribute AttributeType="LastName" >
+      	<abc:InspectorAlternatives>
+      		<abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+      	</abc:InspectorAlternatives>
+      	<abc:InspectionGrounds>Reveal last name for test</abc:InspectionGrounds>
+      </abc:DisclosedAttribute>
+      
+    </abc:Credential>
+    
+    
+  </abc:PresentationPolicy>
+</abc:PresentationPolicyAlternatives>

@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -31,11 +30,18 @@ public class Constants {
 	  public static final String TIME_TYPE = "time";
 	  public static final String DATETIME_TYPE = "dateTime";
 	  public static final String URI_TYPE = "anyURI";
+	  
+	  //predefined predicates for spesific attribute types
+	  public static final String EXPIRES = "Expires";
+	  public static final String DATEOFBIRTH = "DateOfBirth";
+	  
+	  public enum PredefinedAttrTypesForPredicates {
+		    EXPIRES, DATEOFBIRTH
+	  }
 
 	  public enum OperationType {
 	    EQUAL, NOTEQUAL, EQUALONEOF, LESS, LESSEQ, GREATER, GREATEREQ
 	  }
-
 	  
 	  public static final String CONSTANT = "constant";
 

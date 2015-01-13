@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -35,19 +39,19 @@ import javax.xml.bind.JAXBException;
 import org.xml.sax.SAXException;
 
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
 import com.sun.jersey.api.client.WebResource.Builder;
 
-import edu.rice.cs.plt.tuple.Pair;
 import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.cryptoEngine.idemix.user.IdemixCryptoEngineUserImpl;
 import eu.abc4trust.exceptions.CannotSatisfyPolicyException;
 import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
 import eu.abc4trust.ri.servicehelper.FileSystem;
+import eu.abc4trust.services.AbstractTestFactory;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CredentialTemplate;
@@ -65,16 +69,16 @@ public class IssuerServiceFactory extends AbstractTestFactory {
 
     static ObjectFactory of = new ObjectFactory();
 
-    final String baseUrl = "http://localhost:9500/abce-services/issuer";
+    final String baseUrl = "http://localhost:9200/abce-services/issuer";
+    
+    private static final String USERNAME = "default-user";
 
-    public SystemParameters getSystemParameters(int securityLevel,
-            URI cryptoMechanism) {
-        String requestString = "/setupSystemParameters/?securityLevel="
-                + securityLevel + "&cryptoMechanism=" + cryptoMechanism;
+    public SystemParameters getSystemParameters(int securityLevel) {
+        String requestString = "/setupSystemParameters/?keyLength="+ securityLevel;
         Builder resource = this.getHttpBuilder(requestString, this.baseUrl);
 
         SystemParameters systemParameters = resource
-                .get(SystemParameters.class);
+                .post(SystemParameters.class);
         return systemParameters;
     }
 
@@ -176,8 +180,6 @@ public class IssuerServiceFactory extends AbstractTestFactory {
         UserAbcEngine userEngine = userInjector
                 .getInstance(UserAbcEngine.class);
 
-        IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(systemParameters);
-
         URI issuanceLogEntryUid = null;
 
         // Init issuance protocol.
@@ -188,9 +190,9 @@ public class IssuerServiceFactory extends AbstractTestFactory {
 
         issuanceLogEntryUid = issuerIssuanceMessage.getIssuanceLogEntryURI();
 
-        // Reply from user.
+        // Reply from user.        
         IssuMsgOrCredDesc userIm = userEngine
-                .issuanceProtocolStep(issuerIssuanceMessage
+                .issuanceProtocolStepFirstChoice(USERNAME, issuerIssuanceMessage
                         .getIssuanceMessage());
 
         // int round = 1;
@@ -208,7 +210,7 @@ public class IssuerServiceFactory extends AbstractTestFactory {
                     .getIssuanceLogEntryURI();
 
             assertNotNull(issuerIssuanceMessage.getIssuanceMessage());
-            userIm = userEngine.issuanceProtocolStep(issuerIssuanceMessage
+            userIm = userEngine.issuanceProtocolStepFirstChoice(USERNAME, issuerIssuanceMessage
                     .getIssuanceMessage());
 
             boolean userLastMessage = (userIm.cd != null);

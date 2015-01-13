@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- 
+  This is the ABC4Trust presentation policy for the School Registration System 
+-->
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  Version="1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    
+    <abc:PresentationPolicy PolicyUID="uri:presentationTest:2Credentials">
+        <abc:Message>
+            <abc:FriendlyPolicyName lang="en">Policy: Authorized Users only</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyDescription lang="en">This policy will request the two credentials</abc:FriendlyPolicyDescription>
+        </abc:Message>
+        
+        
+        <abc:Credential Alias="CredSchool12Atts">
+           <abc:CredentialSpecAlternatives>
+	          <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool12Atts</abc:CredentialSpecUID>
+	       </abc:CredentialSpecAlternatives>
+	      
+	       <abc:IssuerAlternatives>
+        	 <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool12Atts</abc:IssuerParametersUID>
+      	   </abc:IssuerAlternatives>
+      	   <abc:DisclosedAttribute 
+      	   AttributeType="urn:soderhamn:credspec:credSchool12Atts:birthdate" DataHandlingPolicy="SomePolicy">
+      	   </abc:DisclosedAttribute>
+      	   <abc:DisclosedAttribute 
+      	   AttributeType="urn:soderhamn:credspec:credSchool12Atts:firstname" DataHandlingPolicy="SomePolicy">
+      	   </abc:DisclosedAttribute>
+      	    <abc:DisclosedAttribute 
+      	   AttributeType="urn:soderhamn:credspec:credSchool12Atts:lastname" DataHandlingPolicy="SomePolicy">
+      	   </abc:DisclosedAttribute>
+      	     <abc:DisclosedAttribute 
+      	   AttributeType="urn:soderhamn:credspec:credSchool12Atts:schoolname" DataHandlingPolicy="SomePolicy">
+      	   </abc:DisclosedAttribute>
+      	 </abc:Credential> 
+      	 
+      	
+    </abc:PresentationPolicy>
+   </abc:PresentationPolicyAlternatives>
+ 
+	      
+	     

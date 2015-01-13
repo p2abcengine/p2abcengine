@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -22,14 +23,18 @@
 
 package eu.abc4trust.ri.service.it.issuer;
 
+import java.net.URI;
+
 import javax.ws.rs.core.MediaType;
+
+import org.junit.Test;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource.Builder;
 
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
+import eu.abc4trust.ri.servicehelper.issuer.CryptoTechnology;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.IssuanceMessage;
@@ -37,47 +42,35 @@ import eu.abc4trust.xml.util.XmlUtils;
 
 public class ITIssuer extends AbstractIT {
 
-
+  private static final String USERNAME = "defaultUser";
 
     public ITIssuer() {
         System.out.println("ITIssuer");
     }
 
-    // @Test
+    URI scope = URI.create("urn:identitycard:registration");
+    @Test
     public void testIssuanceIdcard_Alice_IdemixOnly() throws Exception {
         System.out.println("---- testIssuanceIdcard_Alice Idemix----");
-        initIssuer(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX);
-        // UserHelper.resetInstance();
 
-        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "alice");
-        this.runIssuance("start", "idcard?user=alice");
+        initHelper(CryptoTechnology.IDEMIX, "alice_idemix_", "identitycard", scope);
+        this.runIssuance("start", "IDCARD_IDEMIX?user=alice");
     }
 
-    // @Test
+//    @Test
     public void testIssuanceIdcard_Alice_UProveOnly() throws Exception {
         System.out.println("---- testIssuanceIdcard_Alice UProve----");
-        initIssuer(CryptoEngine.UPROVE, CryptoEngine.UPROVE);
-        // UserHelper.resetInstance();
 
-        initHelper(CryptoEngine.UPROVE, CryptoEngine.UPROVE, "alice");
-        this.runIssuance("start", "idcard?user=alice");
+        initHelper(CryptoTechnology.UPROVE, "alice_uprove_", "identitycard", scope);
+        this.runIssuance("start", "IDCARD_UPROVE?user=alice");
     }
 
-    // @Test
-    public void testIssuanceIdcard_Alice_Bridged() throws Exception {
-        System.out.println("---- testIssuanceIdcard_Alice ----");
-        initIssuer(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX);
-        // UserHelper.resetInstance();
 
-        initHelper(CryptoEngine.BRIDGED, CryptoEngine.IDEMIX, "alice");
-        this.runIssuance("start", "idcard?user=alice");
-    }
-
-    // @Test
+//    @Test
     public void testIssuanceIdcard_Stewart() throws Exception {
         System.out.println("---- testIssuanceIdcard_Stewart ----");
-        // UserHelper.resetInstance();
-        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "stewart");
+
+        initHelper(CryptoTechnology.IDEMIX, "stewart_idemix", "identitycard", scope);
         this.runIssuance("start", "idcard?user=stewart");
     }
 
@@ -86,7 +79,7 @@ public class ITIssuer extends AbstractIT {
     public void testHotelCredentials_NotStudent() throws Exception {
         System.out.println("---- testHotelCredentials_NotStudent ----");
         UserHelper.resetInstance();
-        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "hotel_alice");
+//        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "hotel_alice");
 
         // idcard
         this.runIssuance("start", "idcard?user=alice");
@@ -101,7 +94,7 @@ public class ITIssuer extends AbstractIT {
     public void testHotelCredentials_Student() throws Exception {
         System.out.println("---- testHotelCredentials_Student ----");
         UserHelper.resetInstance();
-        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "hotel_stewart");
+//        initHelper(CryptoEngine.IDEMIX, CryptoEngine.IDEMIX, "hotel_stewart");
 
         // idcard
         this.runIssuance("start", "idcard?user=stewart");
@@ -137,7 +130,7 @@ public class ITIssuer extends AbstractIT {
         System.out.println("\nENGINE : " + UserHelper.getInstance().getEngine());
         
         IssuMsgOrCredDesc user_im =
-                UserHelper.getInstance().getEngine().issuanceProtocolStep(server_im);
+                UserHelper.getInstance().getEngine().issuanceProtocolStepFirstChoice(USERNAME, server_im);
         System.out.println(" - initial message - client - created");
         System.out.println(" - initial message - client : "
                 + XmlUtils.toXml(of.createIssuanceMessage(user_im.im), true));
@@ -158,7 +151,7 @@ public class ITIssuer extends AbstractIT {
                     + XmlUtils.toXml(of.createIssuanceMessage(server_im), false));
 
             // process im
-            user_im = UserHelper.getInstance().getEngine().issuanceProtocolStep(server_im);
+            user_im = UserHelper.getInstance().getEngine().issuanceProtocolStepFirstChoice(USERNAME, server_im);
             System.out.println(" - step message - client :" + stepCount);
 
             lastmessage = (user_im.cd != null);
@@ -176,7 +169,7 @@ public class ITIssuer extends AbstractIT {
                 + user_im.cd.getCredentialUID());
 
         Credential cred =
-                UserHelper.getInstance().credentialManager.getCredential(user_im.cd.getCredentialUID());
+                UserHelper.getInstance().credentialManager.getCredential(USERNAME, user_im.cd.getCredentialUID());
         System.out.println("Show Credential " + cred);
         System.out.println("Show Credential " + cred.getCredentialDescription().getSecretReference());
 

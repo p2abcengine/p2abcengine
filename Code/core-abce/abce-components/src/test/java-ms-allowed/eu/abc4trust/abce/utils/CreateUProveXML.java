@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -35,10 +39,12 @@ import com.google.inject.Injector;
 
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
+import eu.abc4trust.abce.internal.user.evidenceGeneration.EvidenceGenerationOrchestration;
 import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
-import eu.abc4trust.cryptoEngine.uprove.issuer.UProveCryptoEngineIssuerImpl;
-import eu.abc4trust.cryptoEngine.uprove.user.UProveCryptoEngineUserImpl;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.cryptoEngine.CryptoEngineException;
+import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
+import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
+import eu.abc4trust.cryptoEngine.issuer.CryptoEngineIssuer;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.xml.ObjectFactory;
@@ -49,34 +55,35 @@ import eu.abc4trust.xml.util.XmlUtils;
 
 public class CreateUProveXML {
 
+  private static final String USERNAME = "defaultUser";
     /**
      * @param args
      * @throws CredentialManagerException
      * @throws KeyManagerException
+     * @throws CryptoEngineException 
      */
     public static void main(String[] args) throws CredentialManagerException,
-    KeyManagerException {
-        UProveUtils uproveUtils = new UProveUtils();
+    KeyManagerException, CryptoEngineException {
 
         Injector issuerInjector = Guice
-                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
-                        uproveUtils.getIssuerServicePort()));
+                .createInjector(IntegrationModuleFactory.newModule(new Random(1231)));
         Injector userInjector = Guice.createInjector(IntegrationModuleFactory.newModule(
-                new Random(1231), uproveUtils.getUserServicePort()));
+                new Random(1231)));
 
         int keyLength = 2048;
         URI cryptoMechanism = URI.create("urn:abc4trust:1.0:algorithm:uprove");
-        UProveCryptoEngineIssuerImpl uproveIssuer = issuerInjector
-                .getInstance(UProveCryptoEngineIssuerImpl.class);
+        CryptoEngineIssuer uproveIssuer = issuerInjector
+                .getInstance(CryptoEngineIssuer.class);
         SystemParameters sysparams = createSystemParams(uproveIssuer,
                 keyLength, cryptoMechanism);
 
         storeSysparams(sysparams, userInjector);
 
-        UProveCryptoEngineUserImpl uprove = userInjector
-                .getInstance(UProveCryptoEngineUserImpl.class);
+        CryptoEngineUser uprove = userInjector
+                .getInstance(CryptoEngineUser.class);
+        EvidenceGenerationOrchestration ego = userInjector.getInstance(EvidenceGenerationOrchestration.class);
 
-        Secret secret = createSecret(uprove);
+        Secret secret = createSecret(ego);
 
         storeSecret(userInjector, secret);
 
@@ -92,11 +99,10 @@ public class CreateUProveXML {
     }
 
     private static SystemParameters createSystemParams(
-            UProveCryptoEngineIssuerImpl uproveIssuer, int keyLength,
-            URI cryptoMechanism) {
+            CryptoEngineIssuer uproveIssuer, int keyLength,
+            URI cryptoMechanism) throws CryptoEngineException {
 
-        SystemParameters systemParameters = uproveIssuer.setupSystemParameters(
-                keyLength, cryptoMechanism);
+        SystemParameters systemParameters = SystemParametersUtil.getDefaultSystemParameters_1024();
         ObjectFactory of = new ObjectFactory();
         JAXBElement<SystemParameters> sysParamsElement = of
                 .createSystemParameters(systemParameters);
@@ -120,12 +126,12 @@ public class CreateUProveXML {
         CredentialManager userCredentialManager = userInjector
                 .getInstance(CredentialManager.class);
 
-        userCredentialManager.storeSecret(secret);
+        userCredentialManager.storeSecret(USERNAME, secret);
     }
 
-    private static void createPseudonym(UProveCryptoEngineUserImpl uprove,
-            Secret secret, String scope) {
-        PseudonymWithMetadata pwm = uprove.createPseudonym(
+    private static void createPseudonym(CryptoEngineUser uprove,
+            Secret secret, String scope) throws CryptoEngineException {
+        PseudonymWithMetadata pwm = uprove.createPseudonym(USERNAME, 
                 URI.create("uprove-uri"), scope, true,
                 secret.getSecretDescription().getSecretUID());
 
@@ -144,8 +150,8 @@ public class CreateUProveXML {
         }
     }
 
-    private static Secret createSecret(UProveCryptoEngineUserImpl uprove) {
-        Secret secret = uprove.createSecret();
+    private static Secret createSecret(EvidenceGenerationOrchestration ego) {
+        Secret secret = ego.createSecret(USERNAME);
 
         ObjectFactory of = new ObjectFactory();
         JAXBElement<Secret> s = of.createSecret(secret);

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -36,6 +40,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
+import org.xml.sax.SAXException;
+
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -50,6 +56,7 @@ import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.Reference;
 import eu.abc4trust.xml.RevocationInformation;
 import eu.abc4trust.xml.RevocationMessage;
+import eu.abc4trust.xml.util.XmlUtils;
 
 public class GenericWebServiceCommunicationStrategy implements RevocationProxyCommunicationStrategy {
 
@@ -60,16 +67,16 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
         URI type = r.getReferenceType();
         if(type!=null) {
             String s = type.toString();
-            if("http".equals(s) || "https".equals(s) ) {
+            if("http".equals(s) || "https".equals(s) || "url".equals(s)) {
                 return;
             }
         }
-        throw new RevocationProxyException("Only 'http' and 'https' ReferenceTypes are supported in WebServiceCommunicationStrategy - was : " + type);
+        throw new RevocationProxyException("Only 'url', 'http' and 'https' ReferenceTypes are supported in WebServiceCommunicationStrategy - was : " + type);
     }
 
     private URI getRevocationServiceURI(Reference r) throws RevocationProxyException {
-        List<URI> anyList = r.getReferences();
-        if((anyList!=null) && (anyList.size()>0)) {
+    	List<URI> anyList = r.getReferences();
+        if(anyList!=null && anyList.size()>0) {
             Object o = anyList.get(0);
             if(o instanceof URI) {
                 return (URI) o;
@@ -80,86 +87,59 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
             throw new RevocationProxyException("URI containing Web address of Revocation not supplied in Reference.");
         }
     }
-
+    
     private RevocationMessage getRevocationMessageFromServer(URI uri, JAXBElement<?> payload, boolean post) throws RevocationProxyException {
-
+    	
         ObjectFactory of = new ObjectFactory();
 
         Client client = Client.create();
-        //        client.setFollowRedirects(false);
+//        client.setFollowRedirects(false);
         client.setConnectTimeout(15000);
         client.setReadTimeout(30000);
-        this.log.info("contacting " + uri);
+        //System.out.println("contacting "+uri);
         WebResource revocationResource = client.resource(uri);
 
         ClientResponse cresp = null;
-        if (post) {
-            cresp = revocationResource.post(ClientResponse.class, payload);
-        } else {
-            cresp = revocationResource.get(ClientResponse.class);
-        }
-
-        InputStream responceInputStream = cresp.getEntityInputStream();
-        RevocationMessage result = null;
-
-        // ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        //
-        // int nRead;
-        // byte[] data = new byte[16384];
-        //
-        // try {
-        // while ((nRead = responceInputStream.read(data, 0, data.length)) !=
-        // -1) {
-        // buffer.write(data, 0, nRead);
-        // }
-        // } catch (IOException ex) {
-        // throw new RevocationProxyException(ex);
-        // }
-        //
-        // try {
-        // buffer.flush();
-        // } catch (IOException ex) {
-        // throw new RevocationProxyException(ex);
-        // }
-        // String string = new String(buffer.toByteArray());
-        // this.log.info(">>>>>>>>> " + string);
-
+        if(post) cresp = revocationResource.post(ClientResponse.class, payload);
+        else
+        	cresp = revocationResource.get(ClientResponse.class);
+        	
+        int status = cresp.getStatus();
+        if(status != 200){
+        	throw new RevocationProxyException("Revocation Authority seems to be unavailable. Came back with the http status: "+status);
+        }        
+        
+        InputStream respIS = cresp.getEntityInputStream();
+        RevocationMessage result = null; 
+        
         try {
             // Unmarshall returned message
-            JAXBContext jCtx = JAXBContext.newInstance(RevocationMessage.class,
-                    NonRevocationEvidence.class, NonRevocationEvidenceUpdate.class,
-                    RevocationInformation.class);
-            Object entity =
-                    jCtx.createUnmarshaller().unmarshal(responceInputStream);
+            JAXBContext jCtx = JAXBContext.newInstance(RevocationMessage.class, NonRevocationEvidence.class, NonRevocationEvidenceUpdate.class, RevocationInformation.class);
+            Object entity = jCtx.createUnmarshaller().unmarshal(respIS);
 
-            // If the response is an JAXBElement, look at what type it is and
-            // create a RevocationMessage
+            // If the response is an JAXBElement, look at what type it is and create a RevocationMessage
             // otherwise throw exception
             if(entity instanceof JAXBElement){
-                JAXBElement ent = (JAXBElement)entity;
+          	  JAXBElement ent = (JAXBElement)entity;
                 Class declaredType = ent.getDeclaredType();
                 if(declaredType == RevocationMessage.class){
-                    result = (RevocationMessage)ent.getValue();
-                }else if((declaredType == NonRevocationEvidence.class)
-                        ||(declaredType == NonRevocationEvidenceUpdate.class) ||(declaredType
-                                == RevocationInformation.class)){
-                    CryptoParams cp = of.createCryptoParams();
-                    cp.getAny().add(ent);
-                    result = of.createRevocationMessage();
-                    result.setCryptoParams(cp);
+              	  result = (RevocationMessage)ent.getValue();
+                }else if(declaredType == NonRevocationEvidence.class ||declaredType == NonRevocationEvidenceUpdate.class ||declaredType == RevocationInformation.class){
+              	  CryptoParams cp = of.createCryptoParams();
+              	  cp.getContent().add(ent);
+              	  result = of.createRevocationMessage();
+              	  result.setCryptoParams(cp);
                 }else {
-                    throw new
-                    RevocationProxyException("Unexpected JAXBElement received");
+              	  throw new RevocationProxyException("Unexpected JAXBElement received");
                 }
             }else {
-                throw new RevocationProxyException("Unknown datatype received");
+          	  throw new RevocationProxyException("Unknown datatype received");
             }
         } catch (JAXBException e) {
-            throw new RevocationProxyException(e);
+      	  throw new RevocationProxyException(e);
         }
-
+        
         return result;
-        //        return null;
     }
 
     @Override
@@ -167,27 +147,29 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
             Reference nonRevocationEvidenceReference)
                     throws RevocationProxyException {
 
-        this.checkSupportedReferenceType(nonRevocationEvidenceReference);
-
+        checkSupportedReferenceType(nonRevocationEvidenceReference);
         try {
-            ObjectFactory of = new ObjectFactory();
-            AttributeList attributes = of.createAttributeList();
-            for(Object o:m.getCryptoParams().getAny()){
-                if(o instanceof JAXBElement){
-                    JAXBElement jax = (JAXBElement)o;
-                    Attribute a = (Attribute)jax.getValue();
-                    if(a.getAttributeValue() != null){
-                        attributes.getAttributes().add(a);
-                    } else {
-                        a.setAttributeValue(BigInteger.ZERO);
-                        attributes.getAttributes().add(a);
-                    }
-                }
-            }
-            JAXBElement<AttributeList> payload = of.createAttributeList(attributes);
+        	ObjectFactory of = new ObjectFactory();
+        	AttributeList attributes = of.createAttributeList();
+        	XmlUtils.fixNestedContent(m.getCryptoParams());
+        	for(Object o:m.getCryptoParams().getContent()){
+        		if(o instanceof Attribute) {
+//        		if(o instanceof JAXBElement){
+//        			JAXBElement jax = (JAXBElement)o;
+//					Attribute a = (Attribute)jax.getValue();
+        		    Attribute a = (Attribute)o;
+					if(a.getAttributeValue() != null){
+						attributes.getAttributes().add(a);
+					} else {
+						a.setAttributeValue(BigInteger.ZERO);
+						attributes.getAttributes().add(a);
+					}
+        		}
+        	}
+        	JAXBElement<AttributeList> payload = of.createAttributeList(attributes);
 
-            URI revocationServiceURI = null;
-            try {
+        	URI revocationServiceURI = null;
+			try {
                 URI revocationAuthorityParametersUID = m.getRevocationAuthorityParametersUID();
                 String urlEncodedRevocationAuthorityParametersUID = URLEncoder
                         .encode(revocationAuthorityParametersUID.toString(),
@@ -195,14 +177,10 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
                 revocationServiceURI = new URI(this.getRevocationServiceURI(
                         nonRevocationEvidenceReference).toString()
                         + "/" + urlEncodedRevocationAuthorityParametersUID);
-            } catch (URISyntaxException ex) {
-                throw new RevocationProxyException(
-                        "Failed to create revocationServiceURI: " + ex);
-            } catch (UnsupportedEncodingException ex) {
-                throw new RevocationProxyException(
-                        "Failed to encode revocation paramters UID: " + ex);
-            }
-            RevocationMessage response = this.getRevocationMessageFromServer(revocationServiceURI, payload, true);
+			} catch (URISyntaxException | UnsupportedEncodingException e) {
+				throw new RevocationProxyException("Failed to create revocationServiceURI: "+e);
+			}
+            RevocationMessage response = getRevocationMessageFromServer(revocationServiceURI, payload, true);
             return response.getCryptoParams();
         } catch (UniformInterfaceException e) {
             ClientResponse clientResponse = e.getResponse();
@@ -212,7 +190,6 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
             }
             throw new RevocationProxyException("Failed to get RevocationMessage from server : " + e);
         }
-
     }
 
 
@@ -220,37 +197,33 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
     public CryptoParams requestRevocationInformation(RevocationMessage m,
             Reference revocationInfoReference) throws RevocationProxyException {
 
-        this.checkSupportedReferenceType(revocationInfoReference);
+        checkSupportedReferenceType(revocationInfoReference);
 
         try {
-            URI revocationAuthorityParametersUID = m
-                    .getRevocationAuthorityParametersUID();
-            String urlEncodedRevocationAuthorityParametersUID = URLEncoder
-                    .encode(revocationAuthorityParametersUID.toString(),
-                            "UTF-8");
-            URI revocationServiceURI = this.getRevocationServiceURI(
-                    revocationInfoReference);
-            String revocationServiceUriStr = revocationServiceURI.toString();
-            String uriStr = revocationServiceUriStr
-                    + "/"
-                    + urlEncodedRevocationAuthorityParametersUID;
-            URI uri = URI.create(uriStr);
-            RevocationMessage response = this.getRevocationMessageFromServer(
-                    uri, null, false);
+        	URI revocationServiceURI = null;
+			try {
+                URI revocationAuthorityParametersUID = m.getRevocationAuthorityParametersUID();
+                String urlEncodedRevocationAuthorityParametersUID = URLEncoder
+                        .encode(revocationAuthorityParametersUID.toString(),
+                                "UTF-8");
+                revocationServiceURI = new URI(this.getRevocationServiceURI(
+                        revocationInfoReference).toString()
+                        + "/" + urlEncodedRevocationAuthorityParametersUID);
+			} catch (URISyntaxException | UnsupportedEncodingException e) {
+				throw new RevocationProxyException("Failed to create revocationServiceURI: "+e);
+			}
+            RevocationMessage response = getRevocationMessageFromServer(revocationServiceURI, null, false);
             return response.getCryptoParams();
         } catch (UniformInterfaceException e) {
             ClientResponse clientResponse = e.getResponse();
             // is 'null' allowed ? - handling taken from old code...
             if(clientResponse.getStatus()== Status.NO_CONTENT.ordinal()) {
-                System.err.println("Response from RevocationServer should not be empty ?");
+              System.err.println("Response from RevocationServer should not be empty ?");
                 throw new RevocationProxyException("Response from RevocationServer should not be empty ?");
             } else {
-                System.err.println("Failed to get RevocationMessage from server : " + e);
+              System.err.println("Failed to get RevocationMessage from server : " + e);
                 throw new RevocationProxyException("Failed to get RevocationMessage from server : " + e);
             }
-        } catch (UnsupportedEncodingException ex) {
-            throw new RevocationProxyException(
-                    "Failed to encode revocation paramters UID: " + ex);
         }
     }
 
@@ -258,28 +231,30 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
     public CryptoParams revocationEvidenceUpdate(RevocationMessage m,
             Reference nonRevocationEvidenceUpdateReference)
                     throws RevocationProxyException {
-        throw new RevocationProxyException("Method not implemented");
+      throw new RevocationProxyException("Method not implemented");
     }
 
     @Override
     public CryptoParams getCurrentRevocationInformation(RevocationMessage m,
             Reference revocationInfoReference) throws RevocationProxyException {
-
-        this.checkSupportedReferenceType(revocationInfoReference);
+      
+        checkSupportedReferenceType(revocationInfoReference);
 
         try {
-            URI revocationAuthorityParametersUID = m
-                    .getRevocationAuthorityParametersUID();
-            String urlEncodedRevocationAuthorityParametersUID = URLEncoder
-                    .encode(revocationAuthorityParametersUID.toString(),
-                            "UTF-8");
-
-            String revocationInfoReferenceStr = this.getRevocationServiceURI(revocationInfoReference).toString();
-            String uriStr = revocationInfoReferenceStr + "/"
-                    + urlEncodedRevocationAuthorityParametersUID;
-            URI uri = URI.create(uriStr);
-            RevocationMessage response = this.getRevocationMessageFromServer(
-                    uri, null, false);
+        	URI revocationServiceURI = null;
+			try {
+                URI revocationAuthorityParametersUID = m.getRevocationAuthorityParametersUID();
+                String urlEncodedRevocationAuthorityParametersUID = URLEncoder
+                        .encode(revocationAuthorityParametersUID.toString(),
+                                "UTF-8");
+                revocationServiceURI = new URI(this.getRevocationServiceURI(
+                        revocationInfoReference).toString()
+                        + "/" + urlEncodedRevocationAuthorityParametersUID);
+			} catch (URISyntaxException | UnsupportedEncodingException e) {
+				throw new RevocationProxyException("Failed to create revocationServiceURI: "+e);
+			}
+            RevocationMessage response = getRevocationMessageFromServer(revocationServiceURI, null, false);
+        	
             return response.getCryptoParams();
         } catch (UniformInterfaceException e) {
             ClientResponse clientResponse = e.getResponse();
@@ -289,9 +264,6 @@ public class GenericWebServiceCommunicationStrategy implements RevocationProxyCo
             } else {
                 throw new RevocationProxyException("Failed to get RevocationMessage from server : " + e);
             }
-        } catch (UnsupportedEncodingException ex) {
-            throw new RevocationProxyException(
-                    "Failed to encode revocation paramters UID: " + ex);
         }
     }
 

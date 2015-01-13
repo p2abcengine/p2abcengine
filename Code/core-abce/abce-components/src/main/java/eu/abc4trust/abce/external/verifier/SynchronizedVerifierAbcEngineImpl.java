@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -32,38 +34,63 @@ import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PresentationTokenDescription;
 import eu.abc4trust.xml.RevocationInformation;
+import eu.abc4trust.xml.SystemParameters;
+import eu.abc4trust.xml.VerifierParameters;
 
 public class SynchronizedVerifierAbcEngineImpl implements VerifierAbcEngine {
 
-    private final VerifierAbcEngine engine;
+  private final VerifierAbcEngine engine;
 
-    @Inject
-    public SynchronizedVerifierAbcEngineImpl(VerifierAbcEngine engine) {
-        this.engine = engine;
-    }
+  @Inject
+  public SynchronizedVerifierAbcEngineImpl(VerifierAbcEngine engine) {
+    this.engine = engine;
+  }
 
-    @Override
-    public synchronized PresentationTokenDescription verifyTokenAgainstPolicy(
-            PresentationPolicyAlternatives p, PresentationToken t, boolean store)
-                    throws TokenVerificationException, CryptoEngineException {
+  @Override
+  public synchronized PresentationTokenDescription verifyTokenAgainstPolicy(
+      PresentationPolicyAlternatives p, PresentationToken t, boolean store)
+      throws TokenVerificationException, CryptoEngineException {
 
-        return this.engine.verifyTokenAgainstPolicy(p, t, store);
-    }
+    return this.engine.verifyTokenAgainstPolicy(p, t, store);
+  }
 
-    @Override
-    public synchronized PresentationToken getToken(URI tokenUid) {
-        return this.engine.getToken(tokenUid);
-    }
+  @Override
+  public synchronized PresentationToken getToken(URI tokenUid) {
+    return this.engine.getToken(tokenUid);
+  }
 
-    @Override
-    public synchronized boolean deleteToken(URI tokenUid) {
-        return this.engine.deleteToken(tokenUid);
-    }
+  @Override
+  public synchronized boolean deleteToken(URI tokenUid) {
+    return this.engine.deleteToken(tokenUid);
+  }
 
-    @Override
-    public synchronized RevocationInformation getLatestRevocationInformation(URI revParamsUid)
-            throws CryptoEngineException {
-        return this.engine.getLatestRevocationInformation(revParamsUid);
-    }
+  @Override
+  public synchronized RevocationInformation getLatestRevocationInformation(URI revParamsUid)
+      throws CryptoEngineException {
+    return this.engine.getLatestRevocationInformation(revParamsUid);
+  }
+
+  @Override
+  public synchronized VerifierParameters createVerifierParameters(SystemParameters sp)
+      throws CryptoEngineException {
+    return this.engine.createVerifierParameters(sp);
+  }
+
+  @Override
+  public synchronized byte[] createNonce() {
+    // TODO Auto-generated method stub
+    return this.engine.createNonce();
+  }
+
+  public PresentationTokenDescription verifyToken(PresentationToken t, VerifierParameters vp, 
+		boolean store) throws TokenVerificationException, CryptoEngineException {
+	return this.engine.verifyToken(t, vp, store);
+  }
+
+  @Override
+  public boolean verifyTokenDescriptionAgainstPolicyAlternatives(
+		PresentationPolicyAlternatives p, PresentationTokenDescription ptd){
+	return this.engine.verifyTokenDescriptionAgainstPolicyAlternatives(p, ptd);
+  }
 
 }

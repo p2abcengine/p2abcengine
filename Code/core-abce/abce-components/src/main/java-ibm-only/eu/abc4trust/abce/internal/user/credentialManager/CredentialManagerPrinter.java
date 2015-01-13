@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -57,60 +56,54 @@ public class CredentialManagerPrinter implements CredentialManager {
   }
   
   @Override
-  public List<CredentialDescription> getCredentialDescription(List<URI> issuers, List<URI> credspecs)
+  public List<CredentialDescription> getCredentialDescription(String username, List<URI> issuers, List<URI> credspecs)
       throws CredentialManagerException {
-    return cm.getCredentialDescription(issuers, credspecs);
+    return cm.getCredentialDescription(username, issuers, credspecs);
   }
 
   @Override
-  public CredentialDescription getCredentialDescription(URI creduid)
+  public CredentialDescription getCredentialDescription(String username, URI creduid)
       throws CredentialManagerException {
-    return cm.getCredentialDescription(creduid);
+    return cm.getCredentialDescription(username, creduid);
   }
 
   @Override
-  public void attachMetadataToPseudonym(Pseudonym p, PseudonymMetadata md)
+  public void attachMetadataToPseudonym(String username, Pseudonym p, PseudonymMetadata md)
       throws CredentialManagerException {
-    cm.attachMetadataToPseudonym(p, md);
+    cm.attachMetadataToPseudonym(username, p, md);
   }
 
   @Override
-  public Credential getCredential(URI creduid) throws CredentialManagerException {
-    return cm.getCredential(creduid);
+  public Credential getCredential(String username, URI creduid) throws CredentialManagerException {
+    return cm.getCredential(username, creduid);
   }
 
   @Override
-  public PseudonymWithMetadata getPseudonymWithMetadata(Pseudonym p)
+  public void storePseudonym(String username, PseudonymWithMetadata pwm) throws CredentialManagerException {
+    cm.storePseudonym(username, pwm);
+  }
+
+  @Override
+  public boolean hasBeenRevoked(String username, URI creduid, URI revparsuid, List<URI> revokedatts)
       throws CredentialManagerException {
-    return cm.getPseudonymWithMetadata(p);
+    return cm.hasBeenRevoked(username, creduid, revparsuid, revokedatts);
   }
 
   @Override
-  public void storePseudonym(PseudonymWithMetadata pwm) throws CredentialManagerException {
-    cm.storePseudonym(pwm);
-  }
-
-  @Override
-  public boolean hasBeenRevoked(URI creduid, URI revparsuid, List<URI> revokedatts)
+  public boolean hasBeenRevoked(String username, URI creduid, URI revparsuid, List<URI> revokedatts, URI revinfouid)
       throws CredentialManagerException {
-    return cm.hasBeenRevoked(creduid, revparsuid, revokedatts);
+    return cm.hasBeenRevoked(username, creduid, revparsuid, revokedatts, revinfouid);
   }
 
   @Override
-  public boolean hasBeenRevoked(URI creduid, URI revparsuid, List<URI> revokedatts, URI revinfouid)
-      throws CredentialManagerException {
-    return cm.hasBeenRevoked(creduid, revparsuid, revokedatts, revinfouid);
+  public void updateNonRevocationEvidence(String username) throws CredentialManagerException {
+    cm.updateNonRevocationEvidence(username);
   }
 
   @Override
-  public void updateNonRevocationEvidence() throws CredentialManagerException {
-    cm.updateNonRevocationEvidence();
-  }
-
-  @Override
-  public URI storeCredential(Credential cred) throws CredentialManagerException {
+  public URI storeCredential(String username, Credential cred) throws CredentialManagerException {
     
-    URI credUri = cm.storeCredential(cred);
+    URI credUri = cm.storeCredential(username, cred);
     
     String filename = PATH + "c-" + credUri.toString().replace("/", "_").replace(':', '_');
     try {
@@ -137,59 +130,59 @@ public class CredentialManagerPrinter implements CredentialManager {
   }
 
   @Override
-  public List<URI> listCredentials() throws CredentialManagerException {
-    return cm.listCredentials();
+  public List<URI> listCredentials(String username) throws CredentialManagerException {
+    return cm.listCredentials(username);
   }
 
   @Override
-  public boolean deleteCredential(URI creduid) throws CredentialManagerException {
-    return cm.deleteCredential(creduid);
+  public boolean deleteCredential(String username, URI creduid) throws CredentialManagerException {
+    return cm.deleteCredential(username, creduid);
   }
 
   @Override
-  public List<PseudonymWithMetadata> listPseudonyms(String scope, boolean onlyExclusive)
+  public List<PseudonymWithMetadata> listPseudonyms(String username, String scope, boolean onlyExclusive)
       throws CredentialManagerException {
-    return cm.listPseudonyms(scope, onlyExclusive);
+    return cm.listPseudonyms(username, scope, onlyExclusive);
   }
 
   @Override
-  public PseudonymWithMetadata getPseudonym(URI pseudonymUid) throws CredentialManagerException {
-    return cm.getPseudonym(pseudonymUid);
+  public PseudonymWithMetadata getPseudonym(String username, URI pseudonymUid) throws CredentialManagerException {
+    return cm.getPseudonym(username, pseudonymUid);
   }
 
   @Override
-  public boolean deletePseudonym(URI pseudonymUid) throws CredentialManagerException {
-    return cm.deletePseudonym(pseudonymUid);
+  public boolean deletePseudonym(String username, URI pseudonymUid) throws CredentialManagerException {
+    return cm.deletePseudonym(username, pseudonymUid);
   }
 
   @Override
-  public void storeSecret(Secret cred) throws CredentialManagerException {
-    cm.storeSecret(cred);
+  public void storeSecret(String username, Secret cred) throws CredentialManagerException {
+    cm.storeSecret(username, cred);
   }
 
   @Override
-  public List<SecretDescription> listSecrets() throws CredentialManagerException {
-    return cm.listSecrets();
+  public List<SecretDescription> listSecrets(String username) throws CredentialManagerException {
+    return cm.listSecrets(username);
   }
 
   @Override
-  public boolean deleteSecret(URI secuid) throws CredentialManagerException {
-    return cm.deleteSecret(secuid);
+  public boolean deleteSecret(String username, URI secuid) throws CredentialManagerException {
+    return cm.deleteSecret(username, secuid);
   }
 
   @Override
-  public Secret getSecret(URI secuid) throws CredentialManagerException {
-    return cm.getSecret(secuid);
+  public Secret getSecret(String username, URI secuid) throws CredentialManagerException {
+    return cm.getSecret(username, secuid);
   }
 
   @Override
-  public void updateSecretDescription(SecretDescription desc) throws CredentialManagerException {
-    cm.updateSecretDescription(desc);
+  public void updateSecretDescription(String username, SecretDescription desc) throws CredentialManagerException {
+    cm.updateSecretDescription(username, desc);
   }
   
   @Override
-  public void updateCredential(Credential cred) throws CredentialManagerException {
-    cm.updateCredential(cred);
+  public void updateCredential(String username, Credential cred) throws CredentialManagerException {
+    cm.updateCredential(username, cred);
   }
 
 }

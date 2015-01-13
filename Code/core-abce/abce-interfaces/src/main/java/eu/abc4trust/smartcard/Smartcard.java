@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -164,8 +168,6 @@ import eu.abc4trust.xml.PseudonymWithMetadata;
  * 10 times.
  * Students can change their PIN (but not their PUK).
  * 
- * @author enr
- *
  */
 public interface Smartcard extends BasicSmartcard {
 	
@@ -378,7 +380,7 @@ public interface Smartcard extends BasicSmartcard {
    * @return
    */
   public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey,
-       URI parametersUri, int keyIDForCounter, CredentialBases credBases, RSAVerificationKey courseKey,
+       URI parametersUri, int keyIDForCounter, SmartcardParameters credBases, RSAVerificationKey courseKey,
        int minimumAttendance);
   
   /**
@@ -389,14 +391,7 @@ public interface Smartcard extends BasicSmartcard {
    * @return
    */
   public SmartcardStatusCode addIssuerParameters(RSAKeyPair rootKey, URI parametersUri,
-		  										 CredentialBases credBases);
-  
-  public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
-          URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
-          RSAVerificationKey courseKey, int minimumAttendance);
-  
-  public SmartcardStatusCode addUProveIssuerParameters(RSAKeyPair rootKey, URI parametersUri,
-			 UProveParams uProveParams);
+                                                 SmartcardParameters credBases);
   
   /**
    * Increment the course attendance counter of the requested credential.

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -32,7 +36,7 @@ public class TrustedIssuerParameters implements Serializable {
 
 	//
 	public final URI parametersUri;
-	public final GroupParameters groupParams;
+	public final SmartcardParameters groupParams;
 	public final boolean enforceAttendanceCheck;
 	// Only used if enforceAttendanceCheck=true
 	public final Course course;
@@ -44,7 +48,7 @@ public class TrustedIssuerParameters implements Serializable {
 	 * @param minimumAttendance
 	 * @param courseKey
 	 */
-	public TrustedIssuerParameters(int courseID, URI parametersUri, GroupParameters groupParams,
+	public TrustedIssuerParameters(int courseID, URI parametersUri, SmartcardParameters groupParams,
 			int minimumAttendance, int keyID) {
 		this.parametersUri = parametersUri;
 		this.groupParams = groupParams;
@@ -57,7 +61,7 @@ public class TrustedIssuerParameters implements Serializable {
 	 * @param parametersUri
 	 * @param credBases
 	 */
-	public TrustedIssuerParameters(URI parametersUri, GroupParameters groupParams) {
+	public TrustedIssuerParameters(URI parametersUri, SmartcardParameters groupParams) {
 		this.parametersUri = parametersUri;
 		this.groupParams = groupParams;
 		this.enforceAttendanceCheck = false;

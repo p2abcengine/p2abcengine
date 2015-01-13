@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -38,16 +42,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBElement;
 
-import org.w3c.dom.Element;
-
-import com.ibm.zurich.idmx.showproof.accumulator.AccumulatorPublicKey;
-import com.ibm.zurich.idmx.utils.Parser;
-import com.ibm.zurich.idmx.utils.StructureStore;
-
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.keyManager.KeyManager;
-import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.ri.servicehelper.AbstractHelper;
+import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.services.helpers.RevocationHelper;
 import eu.abc4trust.xml.ABCEBoolean;
 import eu.abc4trust.xml.Attribute;
@@ -57,8 +55,12 @@ import eu.abc4trust.xml.NonRevocationEvidenceUpdate;
 import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.Reference;
 import eu.abc4trust.xml.RevocationAuthorityParameters;
+import eu.abc4trust.xml.RevocationEvent;
+import eu.abc4trust.xml.RevocationHistory;
 import eu.abc4trust.xml.RevocationInformation;
+import eu.abc4trust.xml.RevocationLogEntry;
 import eu.abc4trust.xml.RevocationReferences;
+import eu.abc4trust.xml.RevocationState;
 import eu.abc4trust.xml.SystemParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
@@ -82,7 +84,6 @@ public class RevocationService {
     public JAXBElement<RevocationAuthorityParameters> setupRevocationAuthorityParameters(
             eu.abc4trust.xml.RevocationReferences references,
             @QueryParam("keyLength") int keyLength,
-            @QueryParam("cryptoMechanism") URI cryptographicMechanism,
             @QueryParam("uid") URI uid)
                     throws Exception{
 
@@ -99,7 +100,6 @@ public class RevocationService {
 
         this.log.info("Setting up Revocation Authority ABCE with the following parameters:");
         this.log.info("keyLength: " + keyLength);
-        this.log.info("crypto: " + cryptographicMechanism);
         this.log.info("uid: " + uid);
         this.log.info("info: " + revocationInfoReference);
         this.log.info("non-evidence: " + nonRevocationEvidenceReference);
@@ -109,12 +109,73 @@ public class RevocationService {
         this.initializeHelper();
 
         try {
-            RevocationAuthorityParameters raParams = RevocationHelper.setupParameters(cryptographicMechanism, keyLength, uid, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference, fileStoragePrefix);
-            // this.log.info("now return output: \n"+XmlUtils.toXml(of.createRevocationAuthorityParameters(raParams)));
+            URI technology = URI.create("urn:idmx:3.0.0:block:revocation:cl");
+            RevocationAuthorityParameters raParams = RevocationHelper.setupParameters(technology, keyLength, uid, revocationInfoReference, nonRevocationEvidenceReference, nonRevocationUpdateReference, fileStoragePrefix);
+
+            String legacyRevocationAuthParameter = fileStoragePrefix + "revocation_authority_";
+            if("urn".equals(uid.getScheme())) {
+                legacyRevocationAuthParameter += uid.toASCIIString().replaceAll(":", "_");
+            } else {
+                legacyRevocationAuthParameter += uid.getHost().replace(".", "_") + uid.getPath().replace("/", "_");
+            }
+            FileSystem.storeObjectInFile(raParams, legacyRevocationAuthParameter);
+            
             return this.of.createRevocationAuthorityParameters(raParams);
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
+        }
+    }
+
+
+    @POST()
+    @Path("/storeSystemParameters")
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces(MediaType.TEXT_XML)
+    public JAXBElement<ABCEBoolean> storeSystemParameters(
+            JAXBElement<SystemParameters> systemParameters) {
+      System.err.println("RevocationService - storeSystemParameters ");
+        this.log.info("RevocationService - storeSystemParameters ");
+
+        try {
+            KeyManager keyManager = UserStorageManager
+                    .getKeyManager(RevocationService.fileStoragePrefix);
+
+            boolean r = keyManager.storeSystemParameters(systemParameters.getValue());
+
+            ABCEBoolean createABCEBoolean = this.of.createABCEBoolean();
+            createABCEBoolean.setValue(r);
+
+            if (r) {
+                this.initializeHelper();
+            }
+
+            return this.of.createABCEBoolean(createABCEBoolean);
+        } catch (Exception ex) {
+            throw new WebApplicationException(ex,
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @POST()
+    @Path("/storeRevocationAuthorityParameters/")
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces(MediaType.TEXT_XML)
+    public JAXBElement<ABCEBoolean> storeRevocationAuthorityParameters(
+            RevocationAuthorityParameters revocationAuthorityParameters) {
+        try{
+            //  register key for IDEMIX!
+            this.log.info("- Try to register Revocation public key in IDEMIX StructureStore : "
+                    + revocationAuthorityParameters.getParametersUID());
+
+            ABCEBoolean createABCEBoolean = this.of.createABCEBoolean();
+            createABCEBoolean.setValue(true);
+
+            return this.of.createABCEBoolean(createABCEBoolean);
+
+        } catch (Exception ex) {
+            throw new WebApplicationException(ex,
+                    Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -155,10 +216,6 @@ public class RevocationService {
 
         this.initializeHelper();
 
-        this.checkIfParamsInStructureStore(revParUid);
-
-        this.log.info("RevocationService - generatenonrevocationevidence - all ready...");
-
         List<Attribute> attributes = attributeList.getValue().getAttributes();
         RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
         NonRevocationEvidence revInfo = engine
@@ -194,8 +251,6 @@ public class RevocationService {
 
         this.initializeHelper();
 
-        this.checkIfParamsInStructureStore(revParUid);
-
         RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
         NonRevocationEvidenceUpdate revInfo  = engine.generateNonRevocationEvidenceUpdate(revParUid, epoch);
 
@@ -212,30 +267,10 @@ public class RevocationService {
 
         this.initializeHelper();
 
-        this.checkIfParamsInStructureStore(revParUid);
-
         RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
         RevocationInformation revInfo  = engine.updateRevocationInformation(revParUid);
+
         return this.of.createRevocationInformation(revInfo);
-    }
-
-    @POST()
-    @Path("/revoke/{revParUid}")
-    @Produces(MediaType.TEXT_XML)
-    public JAXBElement<RevocationInformation> revoke(@PathParam ("revParUid") final URI revParUid, final JAXBElement<AttributeList> in) throws Exception {
-        this.log.info("RevocationService - revoke");
-
-        this.validateRevocationParametersUid(revParUid);
-
-        this.initializeHelper();
-
-        this.checkIfParamsInStructureStore(revParUid);
-
-        List<Attribute> attributes = in.getValue().getAttributes();
-        RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
-        RevocationInformation ri = engine.revoke(revParUid, attributes);
-
-        return this.of.createRevocationInformation(ri);
     }
 
     @GET()
@@ -247,104 +282,30 @@ public class RevocationService {
 
         this.initializeHelper();
 
-        this.checkIfParamsInStructureStore(revParUid);
-
         RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
-        RevocationInformation revInfo = engine
-                .updateRevocationInformation(revParUid);
-
+        RevocationInformation revInfo = engine.updateRevocationInformation(revParUid);
+        
         return this.of.createRevocationInformation(revInfo);
     }
 
-
-    private void checkIfParamsInStructureStore(URI revParUid) throws KeyManagerException{
-        boolean pkInStorage = false;
-        try {
-            pkInStorage = (StructureStore.getInstance().get(revParUid) != null);
-        } catch (RuntimeException e) {
-            pkInStorage = false;
-        }
-
-        if(!pkInStorage){
-            this.log.info("Revocation parameters not found in structurestore");
-            KeyManager keyManager = RevocationHelper.getInstance().keyManager;
-            RevocationAuthorityParameters revParams = keyManager
-                    .getRevocationAuthorityParameters(revParUid);
-
-            if (revParams == null) {
-                throw new RuntimeException(
-                        "No revocation parameters UID matching: \"" + revParUid
-                        + "\"");
-            }
-
-            AccumulatorPublicKey publicKey = this.getPublicKey(revParams);
-
-            StructureStore.getInstance().add(revParUid.toString(), publicKey);
-            this.log.info("stored as " + revParUid.toString());
-        }
-    }
-
-    private AccumulatorPublicKey getPublicKey(
-            RevocationAuthorityParameters revParams) {
-        List<Object> any = revParams.getCryptoParams().getAny();
-        Element publicKeyStr = (Element) any.get(0);
-        Object publicKeyObj = Parser.getInstance().parse(publicKeyStr);
-        return (AccumulatorPublicKey) publicKeyObj;
-    }
-
     @POST()
-    @Path("/storeSystemParameters/")
+    @Path("/revoke/{revParUid}")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
     @Produces(MediaType.TEXT_XML)
-    public JAXBElement<ABCEBoolean> storeSystemParameters(
-            SystemParameters systemParameters) {
-        this.log.info("RevocationService - storeSystemParameters ");
-
-        try {
-            KeyManager keyManager = UserStorageManager
-                    .getKeyManager(RevocationService.fileStoragePrefix);
-
-            boolean r = keyManager.storeSystemParameters(systemParameters);
-
-            ABCEBoolean createABCEBoolean = this.of.createABCEBoolean();
-            createABCEBoolean.setValue(r);
-
-            if (r) {
-                this.initializeHelper();
-            }
-
-            return this.of.createABCEBoolean(createABCEBoolean);
-        } catch (Exception ex) {
-            throw new WebApplicationException(ex,
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
+    public JAXBElement<RevocationInformation> revoke(@PathParam ("revParUid") final URI revParUid, final JAXBElement<AttributeList> in) throws Exception {
+        this.log.severe("RevocationService - revoke");
+  
+        this.validateRevocationParametersUid(revParUid);
+    
+        this.initializeHelper();
+  
+        List<Attribute> attributes = in.getValue().getAttributes();
+        RevocationAbcEngine engine = RevocationHelper.getInstance().engine;
+        RevocationInformation ri = engine.revoke(revParUid, attributes);
+        
+        return this.of.createRevocationInformation(ri);
     }
 
-    @POST()
-    @Path("/storeRevocationAuthorityParameters/")
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
-    @Produces(MediaType.TEXT_XML)
-    public JAXBElement<ABCEBoolean> storeRevocationAuthorityParameters(
-            RevocationAuthorityParameters revocationAuthorityParameters) {
-        try{
-            //  register key for IDEMIX!
-            this.log.info("- Try to register Revocation public key in IDEMIX StructureStore : "
-                    + revocationAuthorityParameters.getParametersUID());
-            AccumulatorPublicKey publicKey = this
-                    .getPublicKey(revocationAuthorityParameters);
-
-            StructureStore.getInstance().add(publicKey.getUri().toString(),
-                    publicKey);
-            ABCEBoolean createABCEBoolean = this.of.createABCEBoolean();
-            createABCEBoolean.setValue(true);
-
-            return this.of.createABCEBoolean(createABCEBoolean);
-
-        } catch (Exception ex) {
-            throw new WebApplicationException(ex,
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
-    }
 
     private void initializeHelper() {
         this.log.info("RevocationService loading...");
@@ -355,10 +316,7 @@ public class RevocationService {
                 AbstractHelper.verifyFiles(false,
                         RevocationService.fileStoragePrefix);
             } else {
-                this.log.info("Initializing RevocationHelper...");
-
-                UProveIntegration uproveIntegration = new UProveIntegration();
-                uproveIntegration.verify();
+                this.log.info("Initializing RevocationHelper : storage folder : " + RevocationService.fileStoragePrefix);
 
                 RevocationHelper.initInstance(RevocationService.fileStoragePrefix);
 
@@ -369,5 +327,12 @@ public class RevocationService {
             ex.printStackTrace();
         }
     }
-
+    
+    @GET()
+    @Path("/isAlive")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response isAlive() throws Exception {
+        System.out.println("ALIVE!");
+        return Response.ok().build();
+    }
 }

@@ -14,7 +14,7 @@
 
     <abc:Attribute>
       <abc:AttributeUID>-5027215341191833961</abc:AttributeUID>
-      <abc:AttributeDescription DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256" Type="FirstName">
+      <abc:AttributeDescription DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:utf-8" Type="FirstName">
         <abc:FriendlyAttributeName lang="en">first name</abc:FriendlyAttributeName>
       </abc:AttributeDescription>
       <abc:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">John</abc:AttributeValue>

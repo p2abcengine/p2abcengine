@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -35,26 +39,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 import org.xml.sax.SAXException;
 
 import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
+import com.ibm.zurich.idmix.abc4trust.facades.RevocationInformationFacade;
+import com.ibm.zurich.idmx.buildingBlock.revocation.cl.ClRevocationStateWrapper;
+import com.ibm.zurich.idmx.exception.ConfigurationException;
+import com.ibm.zurich.idmx.interfaces.util.BigInt;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
 
-import edu.rice.cs.plt.tuple.Pair;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.external.verifier.VerifierAbcEngine;
-import eu.abc4trust.abce.integrationtests.ReloadTokensInMemoryCommunicationStrategy;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.cryptoEngine.uprove.user.ReloadTokensCommunicationStrategy;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
-import eu.abc4trust.ui.idSelection.IdentitySelection;
+import eu.abc4trust.returnTypes.UiPresentationArguments;
+import eu.abc4trust.returnTypes.UiPresentationReturn;
+import eu.abc4trust.returnTypes.ui.CredentialInUi;
+import eu.abc4trust.returnTypes.ui.TokenCandidate;
+import eu.abc4trust.returnTypes.ui.TokenCandidatePerPolicy;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.AttributeDescription;
 import eu.abc4trust.xml.Credential;
@@ -63,7 +70,6 @@ import eu.abc4trust.xml.CredentialInPolicy;
 import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives;
 import eu.abc4trust.xml.CredentialInPolicy.IssuerAlternatives.IssuerParametersUID;
 import eu.abc4trust.xml.CredentialSpecification;
-import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.ObjectFactory;
@@ -72,6 +78,7 @@ import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PresentationTokenDescription;
 import eu.abc4trust.xml.RevocationInformation;
+import eu.abc4trust.xml.VerifierParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class IssuanceHelper {
@@ -109,10 +116,19 @@ public class IssuanceHelper {
         return issuerAtts;
     }
 
-    public CredentialDescription issueCredential(Injector issuerInjector,
+    @Deprecated
+    public CredentialDescription issueCredential(String username, Injector issuerInjector,
+                                                 Injector userInjector,
+                                                 String credentialSpecificationFilename,
+                                                 String issuancePolicyFilename, Map<String, Object> issuerAttsMap)
+                                                         throws Exception {
+      return issueCredential(username, issuerInjector, userInjector, credentialSpecificationFilename, issuancePolicyFilename, issuerAttsMap, null);
+    }
+    
+    public CredentialDescription issueCredential(String username, Injector issuerInjector,
             Injector userInjector,
             String credentialSpecificationFilename,
-            String issuancePolicyFilename, Map<String, Object> issuerAttsMap)
+            String issuancePolicyFilename, Map<String, Object> issuerAttsMap, VerifierParameters verifierParameters)
                     throws Exception {
 
         List<Attribute> issuerAtts = this.populateIssuerAttributes(
@@ -135,6 +151,9 @@ public class IssuanceHelper {
         // Step 2. Load the issuance policy and attributes.
         IssuancePolicy ip = (IssuancePolicy) XmlUtils.getObjectFromXML(this
                 .getClass().getResourceAsStream(issuancePolicyFilename), true);
+        if(verifierParameters != null) {
+          ip.setVerifierParameters(verifierParameters);
+        }
 
         // Step 3. Issue credential.
         IssuerAbcEngine issuerEngine = issuerInjector
@@ -143,24 +162,8 @@ public class IssuanceHelper {
                 .getInstance(UserAbcEngine.class);
 
         //For reload of tokens set these on the UProve reloader
-        Integer port = userInjector.getInstance(Key.get(Integer.class, Names.named("UProvePortNumber")));
-        if (port!=null) {
-            //uprove is set up
-            ReloadTokensInMemoryCommunicationStrategy reloadTokens = (ReloadTokensInMemoryCommunicationStrategy) userInjector.getInstance(ReloadTokensCommunicationStrategy.class);
-            reloadTokens.setIssuerAbcEngine(issuerEngine);
-            //We need the re-issuance policy instead, but not all tests have those, so ignore if not present
-            IssuancePolicy ip_reIssuance;
-            try{
-                ip_reIssuance = (IssuancePolicy) XmlUtils.getObjectFromXML(this
-                        .getClass().getResourceAsStream(issuancePolicyFilename.subSequence(0, issuancePolicyFilename.length()-4)+"_reIssuance.xml"), true);
-            }catch(Exception e){
-                ip_reIssuance = (IssuancePolicy) XmlUtils.getObjectFromXML(this
-                        .getClass().getResourceAsStream(issuancePolicyFilename), true);
-            }
-            reloadTokens.setIssuancePolicy(ip_reIssuance);
-        }
         IssuanceHelper testHelper = new IssuanceHelper();
-        CredentialDescription cd = testHelper.runIssuanceProtocol(issuerEngine,
+        CredentialDescription cd = testHelper.runIssuanceProtocol(username, issuerEngine,
                 userEngine, ip, issuerAtts);
         assertNotNull(cd);
 
@@ -181,7 +184,7 @@ public class IssuanceHelper {
         return credentialSpecification;
     }
 
-    public CredentialDescription runIssuanceProtocol(
+    public CredentialDescription runIssuanceProtocol(String username, 
             IssuerAbcEngine issuerEngine, UserAbcEngine userEngine,
             IssuancePolicy ip, List<Attribute> issuerAtts)
                     throws Exception {
@@ -191,46 +194,20 @@ public class IssuanceHelper {
                 ip, issuerAtts);
         assertFalse(issuerIm.isLastMessage());
 
-        ObjectFactory of = new ObjectFactory();
-        System.out.println("Trying to print first issuance message");
-        JAXBElement<IssuanceMessage> actual = of.createIssuanceMessage(issuerIm
-                .getIssuanceMessage());
-        System.out.println(XmlUtils.toNormalizedXML(actual));
-
         // Reply from user.
-        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStep(issuerIm
+        IssuMsgOrCredDesc userIm = userEngine.issuanceProtocolStepFirstChoice(username, issuerIm
                 .getIssuanceMessage());
-        actual = of.createIssuanceMessage(userIm.im);
-        System.out.println(XmlUtils.toNormalizedXML(actual));
+        
         int round = 1;
         while (!issuerIm.isLastMessage()) {
             System.out.println("Issuance round: " + round);
             assertNotNull(userIm.im);
             issuerIm = issuerEngine.issuanceProtocolStep(userIm.im);
 
-            // for (Object o : issuerIm.im.getAny()) {
-            // System.out.println(o.getClass());
-            // CredentialDescription cd = (CredentialDescription) XmlUtils
-            // .unwrap(o, CredentialDescription.class);
-            // for (Attribute a : cd.getAttribute()) {
-            // System.out.println(a.getAttributeDescription().getType()
-            // + ", " + a.getAttributeValue());
-            // }
-            // }
-
-            // System.out.println("Issuer message:");
-            // actual = of.createIssuanceMessage(issuerIm.im);
-            // System.out.println(XmlUtils.toNormalizedXML(actual));
-
             assertNotNull(issuerIm.getIssuanceMessage());
-            userIm = userEngine.issuanceProtocolStep(issuerIm
+            userIm = userEngine.issuanceProtocolStepFirstChoice(username, issuerIm
                     .getIssuanceMessage());
 
-            // if (userIm.im != null) {
-            // System.out.println("User message:");
-            // actual = of.createIssuanceMessage(userIm.im);
-            // System.out.println(XmlUtils.toNormalizedXML(actual));
-            // }
             boolean userLastMessage = (userIm.cd != null);
             assertTrue(issuerIm.isLastMessage() == userLastMessage);
         }
@@ -239,22 +216,37 @@ public class IssuanceHelper {
         return userIm.cd;
     }
 
+    @Deprecated
     public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken(
-            Injector verfierInjector, Injector userInjector,
-            String presentationPolicyFilename,
-            IdentitySelection idSelectionCallback) throws Exception {
-        return this.createPresentationToken(verfierInjector, userInjector,
-                presentationPolicyFilename, null, idSelectionCallback);
+      String username, Injector userInjector,
+            String presentationPolicyFilename) throws Exception {
+        return this.createPresentationToken(username, userInjector,
+                presentationPolicyFilename, null, null);
+    }
+    
+    public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken(
+      String username, Injector userInjector,
+            String presentationPolicyFilename, VerifierParameters verifierParameters) throws Exception {
+        return this.createPresentationToken(username, userInjector,
+                presentationPolicyFilename, null, verifierParameters);
+    }
+    
+    @Deprecated
+    public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken(String username,
+      Injector userInjector, String presentationPolicyFilename,
+      RevocationInformation revocationInformation) throws Exception {
+      return createPresentationToken(username, userInjector, presentationPolicyFilename, revocationInformation, null);
     }
 
-    public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken(
-            Injector verfierInjector, Injector userInjector,
-            String presentationPolicyFilename,
-            RevocationInformation revocationInformation,
-            IdentitySelection idSelectionCallback) throws Exception {
-        assertNotNull(presentationPolicyFilename);
-        PresentationPolicyAlternatives presentationPolicyAlternatives = this.loadPresentationPolicy(presentationPolicyFilename);
+    public Pair<PresentationToken, PresentationPolicyAlternatives> createSpecificPresentationToken(String username,
+    	      Injector userInjector, String presentationPolicyFilename, URI chosenCredential,
+    	      RevocationInformation revocationInformation, VerifierParameters verifierParameters) throws Exception {
 
+    	assertNotNull(presentationPolicyFilename);
+        PresentationPolicyAlternatives presentationPolicyAlternatives = this.loadPresentationPolicy(presentationPolicyFilename);
+        if(verifierParameters != null) {
+            presentationPolicyAlternatives.setVerifierParameters(verifierParameters);
+          } 
         if (revocationInformation != null) {
             for (PresentationPolicy pp : presentationPolicyAlternatives
                     .getPresentationPolicy()) {
@@ -263,7 +255,77 @@ public class IssuanceHelper {
                     for (IssuerParametersUID ipUid : ia
                             .getIssuerParametersUID()) {
 
-                        URI revInfoUid = revocationInformation.getInformationUID();
+                        URI revInfoUid = revocationInformation.getRevocationInformationUID();
+                        ipUid.setRevocationInformationUID(revInfoUid);
+                    }
+                }
+            }
+        }
+
+        assertNotNull(presentationPolicyAlternatives);
+
+        UserAbcEngine userEngine = userInjector
+                .getInstance(UserAbcEngine.class);
+        
+        UiPresentationArguments choices = userEngine
+        		.createPresentationToken(username, presentationPolicyAlternatives);
+        if(choices == null){
+        	throw new RuntimeException("Cannot generate presentationToken");
+        }
+        
+        UiPresentationReturn choiceMade = new UiPresentationReturn(choices);
+
+        choiceMade.chosenPolicy = -1;
+        choiceMade.chosenPresentationToken = -1;
+
+        for(TokenCandidatePerPolicy candidate :choices.tokenCandidatesPerPolicy) {
+        	for(TokenCandidate tokenCandidate: candidate.tokenCandidates){
+        		for(CredentialInUi cre: tokenCandidate.credentials){
+        			if(chosenCredential.toString().equals(cre.uri)){
+        				choiceMade.chosenPolicy = 
+        					choices.tokenCandidatesPerPolicy.indexOf(candidate);
+        				choiceMade.chosenPresentationToken = 
+        					candidate.tokenCandidates.indexOf(tokenCandidate);
+        			}
+        		}
+        	}
+        }
+        
+        if(choiceMade.chosenPresentationToken == -1){
+            throw new RuntimeException("Cannot generate presentationToken with specified credential");
+        }
+   
+        PresentationToken presentationToken = 
+        		userEngine.createPresentationToken(username, choiceMade);
+        
+        if(presentationToken == null) {
+            throw new RuntimeException("Cannot generate presentationToken");
+        }
+        assertNotNull(presentationToken);
+
+        return new Pair<PresentationToken, PresentationPolicyAlternatives>(
+                presentationToken, presentationPolicyAlternatives);
+    }
+    
+    public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken(String username,
+            Injector userInjector, String presentationPolicyFilename,
+            RevocationInformation revocationInformation,
+            VerifierParameters verifierParameters) throws Exception {
+        assertNotNull(presentationPolicyFilename);
+        PresentationPolicyAlternatives presentationPolicyAlternatives = this.loadPresentationPolicy(presentationPolicyFilename);
+        if(verifierParameters != null) {
+          presentationPolicyAlternatives.setVerifierParameters(verifierParameters);
+        }
+        
+        if (revocationInformation != null) {
+            for (PresentationPolicy pp : presentationPolicyAlternatives
+                    .getPresentationPolicy()) {
+                for (CredentialInPolicy cred : pp.getCredential()) {
+                    IssuerAlternatives ia = cred.getIssuerAlternatives();
+                    for (IssuerParametersUID ipUid : ia
+                            .getIssuerParametersUID()) {
+
+                        URI revInfoUid = revocationInformation.getRevocationInformationUID();
                         ipUid.setRevocationInformationUID(revInfoUid);
                     }
                 }
@@ -276,8 +338,7 @@ public class IssuanceHelper {
                 .getInstance(UserAbcEngine.class);
 
         PresentationToken presentationToken = userEngine
-                .createPresentationToken(presentationPolicyAlternatives,
-                        idSelectionCallback);
+                .createPresentationTokenFirstChoice(username, presentationPolicyAlternatives);
         if(presentationToken == null) {
             throw new RuntimeException("Cannot generate presentationToken");
         }
@@ -288,9 +349,7 @@ public class IssuanceHelper {
     }
 
     public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken_NotSatisfied(
-            Injector verfierInjector, Injector userInjector,
-            String presentationPolicyFilename,
-            IdentitySelection idSelectionCallback) throws Exception {
+      String username, Injector userInjector, String presentationPolicyFilename) throws Exception {
         assertNotNull(presentationPolicyFilename);
         PresentationPolicyAlternatives presentationPolicyAlternatives = this.loadPresentationPolicy(presentationPolicyFilename);
         assertNotNull(presentationPolicyAlternatives);
@@ -299,8 +358,7 @@ public class IssuanceHelper {
                 .getInstance(UserAbcEngine.class);
 
         PresentationToken presentationToken = userEngine
-                .createPresentationToken(presentationPolicyAlternatives,
-                        idSelectionCallback);
+                .createPresentationTokenFirstChoice(username, presentationPolicyAlternatives);
 
         assertNull(presentationToken);
 
@@ -308,9 +366,8 @@ public class IssuanceHelper {
     }
 
     public Pair<PresentationToken, PresentationPolicyAlternatives> createPresentationToken_NotSatisfied(
-            Injector verfierInjector, Injector userInjector, RevocationInformation revocationInformation,
-            String presentationPolicyFilename,
-            IdentitySelection idSelectionCallback) throws Exception {
+      String username, Injector userInjector, RevocationInformation revocationInformation,
+            String presentationPolicyFilename) throws Exception {
         assertNotNull(presentationPolicyFilename);
         PresentationPolicyAlternatives presentationPolicyAlternatives = this.loadPresentationPolicy(presentationPolicyFilename);
         assertNotNull(presentationPolicyAlternatives);
@@ -323,7 +380,7 @@ public class IssuanceHelper {
                     for (IssuerParametersUID ipUid : ia
                             .getIssuerParametersUID()) {
 
-                        URI revInfoUid = revocationInformation.getInformationUID();
+                        URI revInfoUid = revocationInformation.getRevocationInformationUID();
                         ipUid.setRevocationInformationUID(revInfoUid);
                     }
                 }
@@ -334,8 +391,7 @@ public class IssuanceHelper {
                 .getInstance(UserAbcEngine.class);
 
         PresentationToken presentationToken = userEngine
-                .createPresentationToken(presentationPolicyAlternatives,
-                        idSelectionCallback);
+                .createPresentationTokenFirstChoice(username, presentationPolicyAlternatives);
 
         assertNull(presentationToken);
 
@@ -358,10 +414,17 @@ public class IssuanceHelper {
         }
     }
 
-    public PresentationToken verify(Injector verfierInjector,
+    public PresentationToken verify(Injector verifierInjector,
+            String presentationPolicyAlternatives,
+            PresentationToken presentationToken) throws Exception {
+    	PresentationPolicyAlternatives ppa = loadPresentationPolicy(presentationPolicyAlternatives);
+    	return verify(verifierInjector, ppa, presentationToken);
+    }
+    
+    public PresentationToken verify(Injector verifierInjector,
             PresentationPolicyAlternatives presentationPolicyAlternatives,
             PresentationToken presentationToken) throws Exception {
-        VerifierAbcEngine verifierEngine = verfierInjector
+        VerifierAbcEngine verifierEngine = verifierInjector
                 .getInstance(VerifierAbcEngine.class);
 
         assertNotNull(presentationPolicyAlternatives);
@@ -390,4 +453,23 @@ public class IssuanceHelper {
         attributes.add(revocationHandleAttribute);
         revocationEngine.revoke(revParamsUid, attributes);
     }
+    
+    public RevocationInformation getRevocationInformation(Injector revocationInjector,
+          URI raParametersUID) throws CryptoEngineException {
+        RevocationAbcEngine revocationEngine =
+            revocationInjector.getInstance(RevocationAbcEngine.class);
+        return revocationEngine.updateRevocationInformation(raParametersUID);
+    }
+    
+    public BigInt getAccumulatorValue(Injector revocationInjector, URI raParametersUID)
+        throws CryptoEngineException, ConfigurationException {
+      RevocationInformation revocationInformation =
+          getRevocationInformation(revocationInjector, raParametersUID);
+      RevocationInformationFacade revocationInformationFacade =
+          new RevocationInformationFacade(revocationInformation);
+      ClRevocationStateWrapper revocationStateWrapper =
+          new ClRevocationStateWrapper(revocationInformationFacade.getRevocationState());
+      return revocationStateWrapper.getAccumulatorValue();
+    }
+
 }

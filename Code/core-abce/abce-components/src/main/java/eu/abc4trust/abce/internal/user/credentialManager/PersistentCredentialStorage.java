@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -47,43 +49,43 @@ public class PersistentCredentialStorage implements CredentialStorage {
     }
 
     @Override
-    public byte[] getCredential(URI creduid) throws Exception {
+    public byte[] getCredential(String username, URI creduid) throws Exception {
         return StorageUtil.getData(this.credentialFile, creduid);
     }
 
     @Override
-    public byte[] getPseudonymWithData(URI pseudonymUid) throws Exception {
+    public byte[] getPseudonymWithData(String username, URI pseudonymUid) throws Exception {
         return StorageUtil.getData(this.pseudonymFile, pseudonymUid);
     }
 
     @Override
-    public List<URI> listCredentials() throws Exception {
+    public List<URI> listCredentials(String username) throws Exception {
         return StorageUtil.getAllUris(this.credentialFile);
     }
 
     @Override
-    public void addCredential(URI credUid, byte[] credBytes) throws IOException {
+    public void addCredential(String username, URI credUid, byte[] credBytes) throws IOException {
         StorageUtil.appendData(this.credentialFile, credUid, credBytes);
     }
 
     @Override
-    public void addPseudonymWithMetadata(URI pseudonymUri, byte[] pwmBytes)
+    public void addPseudonymWithMetadata(String username, URI pseudonymUri, byte[] pwmBytes)
             throws IOException {
         StorageUtil.appendData(this.pseudonymFile, pseudonymUri, pwmBytes);
     }
 
     @Override
-    public void deletePseudonymWithMetadata(URI pseudonymUri) throws Exception {
+    public void deletePseudonymWithMetadata(String username, URI pseudonymUri) throws Exception {
         StorageUtil.deleteData(this.pseudonymFile, pseudonymUri);
     }
 
     @Override
-    public void deleteCredential(URI credUid) throws Exception {    	
+    public void deleteCredential(String username, URI credUid) throws Exception {    	
         StorageUtil.deleteData(this.credentialFile, credUid);
     }
 
     @Override
-    public List<byte[]> listPseudonyms() throws Exception {
+    public List<byte[]> listPseudonyms(String username) throws Exception {
         return StorageUtil.getAllValues(this.pseudonymFile);
     }
 

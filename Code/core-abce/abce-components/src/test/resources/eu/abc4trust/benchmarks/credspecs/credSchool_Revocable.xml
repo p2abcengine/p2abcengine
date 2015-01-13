@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:CredentialSpecification xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  Version="Version 1.0"  KeyBinding="true" Revocable="true"> <!-- TODO Revocable="true" -->
+    <abc:SpecificationUID>urn:soderhamn:credspec:credSchool_revocable</abc:SpecificationUID>
+    <abc:FriendlyCredentialName lang="en">School Credential</abc:FriendlyCredentialName>
+    <abc:DefaultImageReference>http://www.m-chair.net/wps/wse_td/Fatbardh_Veseli_140x200.JPG</abc:DefaultImageReference>
+    <abc:AttributeDescriptions MaxLength="256">
+	<abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned"/>
+	<abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+
+            <abc:FriendlyAttributeName lang="en">first name</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">last name</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:civicRegistrationNumber" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:utf-8">
+            <abc:FriendlyAttributeName lang="en">civic registration number</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:gender" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">gender</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:schoolname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">school</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool:birthdate" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:since1870:unsigned">
+            <abc:FriendlyAttributeName lang="en">birthdate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+    </abc:AttributeDescriptions>
+</abc:CredentialSpecification>
+

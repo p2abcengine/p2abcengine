@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,18 +32,15 @@ import com.google.inject.Inject;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.exceptions.CannotSatisfyPolicyException;
-import eu.abc4trust.exceptions.IdentitySelectionException;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
 import eu.abc4trust.returnTypes.IssuanceReturn;
 import eu.abc4trust.returnTypes.UiIssuanceReturn;
 import eu.abc4trust.returnTypes.UiPresentationArguments;
 import eu.abc4trust.returnTypes.UiPresentationReturn;
-import eu.abc4trust.ui.idSelection.IdentitySelection;
-import eu.abc4trust.ui.idSelection.IdentitySelectionUi;
-import eu.abc4trust.util.DummyForNewABCEInterfaces;
 import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 
@@ -55,118 +54,95 @@ public class SynchronizedUserAbcEngineImpl implements UserAbcEngine {
     }
 
     @Override
-    public synchronized boolean canBeSatisfied(PresentationPolicyAlternatives p)
+    public synchronized boolean canBeSatisfied(String username, PresentationPolicyAlternatives p)
+            throws CredentialManagerException, CryptoEngineException {
+        return this.engine.canBeSatisfied(username, p);
+    }
+
+
+
+    @Override
+    public synchronized void updateNonRevocationEvidence(String username)
             throws CredentialManagerException {
-        return this.engine.canBeSatisfied(p);
+        this.engine.updateNonRevocationEvidence(username);
     }
 
     @Override
-    public synchronized PresentationToken createPresentationToken(
-            PresentationPolicyAlternatives p)
-                    throws CannotSatisfyPolicyException, CredentialManagerException,
-                    CryptoEngineException, IdentitySelectionException {
-        return this.engine.createPresentationToken(p);
-    }
-
-    @Override
-    @Deprecated
-    public synchronized PresentationToken createPresentationToken(
-            PresentationPolicyAlternatives p,
-            IdentitySelection idSelectionCallback)
-                    throws CannotSatisfyPolicyException, CredentialManagerException,
-                    CryptoEngineException, IdentitySelectionException {
-        return this.engine.createPresentationToken(p, idSelectionCallback);
-    }
-
-    @Override
-    public synchronized PresentationToken createPresentationToken(
-            PresentationPolicyAlternatives p,
-            IdentitySelectionUi idSelectionCallback)
-                    throws CannotSatisfyPolicyException, CredentialManagerException,
-                    CryptoEngineException, IdentitySelectionException {
-        return this.engine.createPresentationToken(p, idSelectionCallback);
-    }
-
-    @Override
-    public synchronized IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m)
-            throws CannotSatisfyPolicyException, CryptoEngineException,
-            IdentitySelectionException, CredentialManagerException {
-        return this.engine.issuanceProtocolStep(m);
-    }
-
-    @Override
-    @Deprecated
-    public synchronized IssuMsgOrCredDesc issuanceProtocolStep(
-            IssuanceMessage m,
-            IdentitySelection idSelectionCallback)
-                    throws CannotSatisfyPolicyException, CryptoEngineException,
-                    IdentitySelectionException, CredentialManagerException {
-        return this.engine.issuanceProtocolStep(m, idSelectionCallback);
-    }
-
-    @Override
-    public synchronized IssuMsgOrCredDesc issuanceProtocolStep(
-            IssuanceMessage m,
-            IdentitySelectionUi idSelectionCallback)
-                    throws CannotSatisfyPolicyException, CryptoEngineException,
-                    IdentitySelectionException, CredentialManagerException {
-        return this.engine.issuanceProtocolStep(m, idSelectionCallback);
-    }
-
-    @Override
-    public synchronized void updateNonRevocationEvidence()
+    public synchronized List<URI> listCredentials(String username)
             throws CredentialManagerException {
-        this.engine.updateNonRevocationEvidence();
+        return this.engine.listCredentials(username);
     }
 
     @Override
-    public synchronized List<URI> listCredentials()
-            throws CredentialManagerException {
-        return this.engine.listCredentials();
-    }
-
-    @Override
-    public synchronized CredentialDescription getCredentialDescription(
+    public synchronized CredentialDescription getCredentialDescription(String username, 
             URI credUid)
                     throws CredentialManagerException {
-        return this.engine.getCredentialDescription(credUid);
+        return this.engine.getCredentialDescription(username, credUid);
     }
 
     @Override
-    public synchronized boolean deleteCredential(URI credUid)
+    public synchronized boolean deleteCredential(String username, URI credUid)
             throws CredentialManagerException {
-        return this.engine.deleteCredential(credUid);
+        return this.engine.deleteCredential(username, credUid);
     }
 
     @Override
-    public synchronized boolean isRevoked(URI credUid)
+    public synchronized boolean isRevoked(String username, URI credUid)
             throws CryptoEngineException {
-        return this.engine.isRevoked(credUid);
+        return this.engine.isRevoked(username, credUid);
     }
 
     @Override
-    public synchronized UiPresentationArguments createPresentationToken(
-            PresentationPolicyAlternatives p, DummyForNewABCEInterfaces d) throws CannotSatisfyPolicyException,
-            CredentialManagerException, KeyManagerException {
-        return this.engine.createPresentationToken(p, d);
+    public synchronized UiPresentationArguments createPresentationToken(String username, 
+            PresentationPolicyAlternatives p) throws CannotSatisfyPolicyException,
+            CredentialManagerException, KeyManagerException, CryptoEngineException {
+        return this.engine.createPresentationToken(username, p);
     }
 
     @Override
-    public synchronized PresentationToken createPresentationToken(UiPresentationReturn upr)
+    public synchronized PresentationToken createPresentationToken(String username, UiPresentationReturn upr)
             throws CredentialManagerException, CryptoEngineException {
-        return this.engine.createPresentationToken(upr);
+        return this.engine.createPresentationToken(username, upr);
     }
 
     @Override
-    public synchronized IssuanceReturn issuanceProtocolStep(IssuanceMessage im, DummyForNewABCEInterfaces d)
+    public synchronized IssuanceReturn issuanceProtocolStep(String username, IssuanceMessage im)
             throws CannotSatisfyPolicyException, CryptoEngineException, CredentialManagerException, KeyManagerException {
-        return this.engine.issuanceProtocolStep(im, d);
+        return this.engine.issuanceProtocolStep(username, im);
     }
 
     @Override
-    public synchronized IssuanceMessage issuanceProtocolStep(UiIssuanceReturn uir)
+    public synchronized IssuanceMessage issuanceProtocolStep(String username, UiIssuanceReturn uir)
             throws CryptoEngineException {
-        return this.engine.issuanceProtocolStep(uir);
+        return this.engine.issuanceProtocolStep(username, uir);
     }
+
+    @Override
+    public synchronized PresentationToken createPresentationTokenFirstChoice(String username,
+        PresentationPolicyAlternatives p) throws CannotSatisfyPolicyException,
+        CredentialManagerException, KeyManagerException, CryptoEngineException {
+      return this.engine.createPresentationTokenFirstChoice(username, p);
+    }
+
+    @Override
+    public synchronized IssuMsgOrCredDesc issuanceProtocolStepFirstChoice(String username, IssuanceMessage im)
+        throws CannotSatisfyPolicyException, CryptoEngineException, CredentialManagerException,
+        KeyManagerException {
+      return this.engine.issuanceProtocolStepFirstChoice(username, im);
+    }
+
+	@Override
+	public List<String> createHumanReadablePresentationPolicy(
+			PresentationPolicyAlternatives ppa) throws KeyManagerException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<String> createHumanReadableIssuancePolicy(IssuancePolicy ip)
+			throws KeyManagerException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

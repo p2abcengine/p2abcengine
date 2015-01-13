@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -20,6 +19,13 @@
 //* under the License.                                                *
 //*/**/****************************************************************
 
+// * Licensed Materials - Property of IBM *
+// * eu.abc4trust.pabce.1.0 *
+// * (C) Copyright IBM Corp. 2012. All Rights Reserved. *
+// * US Government Users Restricted Rights - Use, duplication or *
+// * disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
+// */**/****************************************************************
+
 package eu.abc4trust.keyManager;
 
 import java.io.BufferedOutputStream;
@@ -32,11 +38,7 @@ import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-
-import javax.xml.bind.JAXBException;
-
-import org.xml.sax.SAXException;
+import java.util.List;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -51,11 +53,11 @@ import eu.abc4trust.xml.SystemParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class KeyManagerPrinter implements KeyManager {
-  
+
   private static final String PATH = "target/outputXml/";
-  
+
   private final KeyManager km;
-  
+
   @Inject
   KeyManagerPrinter(@Named("RealKeyManager") KeyManager km) {
     this.km = km;
@@ -69,14 +71,14 @@ public class KeyManagerPrinter implements KeyManager {
   @Override
   public boolean storeIssuerParameters(URI issuid, IssuerParameters issuerParameters)
       throws KeyManagerException {
-    
+
     String filename = PATH + "ip-" + issuid.toString().replace("/", "_").replace(':', '_') + ".obj";
-    
+
     try {
       (new File(PATH)).mkdir();
-      OutputStream file = new FileOutputStream( filename );
-      OutputStream buffer = new BufferedOutputStream( file );
-      ObjectOutput output = new ObjectOutputStream( buffer );
+      OutputStream file = new FileOutputStream(filename);
+      OutputStream buffer = new BufferedOutputStream(file);
+      ObjectOutput output = new ObjectOutputStream(buffer);
       output.writeObject(issuerParameters);
       output.close();
       System.out.println("Wrote issuer parameters to " + filename);
@@ -110,29 +112,44 @@ public class KeyManagerPrinter implements KeyManager {
   }
 
   @Override
+  public void storeRevocationInformation(URI informationUID,
+      RevocationInformation revocationInformation) throws KeyManagerException {
+    km.storeRevocationInformation(informationUID, revocationInformation);
+  }
+
+  @Override
   public RevocationInformation getRevocationInformation(URI rapuid, URI revinfouid)
       throws KeyManagerException {
     return km.getRevocationInformation(rapuid, revinfouid);
   }
 
   @Override
+  public void storeCurrentRevocationInformation(RevocationInformation revocationInformation)
+      throws KeyManagerException {
+
+    km.storeCurrentRevocationInformation(revocationInformation);
+
+  }
+
+  @Override
   public boolean storeRevocationAuthorityParameters(URI issuid,
       RevocationAuthorityParameters revocationAuthorityParameters) throws KeyManagerException {
-    
-    String filename = PATH + "rap-" + issuid.toString().replace("/", "_").replace(':', '_') + ".obj";
-    
+
+    String filename =
+        PATH + "rap-" + issuid.toString().replace("/", "_").replace(':', '_') + ".obj";
+
     try {
       (new File(PATH)).mkdir();
-      OutputStream file = new FileOutputStream( filename );
-      OutputStream buffer = new BufferedOutputStream( file );
-      ObjectOutput output = new ObjectOutputStream( buffer );
+      OutputStream file = new FileOutputStream(filename);
+      OutputStream buffer = new BufferedOutputStream(file);
+      ObjectOutput output = new ObjectOutputStream(buffer);
       output.writeObject(revocationAuthorityParameters);
       output.close();
       System.out.println("Wrote RA parameters to " + filename);
     } catch (Exception e) {
       System.err.println("Could not write RA parameters to " + filename);
     }
-    
+
     return km.storeRevocationAuthorityParameters(issuid, revocationAuthorityParameters);
   }
 
@@ -145,8 +162,8 @@ public class KeyManagerPrinter implements KeyManager {
   @Override
   public boolean storeCredentialSpecification(URI uid,
       CredentialSpecification credentialSpecification) throws KeyManagerException {
-    
-    boolean ret =  km.storeCredentialSpecification(uid, credentialSpecification);
+
+    boolean ret = km.storeCredentialSpecification(uid, credentialSpecification);
     String filename = PATH + "cs-" + uid.toString().replace("/", "_").replace(':', '_') + ".xml";
     try {
       (new File(PATH)).mkdir();
@@ -156,10 +173,10 @@ public class KeyManagerPrinter implements KeyManager {
       out.println(xml);
       out.close();
       System.out.println("Stored credential spec " + uid + " at " + filename);
-    } catch(Exception e) {
+    } catch (Exception e) {
       System.err.println("Cannot store credential spec " + uid + " at " + filename);
     }
-    
+
     return ret;
   }
 
@@ -167,20 +184,20 @@ public class KeyManagerPrinter implements KeyManager {
   public boolean storeSystemParameters(SystemParameters systemParameters)
       throws KeyManagerException {
     BigInteger r = new BigInteger(30, new SecureRandom());
-    String filename = PATH + "sp-"+r+".obj";
-    
+    String filename = PATH + "sp-" + r + ".obj";
+
     try {
       (new File(PATH)).mkdir();
-      OutputStream file = new FileOutputStream( filename );
-      OutputStream buffer = new BufferedOutputStream( file );
-      ObjectOutput output = new ObjectOutputStream( buffer );
+      OutputStream file = new FileOutputStream(filename);
+      OutputStream buffer = new BufferedOutputStream(file);
+      ObjectOutput output = new ObjectOutputStream(buffer);
       output.writeObject(systemParameters);
       output.close();
       System.out.println("Wrote system parameters to " + filename);
     } catch (Exception e) {
       System.err.println("Could not write sysmtem parameters to " + filename);
     }
-    
+
     return km.storeSystemParameters(systemParameters);
   }
 
@@ -195,25 +212,13 @@ public class KeyManagerPrinter implements KeyManager {
   }
 
   @Override
-  public void storeRevocationInformation(URI informationUID,
-      RevocationInformation revocationInformation) throws KeyManagerException {
-    km.storeRevocationInformation(informationUID, revocationInformation);
-  }
-
-  @Override
   public RevocationInformation getLatestRevocationInformation(URI rapuid)
       throws KeyManagerException {
     return km.getLatestRevocationInformation(rapuid);
   }
 
   @Override
-  public ArrayList<?> getCredentialTokens(URI uid){
-  return km.getCredentialTokens(uid);
+  public List<URI> listIssuerParameters() throws KeyManagerException {
+    return km.listIssuerParameters();
   }
-
-  @Override
-  public void storeCredentialTokens(URI uid, ArrayList<?> tokens) throws KeyManagerException {
-  km.storeCredentialTokens(uid, tokens);
-  }
-
 }

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,7 +34,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Random;
 
 import org.junit.Test;
@@ -38,8 +41,7 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import eu.abc4trust.abce.testharness.BridgingModuleFactory;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
 import eu.abc4trust.ri.servicehelper.FileSystem;
 import eu.abc4trust.services.Constants;
@@ -54,7 +56,7 @@ public class ITIssuanceProtocol extends ITAbstract {
 
     static ObjectFactory of = new ObjectFactory();
 
-    final String baseUrl = "http://localhost:9500/abce-services/issuer";
+    final String baseUrl = "http://localhost:9200/abce-services/issuer";
 
     @Test
     public void issuanceProtocolIdemix() throws Exception {
@@ -72,7 +74,7 @@ public class ITIssuanceProtocol extends ITAbstract {
         this.issuanceProtocol(engineSuffix);
     }
 
-    private void issuanceProtocol(String engineSuffix) throws Exception {
+    private void issuanceProtocol(String engineSuffix) throws Exception {      
         String credentialSpecificationFilename = "credentialSpecificationSimpleIdentitycard.xml";
         CredentialSpecification credentialSpecification = (CredentialSpecification) XmlUtils
                 .getObjectFromXML(
@@ -81,14 +83,14 @@ public class ITIssuanceProtocol extends ITAbstract {
 
 
         this.copyCredentialSpecification(credentialSpecificationFilename);
-
-        this.deleteStorageDirectory();
-
+        
         IssuerServiceFactory issuerServiceFactory = new IssuerServiceFactory();
 
+        issuerServiceFactory.deleteStorageDirectory();
+        issuerServiceFactory.deleteResourcesDirectory();
+
         SystemParameters systemParameters = issuerServiceFactory
-                .getSystemParameters(80,
-                        URI.create("urn:abc4trust:1.0:algorithm:idemix"));
+                .getSystemParameters(1024);
 
         String issuerParametersUid = "http://my.country/identitycard/issuancekey_v1.0:"
                 + engineSuffix;
@@ -96,72 +98,16 @@ public class ITIssuanceProtocol extends ITAbstract {
                 .getIssuerParameters(issuerParametersUid);
 
 
-        Injector userInjector = Guice.createInjector(BridgingModuleFactory
-                .newModule(new Random(1987), UProveUtils.UPROVE_COMMON_PORT));
+        Injector userInjector = Guice.createInjector(IntegrationModuleFactory
+                .newModule(new Random(1987)));
 
         IssuMsgOrCredDesc userIm = issuerServiceFactory.issueCredential(
                 credentialSpecification,
                 issuerServiceFactory, systemParameters, issuerParametersUid,
                 issuerParameters,
-                userInjector).first();
+                userInjector).first;
         assertNull(userIm.im);
-        assertNotNull(userIm.cd);
-    }
-
-    private void deleteStorageDirectory() {
-        File directory1 = new File("target" + File.separatorChar
-                + "issuer_storage");
-        File directory2 = new File("abce-services" + File.separatorChar
-                + "target" + File.separatorChar + "issuer_storage");
-
-        this.delete(directory1);
-        this.delete(directory2);
-
-    }
-
-    private void delete(File directory) {
-        if (directory.exists()) {
-            this.deleteBody(directory);
-        }
-
-    }
-
-    private void deleteBody(File file) {
-        if (file.isDirectory()) {
-
-            // directory is empty, then delete it
-            if (file.list().length == 0) {
-
-                file.delete();
-                System.out.println("Directory is deleted : "
-                        + file.getAbsolutePath());
-
-            } else {
-
-                // list all the directory contents
-                String files[] = file.list();
-
-                for (String temp : files) {
-                    // construct the file structure
-                    File fileDelete = new File(file, temp);
-
-                    // recursive delete
-                    this.deleteBody(fileDelete);
-                }
-
-                // check the directory again, if empty then delete it
-                if (file.list().length == 0) {
-                    file.delete();
-                    System.out.println("Directory is deleted : "
-                            + file.getAbsolutePath());
-                }
-            }
-
-        } else {
-            // if file, then delete it
-            file.delete();
-            System.out.println("File is deleted : " + file.getAbsolutePath());
-        }
+        assertNotNull(userIm.cd);        
     }
 
     private void copyCredentialSpecification(String filename)

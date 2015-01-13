@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -25,20 +24,32 @@ package eu.abc4trust.cryptoEngine.inspector;
 import java.net.URI;
 import java.util.List;
 
+import eu.abc4trust.cryptoEngine.CryptoEngineException;
+import eu.abc4trust.returnTypes.InspectorPublicAndSecretKey;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
+import eu.abc4trust.xml.IssuanceToken;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.SystemParameters;
 
 public class MockCryptoEngineInspector implements CryptoEngineInspector {
 
   @Override
-  public InspectorPublicKey setupInspectorPublicKey(int keylength, URI mechanism, URI uid) {
+  public List<Attribute> inspect(PresentationToken t) {
     // TODO Auto-generated method stub
     return null;
   }
 
   @Override
-  public List<Attribute> inspect(PresentationToken t) {
+  public InspectorPublicAndSecretKey setupInspectorPublicKey(SystemParameters sp, URI mechanism, URI uid,
+      List<FriendlyDescription> friendlyInspectorDescription) throws CryptoEngineException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<Attribute> inspect(IssuanceToken issuanceToken) throws CryptoEngineException {
     // TODO Auto-generated method stub
     return null;
   }

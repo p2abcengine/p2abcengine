@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -75,7 +79,6 @@ public class WebServiceCommunicationStrategy implements RevocationProxyCommunica
     private RevocationMessage getRevocationMessageFromServer(Reference reference, RevocationMessage m) throws RevocationProxyException {
 
       URI revocationServiceURI = getRevocationServiceURI(reference);
-      System.out.println("WebServiceCommunicationStrategy.getRevocationMessageFromServer : " + reference.getReferenceType() + " : " + revocationServiceURI);
 
       // 
       ObjectFactory of = new ObjectFactory();
@@ -94,6 +97,12 @@ public class WebServiceCommunicationStrategy implements RevocationProxyCommunica
       resp.setRevocationAuthorityParametersUID(m.getRevocationAuthorityParametersUID());
       
       ClientResponse cresp = revocationResource.post(ClientResponse.class, request);
+      
+      int status = cresp.getStatus();
+      if(status != 200){
+          throw new RevocationProxyException("Revocation Authority seems to be unavailable. Came back with the http status: "+status);
+      }  
+      
       InputStream respIS = cresp.getEntityInputStream();
       RevocationMessage result = null; 
       
@@ -111,7 +120,7 @@ public class WebServiceCommunicationStrategy implements RevocationProxyCommunica
             	  result = (RevocationMessage)ent.getValue();
               }else if(declaredType == NonRevocationEvidence.class ||declaredType == NonRevocationEvidenceUpdate.class ||declaredType == RevocationInformation.class){
             	  CryptoParams cp = of.createCryptoParams();
-            	  cp.getAny().add(ent);
+            	  cp.getContent().add(ent);
             	  result = of.createRevocationMessage();
             	  result.setContext(m.getContext());
             	  result.setRevocationAuthorityParametersUID(m.getRevocationAuthorityParametersUID());

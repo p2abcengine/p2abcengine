@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -32,76 +34,69 @@ import eu.abc4trust.xml.RevocationMessage;
 
 public class InMemoryCommunicationStrategy implements RevocationProxyCommunicationStrategy {
 
-    private final RevocationProxyAuthority otherProxy;
+  private final RevocationProxyAuthority otherProxy;
 
-    @Inject
-    public InMemoryCommunicationStrategy(RevocationProxyAuthority otherProxy) {
-        this.otherProxy = otherProxy;
+  @Inject
+  public InMemoryCommunicationStrategy(RevocationProxyAuthority otherProxy) {
+    this.otherProxy = otherProxy;
+  }
+
+  private RevocationMessageAndBoolean getResponceFromRevocationAuthority(RevocationMessage m,
+      Reference revocationInfoReference) throws Exception {
+
+    RevocationMessageAndBoolean msg = this.otherProxy.processRevocationMessage(m);
+    if (msg == null) {
+      throw new RuntimeException("Failed to receive message from service");
     }
 
-    private RevocationMessageAndBoolean getResponceFromRevocationAuthority(
-            RevocationMessage m, Reference revocationInfoReference)
-                    throws RevocationProxyException {
-
-        RevocationMessageAndBoolean msg = this.otherProxy
-                .processRevocationMessage(m);
-        if (msg==null) {
-            throw new RuntimeException("Failed to receive message from service");
-        }
-
-        if (msg.revmess == null) {
-            throw new RuntimeException(
-                    "Failed to obtain revocation information");
-        }
-        return msg;
+    if (msg.revmess == null) {
+      throw new RuntimeException("Failed to obtain revocation information");
     }
+    return msg;
+  }
 
-    @Override
-    public CryptoParams requestRevocationHandle(RevocationMessage m,
-            Reference nonRevocationEvidenceReference)
-                    throws RevocationProxyException {
-        RevocationMessageAndBoolean msg = this
-                .getResponceFromRevocationAuthority(m,
-                        nonRevocationEvidenceReference);
+  @Override
+  public CryptoParams requestRevocationHandle(RevocationMessage m,
+      Reference nonRevocationEvidenceReference) throws Exception {
+    RevocationMessageAndBoolean msg =
+        this.getResponceFromRevocationAuthority(m, nonRevocationEvidenceReference);
 
-        CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().addAll(msg.revmess.getCryptoParams().getAny());
-        return cryptoParams;
-    }
+    CryptoParams cryptoParams = new CryptoParams();
+    cryptoParams.getContent().addAll(msg.revmess.getCryptoParams().getContent());
+    return cryptoParams;
+  }
 
-    @Override
-    public CryptoParams requestRevocationInformation(RevocationMessage m,
-            Reference revocationInfoReference) throws RevocationProxyException {
-        RevocationMessageAndBoolean msg = this
-                .getResponceFromRevocationAuthority(m, revocationInfoReference);
+  @Override
+  public CryptoParams requestRevocationInformation(RevocationMessage m,
+      Reference revocationInfoReference) throws Exception {
+    RevocationMessageAndBoolean msg =
+        this.getResponceFromRevocationAuthority(m, revocationInfoReference);
 
-        CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().addAll(msg.revmess.getCryptoParams().getAny());
-        return cryptoParams;
-    }
+    CryptoParams cryptoParams = new CryptoParams();
+    cryptoParams.getContent().addAll(msg.revmess.getCryptoParams().getContent());
+    return cryptoParams;
+  }
 
-    @Override
-    public CryptoParams revocationEvidenceUpdate(RevocationMessage m,
-            Reference nonRevocationEvidenceUpdateReference)
-                    throws RevocationProxyException {
-        RevocationMessageAndBoolean msg = this
-                .getResponceFromRevocationAuthority(m,
-                        nonRevocationEvidenceUpdateReference);
+  @Override
+  public CryptoParams revocationEvidenceUpdate(RevocationMessage m,
+      Reference nonRevocationEvidenceUpdateReference) throws Exception {
+    RevocationMessageAndBoolean msg =
+        this.getResponceFromRevocationAuthority(m, nonRevocationEvidenceUpdateReference);
 
-        CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().addAll(msg.revmess.getCryptoParams().getAny());
-        return cryptoParams;
-    }
+    CryptoParams cryptoParams = new CryptoParams();
+    cryptoParams.getContent().addAll(msg.revmess.getCryptoParams().getContent());
+    return cryptoParams;
+  }
 
-    @Override
-    public CryptoParams getCurrentRevocationInformation(RevocationMessage m,
-            Reference revocationInfoReference) throws RevocationProxyException {
-        RevocationMessageAndBoolean msg = this
-                .getResponceFromRevocationAuthority(m, revocationInfoReference);
+  @Override
+  public CryptoParams getCurrentRevocationInformation(RevocationMessage m,
+      Reference revocationInfoReference) throws Exception {
+    RevocationMessageAndBoolean msg =
+        this.getResponceFromRevocationAuthority(m, revocationInfoReference);
 
-        CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().addAll(msg.revmess.getCryptoParams().getAny());
-        return cryptoParams;
-    }
+    CryptoParams cryptoParams = new CryptoParams();
+    cryptoParams.getContent().addAll(msg.revmess.getCryptoParams().getContent());
+    return cryptoParams;
+  }
 
 }

@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -29,6 +31,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.google.inject.util.Providers;
 
+@Deprecated
 public class AbceConfigurationModule extends AbstractModule {
   private final AbceConfiguration configuration;
   
@@ -73,18 +76,11 @@ public class AbceConfigurationModule extends AbstractModule {
     }
     this.bind(Integer.class).annotatedWith(Names.named("NumberOfCredentialsToGenerate"))
         .toInstance(numberOfCredentialsToGenerate);
-    File uProveWorkingDirectory = this.configuration.getUProveWorkingDirectory();
 
     // We bind to providers, since the variables might be null
-    this.bind(File.class).annotatedWith(Names.named("UProveWorkingDirectory"))
-        .toProvider(Providers.of(uProveWorkingDirectory));
-    this.bind(String.class).annotatedWith(Names.named("PathToUProveExe"))
-         .toProvider(Providers.of(this.configuration.getUProvePathToExe()));
     this.bind(Integer.class).annotatedWith(Names.named("UProveRetryTimeout"))
         .toProvider(Providers.of(this.configuration.getUProveRetryTimeout()));
     this.bind(Integer.class).annotatedWith(Names.named("RetryTimeout"))
         .toProvider(Providers.of(this.configuration.getUProveRetryTimeout()));
-    this.bind(Integer.class).annotatedWith(Names.named("UProvePortNumber"))
-        .toProvider(Providers.of(this.configuration.getUProvePortNumber()));
   }
 }

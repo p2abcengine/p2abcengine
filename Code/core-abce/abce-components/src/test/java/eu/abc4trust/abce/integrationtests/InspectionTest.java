@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -27,51 +31,51 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.math.BigInteger;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.junit.Ignore;
+import javax.xml.bind.JAXBException;
+
 import org.junit.Test;
+import org.xml.sax.SAXException;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
 
-import edu.rice.cs.plt.tuple.Pair;
+import eu.abc4trust.TestConfiguration;
+import eu.abc4trust.abce.external.inspector.InspectorAbcEngine;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
 import eu.abc4trust.abce.external.revocation.RevocationAbcEngine;
 import eu.abc4trust.abce.external.verifier.VerifierAbcEngine;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory.IssuerCryptoEngine;
+import eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManagerException;
+import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
+import eu.abc4trust.abce.testharness.IntegrationModuleFactory;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
-import eu.abc4trust.abce.testharness.PolicySelector;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspector;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveBindingManager;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
 import eu.abc4trust.exceptions.TokenVerificationException;
+import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.keyManager.KeyManager;
+import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.revocationProxy.revauth.RevocationProxyAuthority;
 import eu.abc4trust.util.CryptoUriUtil;
 import eu.abc4trust.util.attributeEncoding.MyAttributeEncodingFactory;
 import eu.abc4trust.util.attributeTypes.MyAttributeValue;
 import eu.abc4trust.xml.Attribute;
-import eu.abc4trust.xml.AttributeInPolicy;
-import eu.abc4trust.xml.CredentialInPolicy;
-import eu.abc4trust.xml.CredentialInToken;
+import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
-import eu.abc4trust.xml.ObjectFactory;
-import eu.abc4trust.xml.PresentationPolicy;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.Reference;
@@ -85,13 +89,16 @@ import eu.abc4trust.xml.util.XmlUtils;
  * This test checks 3 things:
  * That a user can get issued a simple identity card with firstname, lastname, and birthday.
  * That the cryptoengines can handle inspectable attributes.
- * That the inspection engine can decrypt an inspectable attribute of a presentationtoken. 
+ * That the inspection engine can decrypt an inspectable attribute of a presentationtoken.
  */
 public class InspectionTest {
 
+  private static final String USERNAME = "defaultUser";
     private static final String NAME = "John";
     private static final String LASTNAME = "Dow";
+    private static final String BIRTHDAY = "1990-02-06Z";
     private static final String CREDENTIAL_SPECIFICATION_ID_CARD = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationSimpleIdentitycard.xml";
+    private static final String CREDENTIAL_SPECIFICATION_ID_CARD_UTF = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationSimpleIdentitycardUTFEncoded.xml";
     private static final String CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationRevocationSimpleIdentitycard.xml";
     private static final String CREDENTIAL_SPECIFICATION_STUDENT_CARD = "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationStudentCard.xml";
     private static final String ISSUANCE_POLICY_ID_CARD = "/eu/abc4trust/sampleXml/issuance/issuancePolicySimpleIdentitycard.xml";
@@ -99,966 +106,860 @@ public class InspectionTest {
     private static final String PRESENTATION_POLICY_CREDENTIALS = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicySimpleIdentitycardWithInspection.xml";
     private static final String PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_SAME_INSPECTOR = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyMultipleAttributesInspection.xml";
     private static final String PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_DIFFERENT_INSPECTORS = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyMultipleAttributesDifferentInspectors.xml";
-    private static final String PRESENTATION_POLICY_SAME_ATTRIBUTE_MULTIPLE_INSPECTORS = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyMultipleInspectorsSingleAttribute.xml";
     private static final String PRESENTATION_POLICY_INSPECT_AND_REVOKABLE = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyInspectionAndRevocation.xml";
     private static final String PRESENTATION_POLICY_TWO_CREDS_SAME_ATTRIBUTE = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicyInspectSameAttributeTwoCredentials.xml";
-    
+    private static final String PRESENTATION_POLICY_SIMPLE_STUDENT_CARD = "/eu/abc4trust/sampleXml/presentationPolicies/presentationPolicySimpleStudentCard.xml";
+
     private static final URI INSPECTOR_URI = URI.create("http://thebestbank.com/inspector/pub_key_v1");
     private static final URI SECOND_INSPECTOR_URI = URI.create("http://inspector.com/inspector/pub_key_v1");
     private static final URI REVOCATION_PARAMETERS_UID = URI.create("revocationUID1");
-    private static final URI REVOCATION_PARAMETERS_UID2 = URI.create("revocationUID2");
-    
-  //  @Ignore
-    @Test
+
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void simpleInspectionIdemixTest() throws Exception {
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.IDEMIX, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsSingle(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), issuanceHelper, PRESENTATION_POLICY_CREDENTIALS, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        } 
+	    URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("GOVERNMENT", cl_technology, false);
+	    entities.addEntity("USER");
+	    entities.addEntity("VERIFIER");
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+	    runTestsSingle(keyLength, entities);
     }
 
-   // @Ignore
-    @Test
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void simpleInspectionUProveTest() throws Exception {
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.UPROVE, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsSingle(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), issuanceHelper, PRESENTATION_POLICY_CREDENTIALS, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+    	URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("GOVERNMENT", uprove_technology, false);
+	    entities.addEntity("USER");
+	    entities.addEntity("VERIFIER");
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+	    runTestsSingle(keyLength, entities);
     }
-    
-    @Ignore
-    @Test
+
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void multiInspectionUProveTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.UPROVE, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsMulti(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), issuanceHelper, PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_SAME_INSPECTOR, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+    	URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+	    int keyLength = 1024;
 
+	    Entities entities = new Entities();
+
+	    entities.addEntity("GOVERNMENT", uprove_technology, false);
+	    entities.addEntity("USER");
+	    entities.addEntity("VERIFIER");
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+	    runTestsMulti(keyLength, entities);
     }
-    
-   // @Ignore
-    @Test
+
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void multiInspectionIdemixTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.IDEMIX, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD,issuanceHelper);
-        
-        this.runTestsMulti(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), issuanceHelper, PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_SAME_INSPECTOR, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
-    }
-    
-   // @Ignore
-    @Test
+	    URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("GOVERNMENT", cl_technology, false);
+	    entities.addEntity("USER");
+	    entities.addEntity("VERIFIER");
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+	    runTestsMulti(keyLength, entities);
+   }
+
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void revocationInspectionIdemixTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.IDEMIX, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsRevocation(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), injectors.get(4), issuanceHelper, PRESENTATION_POLICY_INSPECT_AND_REVOKABLE, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+	    URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("GOVERNMENT", cl_technology, true);
+	    entities.addEntity("USER", true);
+	    entities.addEntity("VERIFIER", true);
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+	    runTestsRevocation(keyLength, entities);
     }
 
-    @Ignore
-    @Test
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void revocationInspectionUProveTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.UPROVE, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsRevocation(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), injectors.get(4), issuanceHelper, PRESENTATION_POLICY_INSPECT_AND_REVOKABLE, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+	    URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("GOVERNMENT", uprove_technology, true);
+	    entities.addEntity("USER", true);
+	    entities.addEntity("VERIFIER", true);
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+	    runTestsRevocation(keyLength, entities);    	
     }
     
-    @Test
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
+    public void revocationMultipleCredsInspectionIdemixTest() throws Exception{
+	    URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("ISSUER", cl_technology, true);
+	    entities.addEntity("USER", true);
+	    entities.addEntity("VERIFIER", true);
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+	    runTestsMultipleCredsRevocation(keyLength, entities);    	
+    }
+
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void idemixTwoAttributesTwoInspectorsTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.IDEMIX, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsDifferentInspectors(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), injectors.get(5), issuanceHelper, PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_DIFFERENT_INSPECTORS, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+	    URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("ISSUER", cl_technology, false);
+	    entities.addEntity("USER", false);
+	    entities.addEntity("VERIFIER", false);
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+	    entities.addEntity("INSPECTOR2", CryptoUriUtil.getIdemixMechanism(), false);
+
+
+	    runTestsDifferentInspectors(keyLength, entities);    	
     }
 
-    @Ignore
-    @Test
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void uproveTwoAttributesTwoInspectorsTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.UPROVE, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsDifferentInspectors(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), injectors.get(5), issuanceHelper, PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_DIFFERENT_INSPECTORS, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+	    URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("ISSUER", uprove_technology, false);
+	    entities.addEntity("USER", false);
+	    entities.addEntity("VERIFIER", false);
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+	    entities.addEntity("INSPECTOR2", CryptoUriUtil.getIdemixMechanism(), false);
+
+
+	    runTestsDifferentInspectors(keyLength, entities);
     }
-    
-    @Test
+
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void idemixTwoCredentialSameAttributeNameTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.IDEMIX, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsTwoCredSameAttribute(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(5), issuanceHelper, PRESENTATION_POLICY_TWO_CREDS_SAME_ATTRIBUTE);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
+	    URI cl_technology = Helper.getSignatureTechnologyURI("cl");
+	    int keyLength = 1024;
+
+	    Entities entities = new Entities();
+
+	    entities.addEntity("ISSUER", cl_technology, true);
+	    entities.addEntity("USER", true);
+	    entities.addEntity("VERIFIER", true);
+	    entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+	    runTestsTwoCredSameAttribute(keyLength, entities);
     }
 
-    @Ignore
-    @Test
+    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
     public void uproveTwoCredentialSameAttributeNameTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.UPROVE, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsTwoCredSameAttribute(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(5), issuanceHelper, PRESENTATION_POLICY_TWO_CREDS_SAME_ATTRIBUTE);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
-    }
-    
-    
-    @Ignore //this test only makes sense in relation to the uiselection
-    @Test //need to change presentation policy to make the test work
-    public void multiInspectionSameAttributeUProveTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper(); 
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.UPROVE, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD, issuanceHelper);
-        
-        this.runTestsMultiSame(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), injectors.get(5), issuanceHelper, PRESENTATION_POLICY_SAME_ATTRIBUTE_MULTIPLE_INSPECTORS, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
-    }
-    
-    @Ignore //this test only makes sense in relation to the uiselection
-    @Test
-    public void multiInspectionSameAttributeIdemixTest() throws Exception{
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-    	List<Injector> injectors = this.setupEngines(IssuerCryptoEngine.IDEMIX, CREDENTIAL_SPECIFICATION_ID_CARD, CREDENTIAL_SPECIFICATION_STUDENT_CARD,issuanceHelper);
-        
-        this.runTestsMultiSame(injectors.get(0), injectors.get(1), injectors.get(2), injectors.get(3), injectors.get(5), issuanceHelper, PRESENTATION_POLICY_SAME_ATTRIBUTE_MULTIPLE_INSPECTORS, CREDENTIAL_SPECIFICATION_ID_CARD);
-//        int exitCode = 0;
-//        for(Injector i: injectors){
-//        	exitCode = i.getInstance(UProveBindingManager.class)
-//                    .stop();
-//            assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        }
-    }
-    
-    
-    /**
-     * 	I believe we can improve our confidence in the correctness of the design
-		if the following unit tests were written:
-    	
-    	- Recover an attribute that is not an integer (e.g. UTF-8 string, or
-		a date). For now, just make sure we recover the same encoded value;
-		later we will want to recover the original value.
-		*** DONE, checking a sha-256 string and utf-8 string in multitest
-		
-    	- Two inspectable attributes from the same credential (same inspector)
-    	*** DONE
-    	
-    	- Two inspectable attributes from different credentials, but with
-		the same attribute name (e.g., a token with 2 credit cards) (same
-		inspector)
-		*** DONE
-		
-    	- Two different attributes are inspected by different inspectors
-    	*** DONE
-    	
-    	- The same attribute is inspected by different inspectors.
-    	* 
-    	
-    	- An attribute is inspected during issuance
-    	* ONLY MEANINGFUL FOR IDEMIX
-    	
-    	- Added: try with inspectable revocation formation. 
-    	*** DONE
-     */
-    
-    
-    public List<Injector> setupEngines(IssuerCryptoEngine chosenEngine, String credentialSpecification, String secondCredSpec, IssuanceHelper issuanceHelper) throws Exception{
+    	URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+    	int keyLength = 1024;
 
-    	List<Injector> injectors = new ArrayList<Injector>();
-        UProveUtils uproveUtils = new UProveUtils();
+    	Entities entities = new Entities();
 
-   /*     Injector revocationInjector = Guice
-                .createInjector(new BridgingTestModule(new Random(1231),
-                        CryptoEngine.IDEMIX,22999)); 
-     */
+    	entities.addEntity("ISSUER", uprove_technology, true);
+    	entities.addEntity("USER", true);
+    	entities.addEntity("VERIFIER", true);
+    	entities.addEntity("INSPECTOR", CryptoUriUtil.getIdemixMechanism(), false);
+
+    	runTestsTwoCredSameAttribute(keyLength, entities);
+    }
+
+    private void runTestsSingle(int keyLength, Entities entities) throws Exception {
+    	// Setp up engines
+	    Collection<Injector> injectors = createEntities(entities);
+	    SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
+
+	    List<Object> parametersList = new ArrayList<Object>();
+
+	    // Setup issuers
+	    URI credentialTechnology = entities.getTechnology("GOVERNMENT");
+	    URI inspectorTechnology = entities.getTechnology("INSPECTOR");
+	    URI issuerParametersGovernmentUID =
+	        getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_ID_CARD);
+	    parametersList.add(setupIssuer(entities.getInjector("GOVERNMENT"), systemParameters,
+	      credentialTechnology, issuerParametersGovernmentUID, 3));
+
+	    parametersList.add(setupInspector(entities.getInjector("INSPECTOR"), InspectionTest.INSPECTOR_URI, systemParameters,
+	  	      inspectorTechnology));
+	    
+	    // Store all issuer parameters to all key managers
+	    entities.storePublicParametersToKeyManagers(parametersList);
+
+	    // Store all credential specifications to all key managers
+	    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_ID_CARD);
+
+	    IssuanceHelper issuanceHelper = new IssuanceHelper();
+		
+ 	   // Step 1. Get an idcard.
+	    System.out.println(">> Get idcard.");
+
+	    this.issueAndStoreIdcard(entities.getInjector("GOVERNMENT"), entities.getInjector("USER"), 
+	    		issuanceHelper, CREDENTIAL_SPECIFICATION_ID_CARD);
+	    
+        // Step 2. Use the idcard to create (and verify) a presentationtoken.
+        System.out.println(">> Verify.");
+
+        PresentationToken pt = this.createPresentationToken(
+                issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), PRESENTATION_POLICY_CREDENTIALS);
+	    assertNotNull(pt);
+
+        // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
+        System.out.println(">> Inspect.");
+        this.inspectSingle(pt, entities.getInjector("INSPECTOR"));
+	}
+
+    private void runTestsMulti(int keyLength, Entities entities) throws Exception {
+    	// Setp up engines
+	    Collection<Injector> injectors = createEntities(entities);
+	    SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
+
+	    List<Object> parametersList = new ArrayList<Object>();
+
+	    // Setup issuers
+	    URI credentialTechnology = entities.getTechnology("GOVERNMENT");
+	    URI inspectorTechnology = entities.getTechnology("INSPECTOR");
+	    URI issuerParametersGovernmentUID =
+	        getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_ID_CARD);
+	    parametersList.add(setupIssuer(entities.getInjector("GOVERNMENT"), systemParameters,
+	      credentialTechnology, issuerParametersGovernmentUID, 3));
+
+	    parametersList.add(setupInspector(entities.getInjector("INSPECTOR"), InspectionTest.INSPECTOR_URI, systemParameters,
+	  	      inspectorTechnology));
+	    
+	    // Store all issuer parameters to all key managers
+	    entities.storePublicParametersToKeyManagers(parametersList);
+
+	    // Store all credential specifications to all key managers
+	    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_ID_CARD);
+
+	    IssuanceHelper issuanceHelper = new IssuanceHelper();
+		
+ 	   // Step 1. Get an idcard.
+	    System.out.println(">> Get idcard.");
+
+	    this.issueAndStoreIdcard(entities.getInjector("GOVERNMENT"), entities.getInjector("USER"), 
+	    		issuanceHelper, CREDENTIAL_SPECIFICATION_ID_CARD);
+	    
+        // Step 2. Use the idcard to create (and verify) a presentationtoken.
+        System.out.println(">> Verify.");
+
+        PresentationToken pt = this.createPresentationToken(
+                issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_SAME_INSPECTOR);
+	    assertNotNull(pt);
+
+        // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
+        System.out.println(">> Inspect.");
+        this.inspectFirstNameAndBirthday(pt, entities.getInjector("INSPECTOR"));
+    }
+
+    private void runTestsRevocation(int keyLength, Entities entities) throws Exception {
+    	// Setp up engines
         Injector revocationInjector = Guice
-        			.createInjector(BridgingModuleFactory.newModule(new Random(1231),
-        					uproveUtils.getIssuerServicePort()));
+                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+                        CryptoEngine.IDEMIX));
         
         RevocationProxyAuthority revocationProxyAuthority = revocationInjector
                 .getInstance(RevocationProxyAuthority.class);
-
-        //Construct issuers
-        Injector governmentInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        chosenEngine, uproveUtils.getIssuerServicePort(), revocationProxyAuthority));
-                
-        //Construct user
-        Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(
-                new Random(1987), uproveUtils.getUserServicePort(), revocationProxyAuthority));
-
-        
-        //Construct verifier
-        Injector hotelInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                        uproveUtils.getVerifierServicePort(), revocationProxyAuthority)); 
-
-        //Construct inspector
-        Injector inspectorInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                uproveUtils.getInspectorServicePort(), revocationProxyAuthority)); 
-
-        //Construct inspector2
-        Injector secondInspectorInjector = Guice.createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                uproveUtils.getInspectorServicePort(), revocationProxyAuthority)); 
-
-        
-        injectors.add(governmentInjector);
-        injectors.add(userInjector);
-        injectors.add(hotelInjector);
-        injectors.add(inspectorInjector);
-        injectors.add(revocationInjector);
-        injectors.add(secondInspectorInjector);
-
-        int keyLength = 1024;
-        if(chosenEngine.equals(IssuerCryptoEngine.UPROVE)) keyLength = 2048;
-
-        IssuerAbcEngine governmentEngine = governmentInjector
-                .getInstance(IssuerAbcEngine.class);
-        
-        // Generate system parameters.
-        SystemParameters systemParameters = null;
-        if(chosenEngine==IssuerCryptoEngine.IDEMIX){
-            systemParameters = governmentEngine
-                    .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
-        } else {
-            systemParameters = governmentEngine
-                    .setupSystemParameters(keyLength, CryptoUriUtil.getUproveMechanism());
-
-            Injector idemixInjector = Guice
-                    .createInjector(BridgingModuleFactory.newModule(new Random(1231),
-                            IssuerCryptoEngine.IDEMIX, UProveUtils.UPROVE_COMMON_PORT));
-            IssuerAbcEngine idemixIssuer = idemixInjector.getInstance(IssuerAbcEngine.class);
-            SystemParameters idemixSystemParameters = idemixIssuer
-                    .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
-
-            systemParameters.getAny().addAll(idemixSystemParameters.getAny());
-        }
-
-
-        KeyManager inspectorKeyManager =inspectorInjector.getInstance(KeyManager.class);
-        KeyManager secondInspectorKeyManager =secondInspectorInjector.getInstance(KeyManager.class);
-        
-
-        KeyManager governmentKeyManager = governmentInjector
-                .getInstance(KeyManager.class);
-        KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
-        KeyManager hotelKeyManager = hotelInjector
-                .getInstance(KeyManager.class);
         KeyManager revocationKeyManager = revocationInjector
                 .getInstance(KeyManager.class);
-        
-        governmentKeyManager.storeSystemParameters(systemParameters);
-        userKeyManager.storeSystemParameters(systemParameters);
-        hotelKeyManager.storeSystemParameters(systemParameters);
-        inspectorKeyManager.storeSystemParameters(systemParameters);
-        secondInspectorKeyManager.storeSystemParameters(systemParameters);
-        revocationKeyManager.storeSystemParameters(systemParameters);
+    	
+	    Collection<Injector> injectors = createEntities(entities, revocationProxyAuthority);
+	    SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
+	    revocationKeyManager.storeSystemParameters(systemParameters);
+	    
+	    List<Object> parametersList = new ArrayList<Object>();
 
-        CryptoEngineInspector inspectorEngine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-        CryptoEngineInspector secondInspectorEngine = secondInspectorInjector.getInstance(CryptoEngineInspector.class);
-
-        
         RevocationAbcEngine revocationEngine = revocationInjector
                 .getInstance(RevocationAbcEngine.class);
-        URI revParamsUid = REVOCATION_PARAMETERS_UID;
-        Reference revocationInfoReference = new Reference();
-        revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getReferences().add(URI.create("example.org"));
-        Reference nonRevocationEvidenceReference = new Reference();
-        nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
-        Reference nonRrevocationUpdateReference = new Reference();
-        nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
-        RevocationAuthorityParameters revocationAuthorityParameters = revocationEngine
-                .setupRevocationAuthorityParameters(keyLength,
-                        CryptoUriUtil.getIdemixMechanism(), revParamsUid,
-                        revocationInfoReference,
-                        nonRevocationEvidenceReference,
-                        nonRrevocationUpdateReference);
 
-        URI revParamsUid2 = REVOCATION_PARAMETERS_UID2;
-        Reference revocationInfoReference2 = new Reference();
-        revocationInfoReference.setReferenceType(URI.create("https"));
-        revocationInfoReference.getReferences().add(URI.create("example.org"));
-        Reference nonRevocationEvidenceReference2 = new Reference();
-        nonRevocationEvidenceReference.setReferenceType(URI.create("https"));
-        nonRevocationEvidenceReference.getReferences().add(URI.create("example.org"));
-        Reference nonRrevocationUpdateReference2 = new Reference();
-        nonRrevocationUpdateReference.setReferenceType(URI.create("https"));
-        nonRrevocationUpdateReference.getReferences().add(URI.create("example.org"));
-        RevocationAuthorityParameters revocationAuthorityParameters2 = revocationEngine
-                .setupRevocationAuthorityParameters(keyLength,
-                        CryptoUriUtil.getIdemixMechanism(), revParamsUid2,
-                        revocationInfoReference2,
-                        nonRevocationEvidenceReference2,
-                        nonRrevocationUpdateReference2);
+        RevocationAuthorityParameters revocationAuthorityParameters = this.setupRevocationEngine(revocationInjector, REVOCATION_PARAMETERS_UID, keyLength);
+
+        // Setup issuer and inspector
+	    URI credentialTechnology = entities.getTechnology("GOVERNMENT");
+	    URI inspectorTechnology = entities.getTechnology("INSPECTOR");
+	    URI issuerParametersGovernmentUID =
+	        getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_ID_CARD);
+	    parametersList.add(setupIssuer(entities.getInjector("GOVERNMENT"), systemParameters,
+	      credentialTechnology, issuerParametersGovernmentUID, 4, REVOCATION_PARAMETERS_UID));
+
+	    parametersList.add(setupInspector(entities.getInjector("INSPECTOR"), InspectionTest.INSPECTOR_URI, systemParameters,
+	  	      inspectorTechnology));
+	    
+	    // Store all issuer and inspector parameters to all key managers
+	    entities.storePublicParametersToKeyManagers(parametersList);
+
+	    // Store all credential specifications to all key managers
+	    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
+
+	    addRevocationKeyManagers(entities, revocationAuthorityParameters);
+	    
+	    IssuanceHelper issuanceHelper = new IssuanceHelper();
+		
+ 	   // Step 1. Get an idcard.
+	    System.out.println(">> Get idcard.");
+	    CredentialDescription cd = this.issueAndStoreIdcard(entities.getInjector("GOVERNMENT"), entities.getInjector("USER"), 
+	    		issuanceHelper, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
+	    
+        // Step 2. Use the idcard to create (and verify) a presentationtoken.
+        System.out.println(">> Verify.");
+
+        PresentationToken pt = this.createPresentationTokenWithRevocation(
+                issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), PRESENTATION_POLICY_INSPECT_AND_REVOKABLE, REVOCATION_PARAMETERS_UID);
+	    assertNotNull(pt);
+
+        // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
+        System.out.println(">> Inspect.");
+        Attribute revocationHandleAttribute = this.inspectRevocation(pt, entities.getInjector("INSPECTOR"));
+
+        // Step 4. Revoke the credential.
+        this.revokeCredential(revocationInjector,
+                issuanceHelper, REVOCATION_PARAMETERS_UID, revocationHandleAttribute);
+
+        RevocationInformation revocationInformation = revocationEngine
+                .updateRevocationInformation(REVOCATION_PARAMETERS_UID);
         
-        // Store revocationauthority parameters
-        governmentKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-        userKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-        hotelKeyManager.storeRevocationAuthorityParameters(revParamsUid,
-                revocationAuthorityParameters);
-        
-        governmentKeyManager.storeRevocationAuthorityParameters(revParamsUid2,
-                revocationAuthorityParameters2);
-        userKeyManager.storeRevocationAuthorityParameters(revParamsUid2,
-                revocationAuthorityParameters2);
-        hotelKeyManager.storeRevocationAuthorityParameters(revParamsUid2,
-                revocationAuthorityParameters2);        
-        
-
-        // Setup issuance policies.
-        IssuancePolicy idcardIssuancePolicy = (IssuancePolicy) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                ISSUANCE_POLICY_ID_CARD), true);
-        URI idcardIssuancePolicyUid = idcardIssuancePolicy
-                .getCredentialTemplate().getIssuerParametersUID();
-
-        IssuancePolicy studentcardIssuancePolicy = (IssuancePolicy) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                ISSUANCE_POLICY_STUDENT_CARD), true);
-        URI studentcardIssuancePolicyUid = studentcardIssuancePolicy
-                .getCredentialTemplate().getIssuerParametersUID();
-        
-
-        // Load credential specifications.
-        CredentialSpecification idcardCredSpec = (CredentialSpecification) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                credentialSpecification), true);
-
-        CredentialSpecification studentcardCredSpec = (CredentialSpecification) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                secondCredSpec), true);
-        
-        // Store credential specifications.
-        governmentKeyManager.storeCredentialSpecification(
-                idcardCredSpec.getSpecificationUID(), idcardCredSpec);
-
-        userKeyManager.storeCredentialSpecification(
-                idcardCredSpec.getSpecificationUID(), idcardCredSpec);
-
-        hotelKeyManager.storeCredentialSpecification(
-                idcardCredSpec.getSpecificationUID(), idcardCredSpec);
-
-        inspectorKeyManager.storeCredentialSpecification(
-                idcardCredSpec.getSpecificationUID(), idcardCredSpec);
-        
-        secondInspectorKeyManager.storeCredentialSpecification(
-                idcardCredSpec.getSpecificationUID(), idcardCredSpec);
-
-        //store studentcard
-        governmentKeyManager.storeCredentialSpecification(
-                studentcardCredSpec.getSpecificationUID(), studentcardCredSpec);
-        userKeyManager.storeCredentialSpecification(
-        		studentcardCredSpec.getSpecificationUID(), studentcardCredSpec);
-        hotelKeyManager.storeCredentialSpecification(
-        		studentcardCredSpec.getSpecificationUID(), studentcardCredSpec);
-        inspectorKeyManager.storeCredentialSpecification(
-        		studentcardCredSpec.getSpecificationUID(), studentcardCredSpec);
-        secondInspectorKeyManager.storeCredentialSpecification(
-        		studentcardCredSpec.getSpecificationUID(), studentcardCredSpec);
-        
-        // Generate issuer parameters.
-        URI hash = new URI("urn:abc4trust:1.0:hashalgorithm:sha-256");
-        URI engineType = null;
-        if(chosenEngine==IssuerCryptoEngine.IDEMIX){
-            engineType = URI.create("Idemix");
-        } else {
-            engineType = URI.create("Uprove");
-        }
-
-        URI revocationId = new URI("revocationUID1");
-        IssuerParameters governmentIdcardIssuerParameters = governmentEngine
-                .setupIssuerParameters(idcardCredSpec, systemParameters,
-                        idcardIssuancePolicyUid, hash, engineType, revocationId, null);
-
-
-        // store issuance parameters for government and user.
-        governmentKeyManager.storeIssuerParameters(idcardIssuancePolicyUid,
-                governmentIdcardIssuerParameters);
-        userKeyManager.storeIssuerParameters(idcardIssuancePolicyUid,
-                governmentIdcardIssuerParameters);
-        hotelKeyManager.storeIssuerParameters(idcardIssuancePolicyUid,
-                governmentIdcardIssuerParameters);
-
-        URI revocationId2 = new URI("revocationUID2");
-        IssuerParameters governmentStudentcardIssuerParameters = governmentEngine
-                .setupIssuerParameters(studentcardCredSpec, systemParameters,
-                        studentcardIssuancePolicyUid, hash, engineType, revocationId2, null);
-
-
-        // store issuance parameters for government and user.
-        governmentKeyManager.storeIssuerParameters(studentcardIssuancePolicyUid,
-                governmentStudentcardIssuerParameters);
-        userKeyManager.storeIssuerParameters(studentcardIssuancePolicyUid,
-                governmentStudentcardIssuerParameters);
-        hotelKeyManager.storeIssuerParameters(studentcardIssuancePolicyUid,
-                governmentStudentcardIssuerParameters);
-
-        
-        InspectorPublicKey inspectorPubKey = inspectorEngine.setupInspectorPublicKey(2048,
-                            CryptoUriUtil.getIdemixMechanism(),
-                            InspectionTest.INSPECTOR_URI);
-        inspectorKeyManager.storeInspectorPublicKey(InspectionTest.INSPECTOR_URI, inspectorPubKey);
-        userKeyManager.storeInspectorPublicKey(InspectionTest.INSPECTOR_URI, inspectorPubKey);
-        hotelKeyManager.storeInspectorPublicKey(InspectionTest.INSPECTOR_URI, inspectorPubKey);
-            
-        InspectorPublicKey secondInspectorPubKey = secondInspectorEngine.setupInspectorPublicKey(2048,
-                    CryptoUriUtil.getIdemixMechanism(),
-                    InspectionTest.SECOND_INSPECTOR_URI);
-        inspectorKeyManager.storeInspectorPublicKey(InspectionTest.SECOND_INSPECTOR_URI, secondInspectorPubKey);
-        userKeyManager.storeInspectorPublicKey(InspectionTest.SECOND_INSPECTOR_URI, secondInspectorPubKey);
-        hotelKeyManager.storeInspectorPublicKey(InspectionTest.SECOND_INSPECTOR_URI, secondInspectorPubKey);    
-            
-
-        return injectors;
+        // Step 5. Verify revoked credential is revoked.
+        this.revokedCredentialsShouldNotBeAllowed(
+                entities.getInjector("USER"),
+                entities.getInjector("VERIFIER"), issuanceHelper, revocationInformation, cd.getCredentialUID());
     }
 
-       private void runTestsSingle(Injector governmentInjector, Injector userInjector,
-               Injector hotelInjector, Injector inspectorInjector, IssuanceHelper issuanceHelper, String presentationPolicy, String credSpec) throws Exception{
+    private void runTestsMultipleCredsRevocation(int keyLength, Entities entities) throws Exception {
+    	// Setp up engines
+    	Injector revocationInjector = Guice
+    			.createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+    					CryptoEngine.IDEMIX));
 
-           // Step 1. Get an idcard.
-           System.out.println(">> Get idcard.");
-           this.issueAndStoreIdcard(governmentInjector, userInjector,
-                   issuanceHelper, credSpec);
+    	RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+    			.getInstance(RevocationProxyAuthority.class);
+    	KeyManager revocationKeyManager = revocationInjector
+    			.getInstance(KeyManager.class);
+
+    	Collection<Injector> injectors = createEntities(entities, revocationProxyAuthority);
+    	SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
+    	revocationKeyManager.storeSystemParameters(systemParameters);
+
+    	List<Object> parametersList = new ArrayList<Object>();
+
+    	RevocationAbcEngine revocationEngine = revocationInjector
+    			.getInstance(RevocationAbcEngine.class);
+
+    	RevocationAuthorityParameters revocationAuthorityParameters = this.setupRevocationEngine(revocationInjector, REVOCATION_PARAMETERS_UID, keyLength);
+    	// Setup issuer and inspector
+    	URI credentialTechnology = entities.getTechnology("ISSUER");
+    	URI inspectorTechnology = entities.getTechnology("INSPECTOR");
+    	URI issuerParametersGovernmentUID =
+    			getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_ID_CARD);
+    	parametersList.add(setupIssuer(entities.getInjector("ISSUER"), systemParameters,
+    			credentialTechnology, issuerParametersGovernmentUID, 4, REVOCATION_PARAMETERS_UID));
+
+    	URI issuerParametersStudentcardUID =
+    			getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_STUDENT_CARD);
+    	parametersList.add(setupIssuer(entities.getInjector("ISSUER"), systemParameters,
+    			credentialTechnology, issuerParametersStudentcardUID, 7, REVOCATION_PARAMETERS_UID));
+
+    	parametersList.add(setupInspector(entities.getInjector("INSPECTOR"), InspectionTest.INSPECTOR_URI, systemParameters,
+    			inspectorTechnology));
+
+    	// Store all issuer and inspector parameters to all key managers
+    	entities.storePublicParametersToKeyManagers(parametersList);
+
+    	// Store all credential specifications to all key managers
+    	storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
+    	storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_STUDENT_CARD);
+
+    	addRevocationKeyManagers(entities, revocationAuthorityParameters);
+
+    	IssuanceHelper issuanceHelper = new IssuanceHelper();
+
+    	// Step 1. Get two idcards and a studentcard.
+    	System.out.println(">> Get idcard.");
+    	CredentialDescription cd = this.issueAndStoreIdcard(entities.getInjector("ISSUER"), entities.getInjector("USER"), 
+    			issuanceHelper, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
+
+    	CredentialDescription cd2 = this.issueAndStoreIdcard(entities.getInjector("ISSUER"), entities.getInjector("USER"), 
+    			issuanceHelper, CREDENTIAL_SPECIFICATION_REVOKABLE_ID_CARD);
+
+    	System.out.println(">> Get studentcard.");
+    	CredentialDescription cd3 = this.issueAndStoreStudentCard(entities.getInjector("ISSUER"), entities.getInjector("USER"),
+    			issuanceHelper, CREDENTIAL_SPECIFICATION_STUDENT_CARD);
+
+    	// Step 2a. Use the idcard to create (and verify) a presentationtoken.
+    	System.out.println(">> Verify.");
+
+    	PresentationToken pt = this.createPresentationTokenWithRevocation(
+    			issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), cd.getCredentialUID(), PRESENTATION_POLICY_INSPECT_AND_REVOKABLE, REVOCATION_PARAMETERS_UID);
+
+    	PresentationToken pt2 = this.createPresentationTokenWithRevocation(
+    			issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), cd2.getCredentialUID(), PRESENTATION_POLICY_INSPECT_AND_REVOKABLE, REVOCATION_PARAMETERS_UID);
+
+    	// Step 2b. Use Studentcard to create (and verify) a presentationtoken.
+    	PresentationToken studentCardPT = this.createPresentationTokenWithRevocation(
+    			issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), cd3.getCredentialUID(), PRESENTATION_POLICY_SIMPLE_STUDENT_CARD, REVOCATION_PARAMETERS_UID);
+    	assertNotNull(pt);
+
+    	// Step 3. Inspect the presentationtoken to reveal the revocation handle.
+    	System.out.println(">> Inspect.");
+    	Attribute revocationHandleAttribute = this.inspectRevocation(pt, entities.getInjector("INSPECTOR"));
 
 
-           // Step 2. Use the idcard to create (and verify) a presentationtoken.
-           System.out.println(">> Verify.");
+    	// Step 4. Revoke the credential.
+    	this.revokeCredential(revocationInjector,
+    			issuanceHelper, REVOCATION_PARAMETERS_UID, revocationHandleAttribute);
+
+    	RevocationInformation revocationInformation = revocationEngine
+    			.updateRevocationInformation(REVOCATION_PARAMETERS_UID);
+
+    	KeyManager hotelKeyManager = entities.getInjector("VERIFIER").getInstance(KeyManager.class);
+    	KeyManager userKeyManager = entities.getInjector("USER").getInstance(KeyManager.class);
+
+    	// Step 5. Verify revoked credential is revoked.
+    	this.revokedCredentialsShouldNotBeAllowed(
+    			entities.getInjector("USER"),
+    			entities.getInjector("VERIFIER"), issuanceHelper, revocationInformation, cd.getCredentialUID());
+    	userKeyManager.getLatestRevocationInformation(REVOCATION_PARAMETERS_UID);
+    	hotelKeyManager.getLatestRevocationInformation(REVOCATION_PARAMETERS_UID);
+    	entities.getInjector("USER").getInstance(CredentialManager.class).updateNonRevocationEvidence(USERNAME);
+
+    	// Step 6. Verify that studentCredential is still valid. 
+    	studentCardPT = this.createPresentationTokenWithRevocation(
+    			issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), cd3.getCredentialUID(), PRESENTATION_POLICY_SIMPLE_STUDENT_CARD, REVOCATION_PARAMETERS_UID);
+
+    	// Step 6b. Verify that id card 2 is still valid
+    	this.createPresentationTokenWithRevocation(
+    			issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), cd2.getCredentialUID(), PRESENTATION_POLICY_INSPECT_AND_REVOKABLE, REVOCATION_PARAMETERS_UID);
+    }
+    
+    private void runTestsDifferentInspectors(int keyLength, Entities entities) throws Exception {
+       	// Setp up engines
+	    Collection<Injector> injectors = createEntities(entities);
+	    SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
+
+	    List<Object> parametersList = new ArrayList<Object>();
+
+	    // Setup issuers
+	    URI credentialTechnology = entities.getTechnology("ISSUER");
+	    URI inspectorTechnology = entities.getTechnology("INSPECTOR");
+	    URI secondInspectorTechnology = entities.getTechnology("INSPECTOR2");
+	    URI issuerParametersGovernmentUID =
+	        getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_ID_CARD);
+	    parametersList.add(setupIssuer(entities.getInjector("ISSUER"), systemParameters,
+	      credentialTechnology, issuerParametersGovernmentUID, 3));
+
+	    parametersList.add(setupInspector(entities.getInjector("INSPECTOR"), InspectionTest.INSPECTOR_URI, systemParameters,
+	  	      inspectorTechnology));
+	    
+	    parametersList.add(setupInspector(entities.getInjector("INSPECTOR2"), InspectionTest.SECOND_INSPECTOR_URI, systemParameters,
+		  	      secondInspectorTechnology));
+		    
+	    // Store all issuer parameters to all key managers
+	    entities.storePublicParametersToKeyManagers(parametersList);
+
+	    // Store all credential specifications to all key managers
+	    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_ID_CARD_UTF);
+
+	    IssuanceHelper issuanceHelper = new IssuanceHelper();
         
-           PresentationToken pt = this.createPresentationToken(
-                   issuanceHelper, hotelInjector, userInjector, 0, presentationPolicy);
+ 	   // Step 1. Get an idcard.
+	    System.out.println(">> Get idcard.");
 
-           // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
-           System.out.println(">> Inspect.");
-           this.inspectSingle(pt, inspectorInjector);
-       }
-       
-       private void runTestsRevocation(Injector governmentInjector, Injector userInjector,
-               Injector hotelInjector, Injector inspectorInjector, Injector revocationInjector, IssuanceHelper issuanceHelper, String presentationPolicy, String credSpec) throws Exception{
+	    this.issueAndStoreIdcard(entities.getInjector("ISSUER"), entities.getInjector("USER"), 
+	    		issuanceHelper, CREDENTIAL_SPECIFICATION_ID_CARD_UTF);
+	    
+        // Step 2. Use the idcard to create (and verify) a presentationtoken.
+        System.out.println(">> Verify.");
 
-           // Step 1. Get an idcard.
-           System.out.println(">> Get idcard.");
-           this.issueAndStoreIdcard(governmentInjector, userInjector,
-                   issuanceHelper, credSpec);
+        PresentationToken pt = this.createPresentationToken(
+                issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), PRESENTATION_POLICY_MULTIPLE_ATTRIBUTES_DIFFERENT_INSPECTORS);
+	    assertNotNull(pt);
 
+        // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
+        System.out.println(">> Inspect.");
+        this.inspectDifferentInspectors(pt, entities.getInjector("INSPECTOR"), entities.getInjector("INSPECTOR2"));
+	}
 
-           // Step 2. Use the idcard to create (and verify) a presentationtoken.
-           System.out.println(">> Verify.");
+    private void runTestsTwoCredSameAttribute(int keyLength, Entities entities) throws Exception{
+       	// Setp up engines
+        Injector revocationInjector = Guice
+                .createInjector(IntegrationModuleFactory.newModule(new Random(1231),
+                        CryptoEngine.IDEMIX));
         
-           PresentationToken pt = this.createPresentationTokenWithRevocation(
-                   issuanceHelper, hotelInjector, userInjector, 0, presentationPolicy, REVOCATION_PARAMETERS_UID);
+        RevocationProxyAuthority revocationProxyAuthority = revocationInjector
+                .getInstance(RevocationProxyAuthority.class);
+        KeyManager revocationKeyManager = revocationInjector
+                .getInstance(KeyManager.class);
+    	
+	    Collection<Injector> injectors = createEntities(entities, revocationProxyAuthority);
 
-           // Step 3. Inspect the presentationtoken to reveal the revocation handle.
-           System.out.println(">> Inspect.");
-           Attribute revocationHandleAttribute = this.inspectRevocation(pt, inspectorInjector);
-           
-           // Step 4. Revoke the credential.
-           this.revokeCredential(revocationInjector,
-                   issuanceHelper, REVOCATION_PARAMETERS_UID, revocationHandleAttribute);
+	    SystemParameters systemParameters = Entities.setupSystemParameters(entities, keyLength);
+	    revocationKeyManager.storeSystemParameters(systemParameters);
+	    
+	    List<Object> parametersList = new ArrayList<Object>();
 
-           RevocationAbcEngine revocationEngine = revocationInjector.getInstance(RevocationAbcEngine.class);
-           
-           RevocationInformation revocationInformation = revocationEngine
-                   .updateRevocationInformation(REVOCATION_PARAMETERS_UID);
+	    RevocationAuthorityParameters revocationAuthorityParameters = this.setupRevocationEngine(revocationInjector, REVOCATION_PARAMETERS_UID, keyLength);
+	    addRevocationKeyManagers(entities, revocationAuthorityParameters);
+	    		
+	    // Setup issuers
+	    URI credentialTechnology = entities.getTechnology("ISSUER");
+	    URI inspectorTechnology = entities.getTechnology("INSPECTOR");
+	    URI issuerParametersGovernmentUID =
+	        getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_ID_CARD);
+	    parametersList.add(setupIssuer(entities.getInjector("ISSUER"), systemParameters,
+	      credentialTechnology, issuerParametersGovernmentUID, 3));
 
-           // Step 5. Verify revoked credential is revoked.
-           this.revokedCredentialsShouldNotBeAllowed(
-                   userInjector,
-                   hotelInjector, issuanceHelper, revocationInformation, 0);
-           
-           
-           
-       }
+	    parametersList.add(setupInspector(entities.getInjector("INSPECTOR"), InspectionTest.SECOND_INSPECTOR_URI, systemParameters,
+	  	      inspectorTechnology));
+	    
+	    URI issuerParametersStudentcardUID =
+    			getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_STUDENT_CARD);
+    	parametersList.add(setupIssuer(entities.getInjector("ISSUER"), systemParameters,
+    			credentialTechnology, issuerParametersStudentcardUID, 7, REVOCATION_PARAMETERS_UID));
+	        
+	    // Store all issuer parameters to all key managers
+	    entities.storePublicParametersToKeyManagers(parametersList);
 
-       private void runTestsMulti(Injector governmentInjector, Injector userInjector,
-               Injector hotelInjector, Injector inspectorInjector, IssuanceHelper issuanceHelper, String presentationPolicy, String credSpec) throws Exception{
+	    // Store all credential specifications to all key managers
+	    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_ID_CARD_UTF);
+    	storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_STUDENT_CARD);
 
-           // Step 1. Get an idcard.
-           System.out.println(">> Get idcard.");
-           this.issueAndStoreIdcard(governmentInjector, userInjector,
-                   issuanceHelper, credSpec);
-
-           // Step 2. Use the idcard to create (and verify) a presentationtoken.
-           System.out.println(">> Verify.");
+	    IssuanceHelper issuanceHelper = new IssuanceHelper();
         
-           PresentationToken pt = this.createPresentationToken(
-                   issuanceHelper, hotelInjector, userInjector, 0, presentationPolicy);
+ 	   // Step 1. Get an idcard and studentcard.
+	    System.out.println(">> Get idcard.");
 
-           // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
-           System.out.println(">> Inspect.");
-           this.inspectFirstAndLastName(pt, inspectorInjector);
-       }
-       
-       private void runTestsMultiSame(Injector governmentInjector, Injector userInjector,
-               Injector hotelInjector, Injector inspectorInjector, Injector inspectorInjector2, IssuanceHelper issuanceHelper, String presentationPolicy, String credSpec) throws Exception{
+	    CredentialDescription cd1 = this.issueAndStoreIdcard(entities.getInjector("ISSUER"), entities.getInjector("USER"), 
+	    		issuanceHelper, CREDENTIAL_SPECIFICATION_ID_CARD_UTF);
 
-           // Step 1. Get an idcard.
-           System.out.println(">> Get idcard.");
-           this.issueAndStoreIdcard(governmentInjector, userInjector,
-                   issuanceHelper, credSpec);
+        System.out.println(">> Get studentcard.");
+        CredentialDescription cd2 = this.issueAndStoreStudentCard(entities.getInjector("ISSUER"), entities.getInjector("USER"),
+                issuanceHelper, CREDENTIAL_SPECIFICATION_STUDENT_CARD);
 
-           // Step 2. Use the idcard to create (and verify) a presentationtoken.
-           System.out.println(">> Verify.");
-        
-           PresentationToken pt = this.createPresentationToken(
-                   issuanceHelper, hotelInjector, userInjector, 0, presentationPolicy);
+        // Step 2. Use the idcard to create (and verify) a presentationtoken.
+        System.out.println(">> Verify.");
 
-           // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
-           System.out.println(">> Inspect.");
-           this.inspectLastNameTwice(pt, inspectorInjector, inspectorInjector2);
-       }
-       
-       
-       private void runTestsDifferentInspectors(Injector governmentInjector, Injector userInjector,
-               Injector hotelInjector, Injector inspectorInjector, Injector secondInspectorInjector, IssuanceHelper issuanceHelper, String presentationPolicy, String credSpec) throws Exception{
+        PresentationToken pt = this.createPresentationToken(
+                issuanceHelper, entities.getInjector("VERIFIER"), entities.getInjector("USER"), PRESENTATION_POLICY_TWO_CREDS_SAME_ATTRIBUTE);
+        assertNotNull(pt);
 
-           // Step 1. Get an idcard.
-           System.out.println(">> Get idcard.");
-           this.issueAndStoreIdcard(governmentInjector, userInjector,
-                   issuanceHelper, credSpec);
+        // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
+        System.out.println(">> Inspect.");
+        this.inspectIdenticalAttributeInDifferentCredentials(pt, entities.getInjector("INSPECTOR"));
+    }
 
-           // Step 2. Use the idcard to create (and verify) a presentationtoken.
-           System.out.println(">> Verify.");
-        
-           PresentationToken pt = this.createPresentationToken(
-                   issuanceHelper, hotelInjector, userInjector, 0, presentationPolicy);
+    private CredentialDescription issueAndStoreIdcard(Injector governmentInjector,
+            Injector userInjector, IssuanceHelper issuanceHelper, String credSpec)
+                    throws Exception {
+        Map<String, Object> passportAtts = this.populateIdcardAttributes();
+        return issuanceHelper.issueCredential(USERNAME, governmentInjector, userInjector,
+                credSpec, ISSUANCE_POLICY_ID_CARD,
+                passportAtts, null);
+    }
 
-           // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
-           System.out.println(">> Inspect.");
-           this.inspectDifferentInspectors(pt, inspectorInjector, secondInspectorInjector);
-       }
+    private CredentialDescription issueAndStoreStudentCard(Injector governmentInjector,
+            Injector userInjector, IssuanceHelper issuanceHelper, String credSpec)
+                    throws Exception {
+        Map<String, Object> studentAtts = this.populateStudentcardAttributes();
+        return issuanceHelper.issueCredential(USERNAME, governmentInjector, userInjector,
+                credSpec, ISSUANCE_POLICY_STUDENT_CARD,
+                studentAtts, null);
+    }
 
-       private void runTestsTwoCredSameAttribute(Injector governmentInjector, Injector userInjector,
-               Injector hotelInjector, Injector inspectorInjector, IssuanceHelper issuanceHelper, String presentationPolicy) throws Exception{
+    private RevocationAuthorityParameters setupRevocationEngine(Injector revocationInjector, URI revParamsUid, int keyLength) throws Exception{
 
-           // Step 1. Get an idcard.
-           System.out.println(">> Get idcard.");
-           this.issueAndStoreIdcard(governmentInjector, userInjector,
-                   issuanceHelper, CREDENTIAL_SPECIFICATION_ID_CARD);
+        RevocationAbcEngine revocationEngine = revocationInjector
+                .getInstance(RevocationAbcEngine.class);
+        Reference revocationInfoReference = new Reference();
+        revocationInfoReference.setReferenceType(URI.create("url"));
+        revocationInfoReference.getReferences().add(URI.create("https://example.org/"));
+        Reference nonRevocationEvidenceReference = new Reference();
+        nonRevocationEvidenceReference.setReferenceType(URI.create("url"));
+        nonRevocationEvidenceReference.getReferences().add(URI.create("https://example.org/"));
+        Reference nonRrevocationUpdateReference = new Reference();
+        nonRrevocationUpdateReference.setReferenceType(URI.create("url"));
+        nonRrevocationUpdateReference.getReferences().add(URI.create("https://example.org/"));
+		return revocationEngine.setupRevocationAuthorityParameters(keyLength,
+                Helper.getRevocationTechnologyURI("cl"), revParamsUid,
+                revocationInfoReference,
+                nonRevocationEvidenceReference,
+                nonRrevocationUpdateReference);
 
-           System.out.println(">> Get studentcard.");
-           this.issueAndStoreStudentCard(governmentInjector, userInjector,
-                   issuanceHelper, CREDENTIAL_SPECIFICATION_STUDENT_CARD);
+    }
+    
+    private Map<String, Object> populateIdcardAttributes() {
+        Map<String, Object> att = new HashMap<String, Object>();
+        att.put("FirstName", NAME);
+        att.put("LastName", LASTNAME);
+        att.put("Birthday", BIRTHDAY);
+        return att;
+    }
 
-           // Step 2. Use the idcard to create (and verify) a presentationtoken.
-           System.out.println(">> Verify.");
-        
-           PresentationToken pt = this.createPresentationTokenWithRevocation(
-                   issuanceHelper, hotelInjector, userInjector, 0, presentationPolicy, REVOCATION_PARAMETERS_UID2);
+    private Map<String, Object> populateStudentcardAttributes() {
+        Map<String, Object> att = new HashMap<String, Object>();
+        att.put("Name", NAME);
+        att.put("LastName", LASTNAME);
+        att.put("StudentNumber", 1000);
+        att.put("Issued", "2012-11-11Z");
+        att.put("Expires", "2015-11-11Z");
+        att.put("IssuedBy", "University of X");
+        return att;
+    }
 
-           // Step 3. Inspect the presentationtoken to reveal the name on the idcard.
-           System.out.println(">> Inspect.");
-           this.inspectIdenticalAttributeInDifferentCredentials(pt, inspectorInjector);
-       }
-       
-       private void issueAndStoreIdcard(Injector governmentInjector,
-               Injector userInjector, IssuanceHelper issuanceHelper, String credSpec)
-                       throws Exception {
-           Map<String, Object> passportAtts = this.populateIdcardAttributes();
-           issuanceHelper.issueCredential(governmentInjector, userInjector,
-                   credSpec, ISSUANCE_POLICY_ID_CARD,
-                   passportAtts);
-       }
+    private PresentationToken createPresentationTokenWithRevocation(IssuanceHelper issuanceHelper,
+    		Injector hotelInjector, Injector userInjector,
+            String presentationPolicy, URI revParamsUid) throws Exception {
+      return createPresentationTokenWithRevocation(issuanceHelper, hotelInjector, userInjector, null, presentationPolicy, revParamsUid);
+    }
+    
+    private PresentationToken createPresentationTokenWithRevocation(IssuanceHelper issuanceHelper,
+            Injector hotelInjector, Injector userInjector,
+            URI selectedCredential, String presentationPolicy, URI revParamsUid)
+                    throws Exception {
 
-       private void issueAndStoreStudentCard(Injector governmentInjector,
-               Injector userInjector, IssuanceHelper issuanceHelper, String credSpec)
-                       throws Exception {
-           Map<String, Object> studentAtts = this.populateStudentcardAttributes();
-           issuanceHelper.issueCredential(governmentInjector, userInjector,
-                   credSpec, ISSUANCE_POLICY_STUDENT_CARD,
-                   studentAtts);
-       }
-       
-       private Map<String, Object> populateIdcardAttributes() {
-           Map<String, Object> att = new HashMap<String, Object>();
-           att.put("FirstName", NAME);
-           att.put("LastName", LASTNAME);
-           att.put("Birthday", "1990-02-06Z");
-           return att;
-       }
+        VerifierAbcEngine verifierEngine = hotelInjector
+                .getInstance(VerifierAbcEngine.class);
+        RevocationInformation revocationInformation = verifierEngine
+                .getLatestRevocationInformation(revParamsUid);
 
-       private Map<String, Object> populateStudentcardAttributes() {
-           Map<String, Object> att = new HashMap<String, Object>();
-           att.put("Name", NAME);
-           att.put("LastName", LASTNAME);
-           att.put("StudentNumber", 1000);
-           att.put("Issued", "2012-11-11Z");
-           att.put("Expires", "2015-11-11Z");
-           att.put("IssuedBy", "University of X");
-           return att;
-       }
-       
-       private PresentationToken createPresentationTokenWithRevocation(IssuanceHelper issuanceHelper,
-               Injector hotelInjector, Injector userInjector,
-               int pseudonymChoice, String presentationPolicy, URI revParamsUid)
-                       throws Exception {
-    	   int presentationTokenChoice = 0;
-           List<URI> chosenInspectors = new LinkedList<URI>();
-           
-           InputStream resourceAsStream = this.getClass().getResourceAsStream(
-                   presentationPolicy);
-           PresentationPolicyAlternatives presentationPolicyAlternatives = (PresentationPolicyAlternatives) XmlUtils
-                       .getObjectFromXML(
-                               resourceAsStream, true);
-           
-           for(PresentationPolicy pp: presentationPolicyAlternatives.getPresentationPolicy()){
-        	   for(CredentialInPolicy cip: pp.getCredential()){
-        		   for(AttributeInPolicy aip: cip.getDisclosedAttribute()){
-        			   chosenInspectors.add(aip.getInspectorAlternatives().getInspectorPublicKeyUID().get(0));  
-        		   }        	   
-        	   }
-        	   
-           }
-           
+        Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
+                .createPresentationToken(USERNAME, userInjector,
+                        presentationPolicy, revocationInformation, null);
 
-/*           chosenInspectors.add(URI
-                   .create("http://thebestbank.com/inspector/pub_key_v1"));
-           chosenInspectors.add(URI
-                   .create("http://thebestbank.com/inspector/pub_key_v1")); */
-           
-           VerifierAbcEngine verifierEngine = hotelInjector
-                   .getInstance(VerifierAbcEngine.class);
-           RevocationInformation revocationInformation = verifierEngine
-                   .getLatestRevocationInformation(revParamsUid);
-           PolicySelector polSelect = new PolicySelector(presentationTokenChoice, chosenInspectors,pseudonymChoice);
-           
-           
-           Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                   .createPresentationToken(userInjector, userInjector,
-                		   presentationPolicy, revocationInformation, polSelect);
+        PresentationToken pt = p.first;
+        assertNotNull(pt);
+        return issuanceHelper.verify(hotelInjector, p.second, p.first);
+    }
 
-           // Store all required cred specs in the verifier key manager.
-           KeyManager hotelKeyManager = hotelInjector.getInstance(KeyManager.class);
-           KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
+    private PresentationToken createPresentationToken(IssuanceHelper issuanceHelper,
+            Injector verifierInjector, Injector userInjector,
+            String presentationPolicy)
+                    throws Exception {
 
-           PresentationToken pt = p.first();
-           assertNotNull(pt);
-           for (CredentialInToken cit: pt.getPresentationTokenDescription().getCredential()){
-               hotelKeyManager.storeCredentialSpecification(
-                       cit.getCredentialSpecUID(),
-                       userKeyManager.getCredentialSpecification(cit.getCredentialSpecUID()));
-           }
+        Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
+                .createPresentationToken(USERNAME, userInjector, presentationPolicy, null, null);
 
-           return issuanceHelper.verify(hotelInjector, p.second(), p.first());
-       }
-       
-       
-       private PresentationToken createPresentationToken(IssuanceHelper issuanceHelper,
-               Injector hotelInjector, Injector userInjector,
-               int pseudonymChoice, String presentationPolicy)
-                       throws Exception {
-    	   int presentationTokenChoice = 0;
-           List<URI> chosenInspectors = new LinkedList<URI>();
-           
-           
-           InputStream resourceAsStream = this.getClass().getResourceAsStream(
-                   presentationPolicy);
-           PresentationPolicyAlternatives presentationPolicyAlternatives = (PresentationPolicyAlternatives) XmlUtils
-                       .getObjectFromXML(
-                               resourceAsStream, true);
-           
-           for(AttributeInPolicy aip: presentationPolicyAlternatives.getPresentationPolicy().get(0).getCredential().get(0).getDisclosedAttribute()){
-        	  chosenInspectors.add(aip.getInspectorAlternatives().getInspectorPublicKeyUID().get(0)); 
-           }
+        PresentationToken pt = p.first;
+        assertNotNull(pt);
+        return issuanceHelper.verify(verifierInjector, p.second, p.first);
+    }
 
-           /*
-           chosenInspectors.add(URI
-                   .create("http://thebestbank.com/inspector/pub_key_v1"));
-           chosenInspectors.add(URI
-                   .create("http://thebestbank.com/inspector/pub_key_v1"));
-           chosenInspectors = null;*/
-           PolicySelector polSelect = new PolicySelector(presentationTokenChoice, chosenInspectors,pseudonymChoice);
-           
-           
-           Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                   .createPresentationToken(userInjector, userInjector,
-                		   presentationPolicy, polSelect);
+    private void inspectFirstNameAndBirthday(PresentationToken pt, Injector inspectorInjector){
+        CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
+        try {
+            List<Attribute> inspectedAttributes = engine.inspect(pt);
 
-           // Store all required cred specs in the verifier key manager.
-           KeyManager hotelKeyManager = hotelInjector.getInstance(KeyManager.class);
-           KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
-
-           PresentationToken pt = p.first();
-           assertNotNull(pt);
-           for (CredentialInToken cit: pt.getPresentationTokenDescription().getCredential()){
-               hotelKeyManager.storeCredentialSpecification(
-                       cit.getCredentialSpecUID(),
-                       userKeyManager.getCredentialSpecification(cit.getCredentialSpecUID()));
-           }
-
-           return issuanceHelper.verify(hotelInjector, p.second(), p.first());
-       }
-       
-       private void inspectFirstAndLastName(PresentationToken pt, Injector inspectorInjector){
-           CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-           try {
-        	 //  ObjectFactory of = new ObjectFactory();
-        	 //  System.out.println("inspecting token:\n"+XmlUtils.toXml(of.createPresentationToken(pt)));
-			List<Attribute> inspectedAttributes = engine.inspect(pt);
-
-			assertEquals(inspectedAttributes.size(), 2);
-
-			Attribute inspectedFirstName = inspectedAttributes.get(1);
-			System.out.println("setting Firstname: "+inspectedFirstName.getAttributeDescription().getType());
-			Attribute inspectedLastName = inspectedAttributes.get(0);
-			MyAttributeValue firstname = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:utf-8"), NAME, null);
-			MyAttributeValue lastname = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
-			
-			System.out.println("inspected 1: "+inspectedFirstName.getAttributeValue()+"/"+firstname.getIntegerValueOrNull());
-			
-			System.out.println("inspected 2: "+inspectedLastName.getAttributeValue()+"/"+lastname.getIntegerValueOrNull());
-			assertEquals(inspectedFirstName.getAttributeValue(), firstname.getIntegerValueOrNull());
-			assertEquals(inspectedLastName.getAttributeValue(), lastname.getIntegerValueOrNull());
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new IllegalStateException("Test should not fail here!", e);
-		}
-           // Serialize PresentationToken - and re-inspect!
-           try {
-             System.out.println("Serialize Jaxb to String and Back");
-             String ptXml = XmlUtils.toXml(new ObjectFactory().createPresentationToken(pt));
-             PresentationToken ptJaxb = (PresentationToken) XmlUtils.getObjectFromXML(new ByteArrayInputStream(ptXml.getBytes()), true);
-            List<Attribute> inspectedAttributes = engine.inspect(ptJaxb);
-
-            assertNotNull("inspectedAttributes must not be null!", inspectedAttributes);
             assertEquals(inspectedAttributes.size(), 2);
+
+            Attribute inspectedFirstName = inspectedAttributes.get(1);
+            Attribute inspectedBirthday = inspectedAttributes.get(0);
             
-            Attribute inspectedAttr = inspectedAttributes.get(0);
-            MyAttributeValue val = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
-            assertEquals(inspectedAttr.getAttributeValue(), val.getIntegerValueOrNull());
+            assertEquals(NAME, inspectedFirstName.getAttributeValue());
+            assertEquals(BIRTHDAY, inspectedBirthday.getAttributeValue().toString());
         } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalStateException("Test should not fail here!", e);
         }
-       }
-       
-       private void inspectSingle(PresentationToken pt, Injector inspectorInjector){
-           CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-           try {
-        	   List<Attribute> inspectedAttributes = engine.inspect(pt);
-        	   assertEquals(inspectedAttributes.size(), 1);
+    }
 
-        	   Attribute inspectedAttr = inspectedAttributes.get(0);
-        	   MyAttributeValue originalValue = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
-        	   
-        	   assertEquals(inspectedAttr.getAttributeValue(), originalValue.getIntegerValueOrNull());
-           } catch (Exception e) {
-        	   e.printStackTrace();
-           }
-       }
-       
-       private void inspectIdenticalAttributeInDifferentCredentials(PresentationToken pt, Injector inspectorInjector){
-           CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-           try {
-        	   List<Attribute> inspectedAttributes = engine.inspect(pt);
-        	   assertEquals(inspectedAttributes.size(), 2);
+    private void inspectSingle(PresentationToken pt, Injector inspectorInjector){
+        CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
+        try {
+            List<Attribute> inspectedAttributes = engine.inspect(pt);
+            assertEquals(inspectedAttributes.size(), 1);
 
-        	   Attribute inspectedAttr = inspectedAttributes.get(0);
-        	   Attribute inspectedAttr2 = inspectedAttributes.get(1);
-        	   MyAttributeValue originalValue = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
-        	   
-        	   assertEquals(inspectedAttr.getAttributeValue(), originalValue.getIntegerValueOrNull());
-        	   assertEquals(inspectedAttr2.getAttributeValue(), originalValue.getIntegerValueOrNull());
-           } catch (Exception e) {
-        	   e.printStackTrace();
-           }
-       }
+            Attribute inspectedAttr = inspectedAttributes.get(0);
 
-       private Attribute inspectRevocation(PresentationToken pt, Injector inspectorInjector){
-           CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-           Attribute revokedHandle = null;
-           try {
-        	   List<Attribute> inspectedAttributes = engine.inspect(pt);
-        	   assertEquals(inspectedAttributes.size(), 2);
+            assertEquals(NAME,
+                    inspectedAttr.getAttributeValue());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-        	   Attribute inspectedAttr1 = inspectedAttributes.get(0);
-        	   MyAttributeValue lastnameValue = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
-        	   
-        	   revokedHandle = inspectedAttributes.get(1);
-        	   
-        	   assertEquals(inspectedAttr1.getAttributeValue(), lastnameValue.getIntegerValueOrNull());
-        	   System.out.println("returning revocationhandle: "+(BigInteger)MyAttributeEncodingFactory.recoverValueFromBigInteger(revokedHandle.getAttributeDescription().getEncoding(), (BigInteger)revokedHandle.getAttributeValue(), null).getValueAsObject());
-           } catch (Exception e) {
-        	   e.printStackTrace();
-           }
-           assertNotNull("Failed to inspect revocation handle!", revokedHandle);
-           return revokedHandle;
-       }
+    private void inspectIdenticalAttributeInDifferentCredentials(PresentationToken pt, Injector inspectorInjector){
+        CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
+        try {
+            List<Attribute> inspectedAttributes = engine.inspect(pt);
+            assertEquals(inspectedAttributes.size(), 2);
 
-       private void inspectDifferentInspectors(PresentationToken pt, Injector inspectorInjector, Injector secondInspectorInjector){
-           CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-           CryptoEngineInspector secondInspector = secondInspectorInjector.getInstance(CryptoEngineInspector.class);
-           try{
-        	   MyAttributeValue firstname = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:utf-8"), NAME, null);
-   				MyAttributeValue lastname = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
+            Attribute inspectedAttr = inspectedAttributes.get(0);
+            Attribute inspectedAttr2 = inspectedAttributes.get(1);
+            assertEquals(LASTNAME, inspectedAttr.getAttributeValue());
+            assertEquals(LASTNAME, inspectedAttr2.getAttributeValue());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-        	 //  ObjectFactory of = new ObjectFactory();
-        	 //  System.out.println("inspecting token:\n"+XmlUtils.toXml(of.createPresentationToken(pt)));
-   				List<Attribute> inspectedAttributes = engine.inspect(pt);
+    private Attribute inspectRevocation(PresentationToken pt, Injector inspectorInjector){
+        CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
+        Attribute revokedHandle = null;
+        try {
+            List<Attribute> inspectedAttributes = engine.inspect(pt);
+            assertEquals(inspectedAttributes.size(), 2);
 
-   				assertEquals(inspectedAttributes.size(),1 );
+            Attribute inspectedAttr1 = inspectedAttributes.get(0);
 
-   				Attribute inspectedFirstName = inspectedAttributes.get(0);
-   				System.out.println("inspected 1: "+inspectedFirstName.getAttributeValue()+"/"+firstname.getIntegerValueOrNull());
-   				assertEquals(inspectedFirstName.getAttributeValue(), firstname.getIntegerValueOrNull());
-   				
-   				inspectedAttributes = secondInspector.inspect(pt);
+            revokedHandle = inspectedAttributes.get(1);
 
-   				assertEquals(inspectedAttributes.size(),1 );
+            assertEquals(inspectedAttr1.getAttributeValue(), NAME);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        assertNotNull("Failed to inspect revocation handle!", revokedHandle);
+        return revokedHandle;
+    }
 
-   				Attribute inspectedLastName = inspectedAttributes.get(0);
-			
-   				System.out.println("inspected 2: "+inspectedLastName.getAttributeValue()+"/"+lastname.getIntegerValueOrNull());
-   				
-   				assertEquals(inspectedLastName.getAttributeValue(), lastname.getIntegerValueOrNull());
-           }catch(Exception e){
-        	   throw new RuntimeException(e);
-           }
-       }
-       
-       private void inspectLastNameTwice(PresentationToken pt, Injector inspectorInjector, Injector secondInspectorInjector){
-           CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
-           CryptoEngineInspector secondInspector = secondInspectorInjector.getInstance(CryptoEngineInspector.class);
-           try{
-   				MyAttributeValue lastname = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
+    private void inspectDifferentInspectors(PresentationToken pt, Injector inspectorInjector, Injector secondInspectorInjector){
+        CryptoEngineInspector engine = inspectorInjector.getInstance(CryptoEngineInspector.class);
+        CryptoEngineInspector secondInspector = secondInspectorInjector.getInstance(CryptoEngineInspector.class);
+        try{
+            MyAttributeValue lastname = MyAttributeEncodingFactory.parseValueFromEncoding(URI.create("urn:abc4trust:1.0:encoding:string:sha-256"), LASTNAME, null);
+            List<Attribute> inspectedAttributes = engine.inspect(pt);
 
-        	 //  ObjectFactory of = new ObjectFactory();
-        	 //  System.out.println("inspecting token:\n"+XmlUtils.toXml(of.createPresentationToken(pt)));
-   				List<Attribute> inspectedAttributes = engine.inspect(pt);
+            assertEquals(inspectedAttributes.size(),1 );
 
-   				assertEquals(inspectedAttributes.size(),1 );
+            Attribute inspectedFirstName = inspectedAttributes.get(0);
+            assertEquals(inspectedFirstName.getAttributeValue(), NAME);
 
-   				Attribute inspectedLastName = inspectedAttributes.get(0);
-   				assertEquals(inspectedLastName.getAttributeValue(), lastname.getIntegerValueOrNull());
-   				
-   				inspectedAttributes = secondInspector.inspect(pt);
+            inspectedAttributes = secondInspector.inspect(pt);
+            assertEquals(1, inspectedAttributes.size());
 
-   				assertEquals(inspectedAttributes.size(),1 );
+            Attribute inspectedLastName = inspectedAttributes.get(0);
+            assertEquals(LASTNAME, inspectedLastName.getAttributeValue());
+        }catch(Exception e){
+            throw new RuntimeException(e);
+        }
+    }
 
-   				inspectedLastName = inspectedAttributes.get(0);
-			
-//   				System.out.println("inspected 2: "+inspectedLastName.getAttributeValue()+"/"+lastname.getIntegerValueOrNull());
-   				
-   				assertEquals(inspectedLastName.getAttributeValue(), lastname.getIntegerValueOrNull());
-           }catch(Exception e){
-        	   throw new RuntimeException(e);
-           }
-       }
-       
-       
-       private void revokeCredential(Injector revocationInjector,
-               IssuanceHelper issuanceHelper, URI revParamsUid,
-               Attribute revocationHandleAttribute) throws CryptoEngineException {
-           issuanceHelper.revokeCredential(revocationInjector, revParamsUid,
-                   revocationHandleAttribute);
-       }
-       
-       private void revokedCredentialsShouldNotBeAllowed(Injector userInjector,
-               Injector verifierInjector, IssuanceHelper issuanceHelper,
-               RevocationInformation revocationInformation,
-               int chosenPresentationToken) throws Exception {
-           try {
-               this.loginToAccount(userInjector, verifierInjector,
-                       issuanceHelper, REVOCATION_PARAMETERS_UID,
-                       revocationInformation, chosenPresentationToken);
-               fail("We should not be allowed to log in with a revoked credential");
-           } catch (TokenVerificationException ex) {
-               // StringWriter sw = new StringWriter();
-               // PrintWriter pw = new PrintWriter(sw);
-               // ex.printStackTrace(pw);
-               // assertTrue(sw.toString().contains("Incorrect T-value at position"));
-               assertTrue(
-                       "We expect the verification to fail due to a revoked credential",
-                       ex.getMessage()
-                       .startsWith(
-                               "The crypto evidence in the presentation token is not valid"));
-           } catch (RuntimeException ex) {
-             assertTrue(
-               "We expect presentation token generation to fail",
-               ex.getMessage()
-               .startsWith(
-                       "Cannot generate presentationToken"));
-           }
-       }
-       
-       private PresentationToken loginToAccount(Injector userInjector,
-               Injector verifierInjector, IssuanceHelper issuanceHelper,
-               URI revParamsUid, RevocationInformation revocationInformation,
-               int chosenPresentationToken)
-                       throws Exception {
-           int pseudonymChoice = 0;
-           Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                   .createPresentationToken(userInjector, userInjector,
-                           PRESENTATION_POLICY_CREDENTIALS, revocationInformation,
-                           new PolicySelector(true, chosenPresentationToken, //debug enabled
-                                   pseudonymChoice));
-           return issuanceHelper.verify(verifierInjector, p.second(), p.first());
-       }
-       
+    private void revokeCredential(Injector revocationInjector,
+            IssuanceHelper issuanceHelper, URI revParamsUid,
+            Attribute revocationHandleAttribute) throws CryptoEngineException {
+        issuanceHelper.revokeCredential(revocationInjector, revParamsUid,
+                revocationHandleAttribute);
+    }
+    
+    private void revokedCredentialsShouldNotBeAllowed(Injector userInjector,
+            Injector verifierInjector, IssuanceHelper issuanceHelper,
+            RevocationInformation revocationInformation, URI chosenCredential) throws Exception {
+        try {
+    
+            this.loginToSpecificAccount(userInjector, verifierInjector,
+                    issuanceHelper, REVOCATION_PARAMETERS_UID,
+                    revocationInformation, chosenCredential, PRESENTATION_POLICY_INSPECT_AND_REVOKABLE);
+            fail("We should not be allowed to log in with a revoked credential");
+        } catch (TokenVerificationException ex) {
+            assertTrue(
+                    "We expect the verification to fail due to a revoked credential",
+                    ex.getMessage()
+                    .startsWith(
+                            "The crypto evidence in the presentation token is not valid"));
+        } catch (RuntimeException ex) {
+          assertTrue(
+            "We expect presentation token generation to fail",
+            ex.getMessage().startsWith("Cannot generate presentationToken") ||
+            ex.getMessage().startsWith("Cannot choose credential, URI does not exist!"));
+        }
+    }
+
+    private PresentationToken loginToSpecificAccount(Injector userInjector,
+            Injector verifierInjector, IssuanceHelper issuanceHelper,
+            URI revParamsUid, RevocationInformation revocationInformation,
+            URI chosenCredential, String presentationPolicy)
+                    throws Exception {
+        
+        
+        Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
+                .createSpecificPresentationToken(USERNAME, userInjector,
+                        presentationPolicy, chosenCredential, revocationInformation, null);
+        return issuanceHelper.verify(verifierInjector, p.second, p.first);
+    }
+    
+	private Collection<Injector> createEntities(Entities entities) {
+		entities.initInjectors(null);
+		return entities.getInjectors();
+	}
+	
+	private Collection<Injector> createEntities(Entities entities, RevocationProxyAuthority revocationProxyAuthority) {
+		entities.initInjectors(revocationProxyAuthority);
+		return entities.getInjectors();
+	}
+
+	private URI getIssuanceParametersUIDFromIssuancePolicy(String pathToIssuancePolicy)
+			throws UnsupportedEncodingException, JAXBException, SAXException {
+		// Load issuance policy
+		IssuancePolicy issuancePolicy =
+				(IssuancePolicy) XmlUtils.getObjectFromXML(
+						this.getClass().getResourceAsStream(pathToIssuancePolicy), true);
+
+		// Get issuer parameters UID from credential template
+		return issuancePolicy.getCredentialTemplate().getIssuerParametersUID();
+	}
+
+	private IssuerParameters setupIssuer(Injector issuerInjector, SystemParameters systemParameters,
+			URI credentialTechnology, URI issuanceParametersUID,
+			int maximalNumberOfAttributes) throws CryptoEngineException {
+		return this.setupIssuer(issuerInjector, systemParameters, credentialTechnology, issuanceParametersUID, maximalNumberOfAttributes, null);
+	}
+
+	private IssuerParameters setupIssuer(Injector issuerInjector, SystemParameters systemParameters,
+			URI credentialTechnology, URI issuanceParametersUID,
+			int maximalNumberOfAttributes, URI revocationAuthority) throws CryptoEngineException {
+		// Generate issuer parameters.
+		IssuerAbcEngine issuerEngine = issuerInjector.getInstance(IssuerAbcEngine.class);
+
+		IssuerParameters issuerParameters =
+				issuerEngine.setupIssuerParameters(systemParameters,
+						maximalNumberOfAttributes, credentialTechnology, issuanceParametersUID,	revocationAuthority, new LinkedList<FriendlyDescription>());
+
+		return issuerParameters;
+	}
+
+	private InspectorPublicKey setupInspector(Injector inspectorInjector, URI uid, SystemParameters systemParameters,
+			URI inspectorTechnology) throws CryptoEngineException, CredentialManagerException {
+		// Generate issuer parameters.
+		InspectorAbcEngine inspectorAbcEngine = inspectorInjector.getInstance(InspectorAbcEngine.class);
+		
+		return inspectorAbcEngine.setupInspectorPublicKey(systemParameters, inspectorTechnology, uid, new LinkedList<FriendlyDescription>());
+	}
+	
+	private void storeCredentialSpecificationToKeyManagers(Collection<Injector> injectors,
+			String pathToCredentialSpecification) throws KeyManagerException,
+			UnsupportedEncodingException, JAXBException, SAXException {
+		// 	Load credential specifications.
+		CredentialSpecification credSpec =
+				(CredentialSpecification) XmlUtils.getObjectFromXML(
+						this.getClass().getResourceAsStream(pathToCredentialSpecification), true);
+
+		// Store credential specifications.
+		URI specificationUID = credSpec.getSpecificationUID();
+		for (Injector injector : injectors) {
+			KeyManager keyManager = injector.getInstance(KeyManager.class);
+			keyManager.storeCredentialSpecification(specificationUID, credSpec);
+		}
+	}
+
+    private void addRevocationKeyManagers(Entities entities, RevocationAuthorityParameters revAuthParams) 
+            throws KeyManagerException{
+          for(Injector injector: entities.getInjectors()){
+            KeyManager keyManager = injector.getInstance(KeyManager.class);
+            keyManager.storeRevocationAuthorityParameters(revAuthParams.getParametersUID(), revAuthParams);
+          }
+        }
 }

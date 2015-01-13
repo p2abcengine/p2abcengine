@@ -28,7 +28,7 @@
       </abc:IssuerAlternatives>
        <abc:DisclosedAttribute AttributeType="LastName" >
       	<abc:InspectorAlternatives>
-      		<abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
+      		<abc:InspectorPublicKeyUID>http://inspector.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
       		<abc:InspectorPublicKeyUID>http://thebestbank.com/inspector/pub_key_v1</abc:InspectorPublicKeyUID>
       	</abc:InspectorAlternatives>
       	<abc:InspectionGrounds>Reveal last name for test</abc:InspectionGrounds>

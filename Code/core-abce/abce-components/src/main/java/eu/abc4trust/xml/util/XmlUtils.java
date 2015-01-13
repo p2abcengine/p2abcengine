@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -28,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -51,6 +56,8 @@ import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.SAXException;
+
+import eu.abc4trust.xml.CryptoParams;
 
 public class XmlUtils {
 
@@ -289,18 +296,18 @@ public class XmlUtils {
      * @param clazz
      * @return
      */
-    public static Object unwrap(Object jaxbElement, Class<?> clazz) {
+    public static <T> T unwrap(Object jaxbElement, Class<T> clazz) {
         if (jaxbElement instanceof JAXBElement<?>) {
             Object ret = ((JAXBElement<?>) jaxbElement).getValue();
             if (clazz.isInstance(ret)) {
-                return ret;
+                return (T)ret;
             } else {
                 System.err.println("Cannot cast " + ret + " to class " + clazz + " (actual class is "
                         + ret.getClass() + ").");
                 return null; // TODO(enr): Throw an exception here
             }
         } else if (clazz.isInstance(jaxbElement)) {
-            return jaxbElement;
+            return (T)jaxbElement;
         } else {
             System.err.println("Cannot cast " + jaxbElement + " to class JAXBElement<?> or " + clazz
                     + " (actual class is " + jaxbElement.getClass() + ").");
@@ -320,13 +327,45 @@ public class XmlUtils {
      * @param clazz
      * @return
      */
-    public static Object unwrap(List<Object> jaxbElementList, Class<?> clazz) {
-        if (jaxbElementList.size() == 1) {
-            return unwrap(jaxbElementList.get(0), clazz);
+    public static <T> T unwrap(List<Object> jaxbElementList, Class<T> clazz) {
+      List<Object> cleanedUpList = cleanupXmlContents(jaxbElementList);
+        if (cleanedUpList.size() == 1) {
+            return unwrap(cleanedUpList.get(0), clazz);
         } else {
-            System.err.println("Cannot unwrap " + jaxbElementList + ". Size is " + jaxbElementList.size()
-                    + " (expected 1).");
+            System.err.println("Cannot unwrap " + cleanedUpList + ". Size is " + cleanedUpList.size()
+                    + " (expected 1). Before cleanup: " + jaxbElementList + ".");
             return null; // TODO(enr): Throw an exception here
         }
+    }
+    
+    public static List<Object> cleanupXmlContents(List<Object> jaxbElementList) {
+      List<Object> cleanedUpList = new ArrayList<>();
+      for(Object o: jaxbElementList) {
+        if(o instanceof String) {
+          // All whitespace in XML denotes formatting
+          if(((String) o).trim().length() == 0) {
+            continue;
+          }
+        }
+        cleanedUpList.add(o);
+      }
+      return cleanedUpList;
+    }
+    
+    public static void fixNestedContent(final CryptoParams cp) {
+    	final List<Object> content = cp.getContent();
+    	final List<Object> filtered = new ArrayList<Object>();
+    	for (final Object o : content) {
+    		if (!"".equals(o.toString().trim())) {
+    			if (o instanceof JAXBElement) {
+					JAXBElement<?> unwrapped = (JAXBElement<?>) o;
+					filtered.add(unwrapped.getValue());
+				} else {
+					filtered.add(o);
+				}
+    		}
+    	}
+    	content.clear();
+    	content.addAll(filtered);
     }
 }

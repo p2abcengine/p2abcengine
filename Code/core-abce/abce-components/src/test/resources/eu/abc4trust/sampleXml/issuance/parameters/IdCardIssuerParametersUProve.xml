@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:IssuerParameters xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" xmlns:idmx="http://zurich.ibm.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="3.0.0">
+    <abc:ParametersUID>http://my.country/identitycard/issuancekey_v1.0</abc:ParametersUID>
+    <abc:AlgorithmID>urn:idmx:3.0.0:block:sig:uprove:sig:uprove</abc:AlgorithmID>
+    <abc:SystemParametersUID>1cf1cd52-b480-435a-816a-625bf0c7faf4</abc:SystemParametersUID>
+    <abc:MaximalNumberOfAttributes>4</abc:MaximalNumberOfAttributes>
+    <abc:HashAlgorithm>sha-256</abc:HashAlgorithm>
+    <abc:CryptoParams>
+        <abc:PublicKey Version="3.0.0" Technology="urn:idmx:3.0.0:block:sig:uprove:sig:uprove" SystemParametersId="1cf1cd52-b480-435a-816a-625bf0c7faf4" PublicKeyId="http://my.country/identitycard/issuancekey_v1.0:7f7cf797-c50c-481a-bdf7-78a1a247d4a0">
+            <abc:Parameter xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:maxAtts">
+                <abc:Value>4</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:UriParameter" Name="urn:idmx:3.0.0:issuer:publicKey:revauth">
+                <abc:Value>revocationUID1</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:0">
+                <abc:Value>147478488429734830355132949779564419574688492659938370435967378646601029376416119434424048507249965969883938458724733375816183408567510698443802719055156350836081676411907578484427556768329306642338228599100173760137914108752697395919751938581126012974529197903117152558036427721165300573333993330831126759318</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:1">
+                <abc:Value>64801533773061594976495394240333802904715289654733506673189507230798834555560591120232771651737069409284702211802569209135287490746755396755417815428467438591590021515673768820454943406226749343942587098092740238152752711890357529353360393236706183821657721469718855794142932827281098745562423780716349819917</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:2">
+                <abc:Value>31395581452072293382610319927322300365814561525164750674559426893390582572963218944752792644810004604876484522032867455601633537484129363034386784516350986930150433893553567530648786224698008005519752019437537544707574378251337697723982983888172772515925561399303691542624510926931956888409222391291830375285</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:3">
+                <abc:Value>79048118752539518737887989157866157208464003302089831069883673668697690950103825655335879169628588870170146637315346793006810076414103895598740137751865491616404100206812456690813345153449296926915922728692998091619721977999468209338460959491350453748710790027993682853367127100517336935239101648650083468141</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:4">
+                <abc:Value>119393500685541530805952769861215084913918834585374540617266210579564366231969606438530089658868557537379787736669482582995227404090393369574177315943906173484044884185414770483975794224798593983981231335483735832568505401004556904464473093225049549796639710379828477066281702067290009171152728435142362857067</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:d">
+                <abc:Value>119909651860965138336363532421819599468588833762340488913006249681827447253045290283129164078290855095076610676576159830305297562491836429215988056377072243413508625000848589611908517427771016724118667429636994799097487644154053973540306134298080149502395305974130491638449898690784296893006457791359611562343</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:g:t">
+                <abc:Value>17456058673684951060100818956852199829660277020760850123478498373483139984144634488287904194031351697938446820643293401925464544977720324006694447423879201185825422425515401697917568279252403643115364613137468559860721691458587461492094919471623921712104071376087411213291009144658507658208526187588925092703</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:tokens">
+                <abc:Value>5</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:UIDp">
+                <abc:Value>7995505854649787036012156829464405396549021432771264269947098695423068451490659668120199788085239945613290274351547151134603068412032393418483233157759920102583396903669222161227133272451867185775927600</abc:Value>
+            </abc:Parameter>
+            <abc:Parameter xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:issuer:publicKey:uprove:S">
+                <abc:Value>95945071486528704429741121173717519644360046707830271081679794805621129425233196967476</abc:Value>
+            </abc:Parameter>
+        </abc:PublicKey>
+    </abc:CryptoParams>
+    <abc:RevocationParametersUID>revocationUID1</abc:RevocationParametersUID>
+</abc:IssuerParameters>

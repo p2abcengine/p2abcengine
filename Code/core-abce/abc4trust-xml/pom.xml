@@ -4,7 +4,7 @@
   <parent>
     <artifactId>pom</artifactId>
     <groupId>eu.abc4trust.ri</groupId>
-    <version>patras-1.0.14-SNAPSHOT</version>
+    <version>1.1.36</version>
   </parent>
   <artifactId>abc4trust-xml</artifactId>
   <name>abc4trust-xml</name>
@@ -24,32 +24,51 @@
     <plugins>
       <plugin>
         <groupId>org.jvnet.jaxb2.maven2</groupId>
-        <artifactId>maven-jaxb22-plugin</artifactId>
+        <artifactId>maven-jaxb2-plugin</artifactId>
+        <version>0.8.1</version>
         <executions>
           <execution>
+            <id>process-xsd</id>
             <goals>
               <goal>generate</goal>
             </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <!--<specVersion>2.1</specVersion>-->
+              <generatePackage>eu.abc4trust.xml</generatePackage>
+              <schemaDirectory>src/main/resources/xsd</schemaDirectory>
+              <bindingDirectory>src/main/xjb</bindingDirectory>
+              <args>
+                <arg>-npa</arg>
+                <arg>-Xannotate</arg>
+              </args>
+              <forceRegenerate>true</forceRegenerate>
+              <extension>true</extension>
+              <plugins>
+                <plugin>
+                  <groupId>org.jvnet.jaxb2_commons</groupId>
+                  <artifactId>jaxb2-basics-annotate</artifactId>
+                  <version>0.6.3</version>
+                </plugin>
+                <plugin>
+                  <groupId>org.jvnet.jaxb2_commons</groupId>
+                  <artifactId>jaxb2-basics</artifactId>
+                  <version>0.6.3</version>
+                </plugin>
+              </plugins>
+            </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <specVersion>2.1</specVersion>
-          <generatePackage>eu.abc4trust.xml</generatePackage>
-          <schemaDirectory>src/main/resources/xsd</schemaDirectory>
-          <bindingDirectory>src/main/xjb</bindingDirectory>
-          <extension>true</extension>
-          <forceRegenerate>true</forceRegenerate>
+          <archive>
+            <manifestFile>META-INF/MANIFEST.MF</manifestFile>
+          </archive>
         </configuration>
       </plugin>
-	  <plugin>
-  	    <groupId>org.apache.maven.plugins</groupId>
-	    <artifactId>maven-jar-plugin</artifactId>
-	    <configuration>
-  		  <archive>
-		    <manifestFile>META-INF/MANIFEST.MF</manifestFile>
-		  </archive>
-	    </configuration>
-	  </plugin>
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
@@ -69,3 +88,4 @@
     </plugins>
   </build>
 </project>
+

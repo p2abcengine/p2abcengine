@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -36,6 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+
+import com.ibm.zurich.idmx.interfaces.util.BigIntFactory;
+import com.ibm.zurich.idmx.interfaces.util.group.Group;
+import com.ibm.zurich.idmx.util.bigInt.BigIntFactoryImpl;
+import com.ibm.zurich.idmx.util.group.GroupFactoryImpl;
 
 
 /**
@@ -71,11 +78,21 @@ public class Utils {
 	  return res;	
   }
   
-  public static void addToStream(ByteArrayOutputStream baos, UProveParams params){
-	  addToStream(baos, params.p);
-	  addToStream(baos, params.q);
-	  addToStream(baos, params.g);
-	  addToStream(baos, params.f);
+  public static void addToStream(ByteArrayOutputStream baos, SmartcardParameters params){
+	  // Order for Idemix is N, R0, S
+      // Order for UProve is P, Q, G, F
+      // We settle for order:  modulus, (order), base1, (base2), (cofactor)
+      addToStream(baos, params.getModulus());
+      if(params.getOrderOrNull() != null) {
+	    addToStream(baos, params.getOrderOrNull());
+      }
+	  addToStream(baos, params.getBaseForDeviceSecret());
+	  if(params.getBaseForCredentialSecretOrNull() != null) {
+	    addToStream(baos, params.getBaseForCredentialSecretOrNull());
+	  }
+	  if(params.getCofactorOrNull() != null) {
+	    addToStream(baos, params.getCofactorOrNull());
+	  }
   }
   
   /**
@@ -169,12 +186,6 @@ public class Utils {
   
   public static void addToStream(ByteArrayOutputStream baos, SmartcardBlob blob) {
     addToStream(baos, blob.blob);
-  }
-  
-  public static void addToStream(ByteArrayOutputStream baos, CredentialBases cb) {
-    addToStream(baos, cb.n);
-    addToStream(baos, cb.R0);
-    addToStream(baos, cb.S);
   }
   
   public static void addToStream(ByteArrayOutputStream baos, RSAVerificationKey vk) {
@@ -275,7 +286,7 @@ public class Utils {
   }
 
   public static RSASignature generateSignatureToAddIssuer(RSAKeyPair sk, URI parametersUri,
-      CredentialBases credBases, byte[] nonce, Random rand) {
+        SmartcardParameters credBases, byte[] nonce, Random rand) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     Utils.addToStream(baos, Utils.NEW_ISSUER_SIMPLE);
     Utils.addToStream(baos, parametersUri);
@@ -284,7 +295,7 @@ public class Utils {
   }
 
   public static RSASignature generateSignatureToAddIssuer(RSAKeyPair sk, URI parametersUri,
-      CredentialBases credBases, RSAVerificationKey courseKey, int minAttendance, byte[] nonce, Random rand) {
+        SmartcardParameters credBases, RSAVerificationKey courseKey, int minAttendance, byte[] nonce, Random rand) {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     Utils.addToStream(baos, Utils.NEW_ISSUER_WITH_ATTENDANCE);
     Utils.addToStream(baos, parametersUri);

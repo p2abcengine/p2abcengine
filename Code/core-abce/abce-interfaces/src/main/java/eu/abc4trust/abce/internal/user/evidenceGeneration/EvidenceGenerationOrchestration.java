@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -31,11 +35,13 @@ import eu.abc4trust.exceptions.TokenIssuanceException;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuanceTokenDescription;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PresentationTokenDescription;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 import eu.abc4trust.xml.Secret;
+import eu.abc4trust.xml.VerifierParameters;
 
 public interface EvidenceGenerationOrchestration {
     /**
@@ -59,9 +65,8 @@ public interface EvidenceGenerationOrchestration {
      * @return
      * @throws CryptoEngineException
      */
-    public PresentationToken createPresentationToken(PresentationTokenDescription td,
- List<URI> creds,
-            List<URI> pseudonyms) throws CryptoEngineException;
+      public PresentationToken createPresentationToken(String username, PresentationTokenDescription td,
+          VerifierParameters vp, List<URI> creds, List<URI> pseudonyms) throws CryptoEngineException;
 
     /**
      * This method orchestrates the generation of the cryptographic evidence for the given issuance
@@ -87,8 +92,9 @@ public interface EvidenceGenerationOrchestration {
      * @return
      * @throws TokenIssuanceException
      */
-    public IssuanceMessage createIssuanceToken(IssuanceTokenDescription itd, List<URI> creduids,
-            List<Attribute> atts, List<URI> pseudonyms, URI ctxt) throws TokenIssuanceException;
+     public IssuanceMessage createIssuanceToken(String username, IssuanceMessage im, IssuanceTokenDescription itd,
+         List<URI> creduids, List<URI> pseudonyms, List<Attribute> atts)
+         throws CryptoEngineException;
 
     /**
      * Create a new pseudonym.
@@ -96,16 +102,17 @@ public interface EvidenceGenerationOrchestration {
      * the pseudonym.
      * The caller is responsible for storing the pseudonym.
      * The pseudonym will not contain any metadata.
+     * @throws CryptoEngineException 
      */
-    public PseudonymWithMetadata createPseudonym(URI pseudonymUri, String scope, boolean exclusive,
-            URI secretReference);
+    public PseudonymWithMetadata createPseudonym(String username, URI pseudonymUri, String scope, boolean exclusive,
+            URI secretReference) throws CryptoEngineException;
 
     /**
      * Create a new (non-device-bound) secret.
      * This method must generate a random UID for the secret.
      * The caller is responsible for storing the secret.
      */
-    public Secret createSecret();
+    public Secret createSecret(String username);
     
     /**
      * This method updates the non-revocation evidence stored in credential cred with respect to
@@ -119,13 +126,16 @@ public interface EvidenceGenerationOrchestration {
      * 
      * If the credential was revoked, this method must throw a CredentialWasRevokedException.
      * 
+     * This method is also responsible for updating the credential in the credential manager if
+     * needed.
+     * 
      * @param cred
      * @param raparsuid
      * @param revokedatts
      * @return
      * @throws CredentialWasRevokedException 
      */
-    public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
+    public Credential updateNonRevocationEvidence(String username, Credential cred, URI raparsuid,
             List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException;
 
     /**
@@ -140,13 +150,18 @@ public interface EvidenceGenerationOrchestration {
      * 
      * If the credential was revoked, this method must throw a CredentialWasRevokedException.
      * 
+     * This method is also responsible for updating the credential in the credential manager if
+     * needed.
+     * 
      * @param cred
      * @param raparsuid
      * @param revokedatts
      * @param revinfouid
      * @return
      */
-    public Credential updateNonRevocationEvidence(Credential cred,
+    public Credential updateNonRevocationEvidence(String username, Credential cred,
             URI raparsuid, List<URI> revokedatts, URI revinfouid)
                     throws CryptoEngineException, CredentialWasRevokedException;
+
+    public IssuancePolicy extractIssuancePolicy(IssuanceMessage im);
 }

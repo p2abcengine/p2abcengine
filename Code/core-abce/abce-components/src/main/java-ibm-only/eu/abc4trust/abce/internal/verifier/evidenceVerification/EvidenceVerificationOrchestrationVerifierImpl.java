@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -28,6 +27,7 @@ import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.verifier.CryptoEngineVerifier;
 import eu.abc4trust.exceptions.TokenVerificationException;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.VerifierParameters;
 
 public class EvidenceVerificationOrchestrationVerifierImpl
 implements
@@ -43,9 +43,9 @@ EvidenceVerificationOrchestrationVerifier {
     }
 
     @Override
-    public boolean verifyToken(PresentationToken t)
+    public boolean verifyToken(PresentationToken t, VerifierParameters vp)
             throws TokenVerificationException, CryptoEngineException {
-        return this.cryptoEngine.verifyToken(t);
+        return this.cryptoEngine.verifyToken(t, vp);
     }
 
 }

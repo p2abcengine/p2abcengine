@@ -28,7 +28,7 @@
         I agree to the terms of service and cancellation policy.
       </abc:ApplicationData>
     </abc:Message>
-    <abc:Pseudonym Exclusive="false" Scope="http://www.sweetdreamsuites.com"
+    <abc:Pseudonym Exclusive="true" Scope="http://www.sweetdreamsuites.com"
       Established="false" Alias="#mainPseudonym" />
     <abc:Credential Alias="Passport">
       <abc:CredentialSpecAlternatives>
@@ -86,7 +86,7 @@
       </abc:ApplicationData>
     </abc:Message>
     <abc:Pseudonym 
-    	Exclusive="false" 
+    	Exclusive="true" 
     	Scope="http://www.sweetdreamsuites.com"
       	Established="false"
       	Alias="#mainPseudonym"/>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- 
+  This is the ABC4Trust presentation policy for the School Registration System 
+-->
+<abc:PresentationPolicyAlternatives xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  Version="1.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://abc4trust.eu/wp2/abcschemav1.0 ../../../../../../../../abc4trust-xml/src/main/resources/xsd/schema.xsd">
+    
+    <abc:PresentationPolicy PolicyUID="uri:presentationTest">
+        <abc:Message>
+            <abc:FriendlyPolicyName lang="en">Policy: Authorized Users only</abc:FriendlyPolicyName>
+            <abc:FriendlyPolicyDescription lang="en">This policy will request the pupil to present the established scope-exclusive Pseudonym with the scope "urn:soderhamn:registration" and a credential "credSchool".</abc:FriendlyPolicyDescription>
+        </abc:Message>
+        <abc:Pseudonym Exclusive="true" Scope="urn:soderhamn:registration" Established="true" Alias="#nym"/>
+        
+        <abc:Credential SameKeyBindingAs="#nym" Alias="#credSchool" >
+           <abc:CredentialSpecAlternatives>
+	          <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool</abc:CredentialSpecUID>
+	       </abc:CredentialSpecAlternatives>
+	      
+	       <abc:IssuerAlternatives>
+        	 <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool</abc:IssuerParametersUID>
+      	   </abc:IssuerAlternatives>
+      	   <abc:DisclosedAttribute AttributeType="urn:soderhamn:credspec:credSchool:firstname">
+        	 </abc:DisclosedAttribute>
+      	   
+      	 </abc:Credential> 
+      	 
+      	 
+      	 <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:date-less-than-or-equal">
+      		<abc:Attribute CredentialAlias="#credSchool" AttributeType="urn:soderhamn:credspec:credSchool:birthdate"/>
+      		<abc:ConstantValue>2014-02-18Z</abc:ConstantValue>
+
+    	 </abc:AttributePredicate>   
+      	  
+      	
+    </abc:PresentationPolicy>
+   </abc:PresentationPolicyAlternatives>
+   
+   
+ <!--    
+    <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:testPolicy">
+        <abc:Message>
+            <abc:Nonce>bkQydHBQWDR4TUZzbXJKYUphdVM=</abc:Nonce>
+        </abc:Message>
+        <abc:Pseudonym Exclusive="true" Scope="urn:soderhamn:registration" Established="true" Alias="#nym"/>
+      <abc:Credential Alias="#credSchool" SameKeyBindingAs="#nym">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool<</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+   -->
+<!-- 
+      <abc:DisclosedAttribute AttributeType="urn:soderhamn:credspec:credSchool:civicRegistrationNumber">
+        <abc:InspectorAlternatives>
+          <abc:InspectorPublicKeyUID>urn:soderhamn:inspectorpk</abc:InspectorPublicKeyUID>
+        </abc:InspectorAlternatives>
+        <abc:InspectionGrounds>
+          Description of circumstances and process under which token may be inspected.
+        </abc:InspectionGrounds>
+      </abc:DisclosedAttribute>
+      
+        
+      
+       </abc:Credential>  
+       <abc:AttributePredicate Function="urn:oasis:names:tc:xacml:1.0:function:boolean-equal">
+      		<abc:Attribute CredentialAlias="credSchool" AttributeType="urn:soderhamn:credspec:credSchool:lastname"/>
+      		<abc:ConstantValue>Cocker</abc:ConstantValue>
+      		<abc:Attribute CredentialAlias="credSchool2" AttributeType="urn:soderhamn:credspec:credSchool:lastname"/>
+    	  </abc:AttributePredicate>   
+    </abc:PresentationPolicy>
+ -->
+

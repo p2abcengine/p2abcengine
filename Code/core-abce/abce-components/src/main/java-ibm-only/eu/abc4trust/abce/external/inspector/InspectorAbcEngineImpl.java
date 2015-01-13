@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -27,28 +28,39 @@ import java.util.List;
 
 import com.google.inject.Inject;
 
+import eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManager;
+import eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManagerException;
+import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.inspector.CryptoEngineInspector;
+import eu.abc4trust.returnTypes.InspectorPublicAndSecretKey;
 import eu.abc4trust.xml.Attribute;
+import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.SystemParameters;
 
 public class InspectorAbcEngineImpl implements InspectorAbcEngine {
 
   private final CryptoEngineInspector cryptoEngine;
+  private final CredentialManager credentialManager;
   
   @Inject
-  public InspectorAbcEngineImpl(CryptoEngineInspector cryptoEngine) {
+  public InspectorAbcEngineImpl(CryptoEngineInspector cryptoEngine, CredentialManager credentialManager) {
     this.cryptoEngine = cryptoEngine;
-  }
-  
-  @Override
-  public List<Attribute> inspect(PresentationToken t) throws Exception {
-	     return cryptoEngine.inspect(t);
+    this.credentialManager = credentialManager;
   }
 
   @Override
-  public InspectorPublicKey setupInspectorPublicKey(int keyLength, URI mechanism, URI uid) throws Exception {	     
-	  return cryptoEngine.setupInspectorPublicKey(keyLength, mechanism, uid);   
+  public InspectorPublicKey setupInspectorPublicKey(SystemParameters sp, URI mechanism, URI uid,
+      List<FriendlyDescription> friendlyInspectorDescription) throws CryptoEngineException, CredentialManagerException {
+    InspectorPublicAndSecretKey keyPair = cryptoEngine.setupInspectorPublicKey(sp, mechanism, uid, friendlyInspectorDescription);
+    credentialManager.storeInspectorSecretKey(uid, keyPair.secretKey);
+    return keyPair.publicKey;
+  }
+
+  @Override
+  public List<Attribute> inspect(PresentationToken t) throws CryptoEngineException {
+    return cryptoEngine.inspect(t);
   }
 
 

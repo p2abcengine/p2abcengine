@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -50,16 +52,16 @@ public class CredentialManagerImplTest {
 
         SecretKey issuerSecretKey = new SecretKey();
         CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString1");
+        cryptoParams.getContent().add("TestString1");
         issuerSecretKey.setCryptoParams(cryptoParams);
         credMng.storeIssuerSecretKey(EXPECTED_UUID,
                 issuerSecretKey);
 
         SecretKey storedIssuerSecretKey = credMng
                 .getIssuerSecretKey(EXPECTED_UUID);
-        assertEquals(issuerSecretKey.getCryptoParams().getAny()
+        assertEquals(issuerSecretKey.getCryptoParams().getContent()
                 .get(0),
-                storedIssuerSecretKey.getCryptoParams().getAny()
+                storedIssuerSecretKey.getCryptoParams().getContent()
                 .get(0));
     }
 
@@ -73,17 +75,17 @@ public class CredentialManagerImplTest {
         SecretKey[] issuerSecretKeys = new SecretKey[3];
         issuerSecretKeys[0] = new SecretKey();
         CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString1");
+        cryptoParams.getContent().add("TestString1");
         issuerSecretKeys[0].setCryptoParams(cryptoParams);
 
         issuerSecretKeys[1] = new SecretKey();
         cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString2");
+        cryptoParams.getContent().add("TestString2");
         issuerSecretKeys[1].setCryptoParams(cryptoParams);
 
         issuerSecretKeys[2] = new SecretKey();
         cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString2");
+        cryptoParams.getContent().add("TestString2");
         issuerSecretKeys[2].setCryptoParams(cryptoParams);
 
         credMng.storeIssuerSecretKey(URI.create("1"), issuerSecretKeys[0]);
@@ -95,8 +97,8 @@ public class CredentialManagerImplTest {
             SecretKey issuerSecretKey = credMng
                     .getIssuerSecretKey(storedURIs
                             .get(inx));
-            assertEquals(issuerSecretKeys[inx].getCryptoParams().getAny()
-                    .get(0), issuerSecretKey.getCryptoParams().getAny().get(0));
+            assertEquals(issuerSecretKeys[inx].getCryptoParams().getContent()
+                    .get(0), issuerSecretKey.getCryptoParams().getContent().get(0));
         }
     }
 }

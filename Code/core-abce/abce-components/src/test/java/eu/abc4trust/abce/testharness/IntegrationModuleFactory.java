@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -29,9 +31,8 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.util.Modules;
 
-import eu.abc4trust.abce.integrationtests.ReloadTokensInMemoryCommunicationStrategy;
-import eu.abc4trust.cryptoEngine.uprove.user.ReloadTokensCommunicationStrategy;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.cryptoEngine.issuer.CryptoEngineReIssuer;
+import eu.abc4trust.cryptoEngine.issuer.MockCryptoEngineReIssuer;
 import eu.abc4trust.guice.ProductionModuleFactory;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
 import eu.abc4trust.guice.configuration.AbceConfiguration;
@@ -43,8 +44,8 @@ import eu.abc4trust.util.TemporaryFileFactory;
 
 public class IntegrationModuleFactory {
 
-  public static Module newModule(Random random, CryptoEngine cryptoEngine, Integer uProvePortNumber) {
-    AbceConfiguration config = generateDefaultConfiguration(random, uProvePortNumber);
+  public static Module newModule(Random random, CryptoEngine cryptoEngine) {
+    AbceConfiguration config = generateDefaultConfiguration(random);
 
     Module m = ProductionModuleFactory.newModule(config, cryptoEngine);
     return Modules.override(m).with(new AbstractModule() {
@@ -52,24 +53,18 @@ public class IntegrationModuleFactory {
       protected void configure() {
           this.bind(RevocationProxyCommunicationStrategy.class)
           .to(InMemoryCommunicationStrategy.class).in(Singleton.class);
-          this.bind(ReloadTokensCommunicationStrategy.class)
-          .to(ReloadTokensInMemoryCommunicationStrategy.class).in(Singleton.class);
+          this.bind(CryptoEngineReIssuer.class)
+          .to(MockCryptoEngineReIssuer.class).in(Singleton.class);
       }
     });
   }
 
-//  public static Module newModule(Random random, CryptoEngine cryptoEngine) {
-//    Integer uprovePortNumber = null;
-//    return newModule(random, cryptoEngine, uprovePortNumber);
-//  }
-  
-  public static Module newModule(Random random, Integer uProvePortNumber) {
-    return newModule(random, CryptoEngine.UPROVE, uProvePortNumber);
+  public static Module newModule(Random random) {
+    return newModule(random, CryptoEngine.UPROVE);
   }
 
-  public static Module newModule(Random random, Integer uProvePortNumber,
-      RevocationProxyAuthority revocationProxyAuthority) {
-    return newModule(random, CryptoEngine.UPROVE, uProvePortNumber, revocationProxyAuthority);
+  public static Module newModule(Random random, RevocationProxyAuthority revocationProxyAuthority) {
+    return newModule(random, CryptoEngine.UPROVE, revocationProxyAuthority);
   }
 
 //  public static Module newModule(Random random, CryptoEngine cryptoEngine,
@@ -77,10 +72,10 @@ public class IntegrationModuleFactory {
 //    return newModule(random, cryptoEngine, null, revocationProxyAuthority);
 //  }
   
-  public static Module newModule(Random random, CryptoEngine cryptoEngine, Integer uProvePortNumber,
+  public static Module newModule(Random random, CryptoEngine cryptoEngine,
       final RevocationProxyAuthority revocationProxyAuthority) {
 
-    Module m = newModule(random, cryptoEngine, uProvePortNumber);
+    Module m = newModule(random, cryptoEngine);
 
     return Modules.override(m).with(new AbstractModule() {
       @Override
@@ -90,7 +85,7 @@ public class IntegrationModuleFactory {
     });
   }
 
-  private static AbceConfiguration generateDefaultConfiguration(Random random, Integer uProvePortNumber) {
+  private static AbceConfiguration generateDefaultConfiguration(Random random) {
     AbceConfigurationImpl config = new AbceConfigurationImpl();
     config.setSecretStorageFile(TemporaryFileFactory.createTemporaryFile());
     config.setCredentialFile(TemporaryFileFactory.createTemporaryFile());
@@ -106,10 +101,7 @@ public class IntegrationModuleFactory {
     config.setPrng(random);
     config.setDefaultImagePath("file://error");
     config.setUProveRetryTimeout(10);
-    config.setUProvePortNumber(uProvePortNumber);
     config.setUProveNumberOfCredentialsToGenerate(3);
-    config.setUProveWorkingDirectory(null);
-    config.setUProvePathToExe(new UProveUtils().getPathToUProveExe().getAbsolutePath());    
     return config;
   }
 }

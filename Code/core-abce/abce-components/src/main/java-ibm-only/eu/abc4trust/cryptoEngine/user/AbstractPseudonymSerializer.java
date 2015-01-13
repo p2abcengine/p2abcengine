@@ -1,10 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -30,8 +31,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.Map;
 
-import com.ibm.zurich.idmx.dm.StoredDomainPseudonym;
-import com.ibm.zurich.idmx.utils.XMLSerializer;
+import com.ibm.zurich.idmix.abc4trust.facades.PseudonymCryptoFacade;
 
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerImpl;
 import eu.abc4trust.smartcard.BasicSmartcard;
@@ -64,6 +64,7 @@ public abstract class AbstractPseudonymSerializer implements PseudonymSerializer
             if (scope_bytes.length > 255) {
               throw new RuntimeException("Scope is too long. Cannot serialize pseudonym.");
             }
+            out.write(magicHeaderForScopeExclusive());
             out.write(scope_bytes.length);
             out.write(scope_bytes);
             
@@ -93,6 +94,10 @@ public abstract class AbstractPseudonymSerializer implements PseudonymSerializer
         URI pseudonymUIDFromStream;
         try {           
             ByteArrayInputStream in = new ByteArrayInputStream(data);
+            int header = in.read();
+            if(header != magicHeaderForScopeExclusive()) {
+              return null;
+            }
             scopeFromStream = URI.create(getNextString(in));
             secretReferenceFromStream = URI.create(getNextString(in));
             pseudonymUIDFromStream = URI.create(getNextString(in));
@@ -108,9 +113,14 @@ public abstract class AbstractPseudonymSerializer implements PseudonymSerializer
         if(!secretReference.equals(secretReferenceFromStream)){
             throw new RuntimeException("Secret refenreces don't match: " + pseudonym.getSecretReference()+" vs. "+ secretReferenceFromStream);
         }       
-        URI alternativeUID = URI.create(CredentialManagerImpl.PSEUDONYM_PREFIX+pseudonymUIDFromStream);
-        if(!(pseudonymUID.equals(pseudonymUIDFromStream) || pseudonymUID.equals(alternativeUID))){
-            throw new RuntimeException("PseudonymUIDs don't match: "+pseudonymUID +" vs. "+pseudonymUIDFromStream);
+        URI prefixedPseudonymUID = URI.create(CredentialManagerImpl.PSEUDONYM_PREFIX+pseudonymUIDFromStream.toASCIIString().replaceAll(":", "_"));
+        if(!pseudonymUID.equals(prefixedPseudonymUID)){
+            // TODO: how shuld test be done...
+            if(pseudonymUID.equals(pseudonymUIDFromStream)) {
+              //throw new RuntimeException("PseudonymUIDs is not prefixed with " + CredentialManagerImpl.PSEUDONYM_PREFIX); 
+            } else {
+              throw new RuntimeException("PseudonymUIDs don't match prefixed card UID : "+pseudonymUID +" vs. "+prefixedPseudonymUID);
+            }
         }
         pseudonym.setSecretReference(secretReference);
         pseudonym.setExclusive(true);       
@@ -131,9 +141,9 @@ public abstract class AbstractPseudonymSerializer implements PseudonymSerializer
         URI groupParameterId = URI.create("http://www.zurich.ibm.com/security/idmx/v2/gp.xml");
 
         URI secretUID = sc.getDeviceURI(pin);
-        StoredDomainPseudonym dp = new StoredDomainPseudonym(scopeFromStream, secretUID, groupParameterId);
-        cryptoEvidence.getAny().add(XMLSerializer.getInstance().serializeAsElement(dp));
-        pwm.setCryptoParams(cryptoEvidence);
+        PseudonymCryptoFacade pcf = new PseudonymCryptoFacade();
+        pcf.setScopeExclusivePseudonym(scopeFromStream, secretUID, pseudonym.getPseudonymValue());
+        pwm.setCryptoParams(pcf.getCryptoParams());
         
         return pwm;
     }
@@ -183,5 +193,9 @@ public abstract class AbstractPseudonymSerializer implements PseudonymSerializer
       }
 
       return fd;
+    }
+    
+    public int magicHeaderForScopeExclusive() {
+      return 70;
     }
 }

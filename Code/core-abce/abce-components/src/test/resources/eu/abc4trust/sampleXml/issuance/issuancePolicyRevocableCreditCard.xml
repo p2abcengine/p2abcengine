@@ -70,7 +70,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       <abc:CarriedOverAttribute TargetAttributeType="ExpirationDate">
         <abc:SourceCredentialInfo Alias="#studentid" AttributeType="Expires"/>
       </abc:CarriedOverAttribute>
-      <abc:JointlyRandomAttribute TargetAttributeType="CardNumber" />
+  <!--     <abc:JointlyRandomAttribute TargetAttributeType="CardNumber" /> -->
     </abc:UnknownAttributes>
   </abc:CredentialTemplate>
 </abc:IssuancePolicy>

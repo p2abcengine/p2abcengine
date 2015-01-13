@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -32,12 +36,12 @@ import eu.abc4trust.returnTypes.IssuMsgOrCredDesc;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.Credential;
 import eu.abc4trust.xml.IssuanceMessage;
-import eu.abc4trust.xml.IssuanceToken;
+import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuanceTokenDescription;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PresentationTokenDescription;
 import eu.abc4trust.xml.PseudonymWithMetadata;
-import eu.abc4trust.xml.Secret;
+import eu.abc4trust.xml.VerifierParameters;
 
 public interface CryptoEngineUser {
     /**
@@ -78,9 +82,9 @@ public interface CryptoEngineUser {
      * @return
      * @throws CryptoEngineException
      */
-    public PresentationToken createPresentationToken(PresentationTokenDescription td,
-            List<URI> creds,
-            List<URI> pseudonyms) throws CryptoEngineException;
+    public PresentationToken createPresentationToken(String username, PresentationTokenDescription td,
+            VerifierParameters vp, List<URI> creds, List<URI> pseudonyms)
+                throws CryptoEngineException;
 
     /**
      * This method generates the extended cryptographic evidence for the given issuance token
@@ -119,8 +123,9 @@ public interface CryptoEngineUser {
      * @return
      * @throws TokenIssuanceException
      */
-    public IssuanceToken createIssuanceToken(IssuanceTokenDescription itd, List<URI> creduids,
-            List<Attribute> atts, List<URI> pseudonyms, URI ctxt);
+     public IssuanceMessage createIssuanceToken(String username, IssuanceMessage im, IssuanceTokenDescription itd,
+         List<URI> creduids, List<URI> pseudonyms, List<Attribute> atts)
+             throws CryptoEngineException;
 
     /**
      * On input an incoming issuance message m, this method first extracts the
@@ -145,7 +150,7 @@ public interface CryptoEngineUser {
      * @return
      * @throws CryptoEngineException
      */
-    public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m)
+    public IssuMsgOrCredDesc issuanceProtocolStep(String username, IssuanceMessage m)
             throws CryptoEngineException;
 
     /**
@@ -160,13 +165,16 @@ public interface CryptoEngineUser {
      * 
      * If the credential was revoked, this method must throw a CredentialWasRevokedException.
      * 
+     * This method is also responsible for updating the credential in the credential manager if
+     * needed.
+     * 
      * @param cred
      * @param raparsuid
      * @param revokedatts
      * @return
      * @throws CredentialWasRevokedException 
      */
-    public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
+    public Credential updateNonRevocationEvidence(String username, Credential cred, URI raparsuid,
             List<URI> revokedatts) throws CryptoEngineException, CredentialWasRevokedException;
 
     /**
@@ -181,6 +189,9 @@ public interface CryptoEngineUser {
      * 
      * If the credential was revoked, this method must throw a CredentialWasRevokedException.
      * 
+     * This method is also responsible for updating the credential in the credential manager if
+     * needed.
+     * 
      * @param cred
      * @param raparsuid
      * @param revokedatts
@@ -188,7 +199,7 @@ public interface CryptoEngineUser {
      * @return
      * @throws CredentialWasRevokedException 
      */
-    public Credential updateNonRevocationEvidence(Credential cred,
+    public Credential updateNonRevocationEvidence(String username, Credential cred,
             URI raparsuid, List<URI> revokedatts, URI revinfouid)
                     throws CryptoEngineException, CredentialWasRevokedException;
 
@@ -198,16 +209,10 @@ public interface CryptoEngineUser {
      * the pseudonym.
      * The caller is responsible for storing the pseudonym.
      * The pseudonym will not contain any metadata.
+     * @throws CryptoEngineException 
      */
-    public PseudonymWithMetadata createPseudonym(URI pseudonymUri, String scope, boolean exclusive,
-            URI secretReference);
-
-    /**
-     * Create a new (non-device-bound) secret.
-     * This method must generate a random UID for the secret.
-     * The caller is responsible for storing the secret.
-     */
-    public Secret createSecret();
+    public PseudonymWithMetadata createPseudonym(String username, URI pseudonymUri, String scope, boolean exclusive,
+            URI secretReference) throws CryptoEngineException;
 
     /**
      * This method checks if the given credential has been revoked. Returns true
@@ -217,6 +222,17 @@ public interface CryptoEngineUser {
      * @return
      * @throws CryptoEngineException
      */
-    public boolean isRevoked(Credential cred) throws CryptoEngineException;
+    public boolean isRevoked(String username, Credential cred) throws CryptoEngineException;
+    
+    /**
+     * Extract the issuance policy in the issuance message, or return null if the message does
+     * not contain one. This message will return a non-null value for the first message of an
+     * advanced issuance only.
+     * If this method returns non-null, it is mandatory to generate an issuance token description
+     * and call createIssuanceToken() (instead of issuanceProtocolStep()).
+     * @param issuanceMessage
+     * @return
+     */
+    public IssuancePolicy extractIssuancePolicy(IssuanceMessage issuanceMessage);
 
 }

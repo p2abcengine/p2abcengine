@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -52,38 +54,38 @@ public class CredentialManagerImplTest {
     public void storeKey() throws Exception {
         SecretKey inspectorSecretKey = new SecretKey();
         CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString1");
+        cryptoParams.getContent().add("TestString1");
         inspectorSecretKey.setCryptoParams(cryptoParams);
         credMng.storeInspectorSecretKey(EXPECTED_UUID, inspectorSecretKey);
 
         SecretKey storedInspectorSecretKey = credMng
                 .getInspectorSecretKey(EXPECTED_UUID);
-        assertEquals(inspectorSecretKey.getCryptoParams().getAny().get(0),
-                storedInspectorSecretKey.getCryptoParams().getAny().get(0));
+        assertEquals(inspectorSecretKey.getCryptoParams().getContent().get(0),
+                storedInspectorSecretKey.getCryptoParams().getContent().get(0));
     }
 
     @Test
     public void updateKey() throws Exception {
         SecretKey inspectorSecretKey = new SecretKey();
         CryptoParams cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString1");
+        cryptoParams.getContent().add("TestString1");
         inspectorSecretKey.setCryptoParams(cryptoParams);
         credMng.storeInspectorSecretKey(EXPECTED_UUID, inspectorSecretKey);
 
         SecretKey storedInspectorSecretKey = credMng
                 .getInspectorSecretKey(EXPECTED_UUID);
-        assertEquals(inspectorSecretKey.getCryptoParams().getAny().get(0),
-                storedInspectorSecretKey.getCryptoParams().getAny().get(0));
+        assertEquals(inspectorSecretKey.getCryptoParams().getContent().get(0),
+                storedInspectorSecretKey.getCryptoParams().getContent().get(0));
 
         SecretKey inspectorSecretKey_new = new SecretKey();
         cryptoParams = new CryptoParams();
-        cryptoParams.getAny().add("TestString1");
+        cryptoParams.getContent().add("TestString1");
         inspectorSecretKey_new.setCryptoParams(cryptoParams);
         credMng.storeInspectorSecretKey(EXPECTED_UUID, inspectorSecretKey_new);
         SecretKey storedInspectorSecretKey_new = credMng
                 .getInspectorSecretKey(EXPECTED_UUID);
-        assertEquals(inspectorSecretKey_new.getCryptoParams().getAny().get(0),
-                storedInspectorSecretKey_new.getCryptoParams().getAny().get(0));
+        assertEquals(inspectorSecretKey_new.getCryptoParams().getContent().get(0),
+                storedInspectorSecretKey_new.getCryptoParams().getContent().get(0));
     }
 
     @Test (expected=CredentialManagerException.class)
@@ -105,7 +107,7 @@ public class CredentialManagerImplTest {
         for (int i = 0 ; i != 10 ; ++i) {
             SecretKey inspectorSecretKey = new SecretKey();
             CryptoParams cryptoParams = new CryptoParams();
-            cryptoParams.getAny().add("TestString1");
+            cryptoParams.getContent().add("TestString1");
             inspectorSecretKey.setCryptoParams(cryptoParams);
             keys.put(URI.create(UUID.randomUUID().toString()), inspectorSecretKey);
         }

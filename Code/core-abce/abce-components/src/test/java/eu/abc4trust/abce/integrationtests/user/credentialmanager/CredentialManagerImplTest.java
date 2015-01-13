@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -51,7 +52,7 @@ import eu.abc4trust.abce.internal.user.credentialManager.PersistentSecretStorage
 import eu.abc4trust.abce.internal.user.credentialManager.SecretStorage;
 import eu.abc4trust.abce.testharness.ImagePathBuilder;
 import eu.abc4trust.cryptoEngine.CredentialWasRevokedException;
-import eu.abc4trust.cryptoEngine.user.CredentialSerializerSmartcard;
+import eu.abc4trust.cryptoEngine.user.CredentialSerializerGzipXml;
 import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
 import eu.abc4trust.keyManager.InMemoryKeyStorage;
 import eu.abc4trust.keyManager.KeyManager;
@@ -73,11 +74,12 @@ import eu.abc4trust.xml.Secret;
 import eu.abc4trust.xml.SecretDescription;
 
 
-public class CredentialManagerImplTest {
+public class CredentialManagerImplTest {    
 
     private static final URI EXPECTED_UUID = URI.create("ba419d35-0dfe-4af7-aee7-bbe10c45c028");
 
     private static CardStorage cardStorage = new CardStorage();
+    private static final String USERNAME = "defaultUser";
 
     @Test
     public void attachMetadataToPseudonym() throws Exception {
@@ -98,14 +100,14 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Pseudonym p = new Pseudonym();
         p.setPseudonymUID(EXPECTED_UUID);
         p.setPseudonymValue(new byte[] { 1, 2, 3 });
         PseudonymMetadata md = new PseudonymMetadata();
-        credMng.attachMetadataToPseudonym(p, md);
-        PseudonymWithMetadata pmd = credMng.getPseudonymWithMetadata(p);
+        credMng.attachMetadataToPseudonym(USERNAME, p, md);
+        PseudonymWithMetadata pmd = credMng.getPseudonym(USERNAME, p.getPseudonymUID());
         assertNotNull(pmd);
     }
 
@@ -128,15 +130,15 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Credential cred = new Credential();
         CredentialDescription credDesc = new CredentialDescription();
         credDesc.setImageReference(ImagePathBuilder.TEST_IMAGE_JPG);
         cred.setCredentialDescription(credDesc);
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
-        Credential storedCred = credMng.getCredential(credUri);
+        Credential storedCred = credMng.getCredential(USERNAME, credUri);
         assertEquals(EXPECTED_UUID,
                 storedCred.getCredentialDescription().getCredentialUID());
     }
@@ -160,7 +162,7 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Credential[] creds = new Credential[3];
         creds[0] = new Credential();
@@ -181,7 +183,7 @@ public class CredentialManagerImplTest {
             URI credUid = new URI("Cred-Uri");
             credDesc.setCredentialUID(credUid);
             cred.setCredentialDescription(credDesc);
-            URI credUri = credMng.storeCredential(cred);
+            URI credUri = credMng.storeCredential(USERNAME, cred);
             assertNotNull(credUri);
         }
 
@@ -191,7 +193,7 @@ public class CredentialManagerImplTest {
         List<URI> credspecs = new LinkedList<URI>();
         credspecs.add(credSpecUris[2]);
         List<CredentialDescription> storedCredSpecs = credMng
-                .getCredentialDescription(issuers,
+                .getCredentialDescription(USERNAME, issuers,
                         credspecs);
         for (int inx = 0; inx < storedCredSpecs.size(); inx++) {
             assertEquals(issuerUris[2], storedCredSpecs.get(inx)
@@ -218,16 +220,16 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Credential cred = new Credential();
         CredentialDescription credDesc = new CredentialDescription();
         credDesc.setImageReference(ImagePathBuilder.TEST_IMAGE_JPG);
         cred.setCredentialDescription(credDesc);
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
         CredentialDescription storedCredDesc = credMng
-                .getCredentialDescription(credUri);
+                .getCredentialDescription(USERNAME, credUri);
         assertEquals(EXPECTED_UUID, storedCredDesc.getCredentialUID());
     }
 
@@ -249,7 +251,7 @@ public class CredentialManagerImplTest {
         URI raparsUid = new URI("sample-uri");
         List<URI> revokedAttrs = new LinkedList<URI>();
         EasyMock.expect(
-                mockEngine.updateNonRevocationEvidence(
+                mockEngine.updateNonRevocationEvidence(EasyMock.eq(USERNAME), 
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class)))
                         .andThrow(new CredentialWasRevokedException());
@@ -269,11 +271,11 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerGzipXml());
 
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
-        assertTrue(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs));
+        assertTrue(credMng.hasBeenRevoked(USERNAME, credUri, raparsUid, revokedAttrs));
 
         EasyMock.verify(mockEngine);
     }
@@ -296,7 +298,7 @@ public class CredentialManagerImplTest {
         URI raparsUid = new URI("sample-uri");
         List<URI> revokedAttrs = new LinkedList<URI>();
         EasyMock.expect(
-                mockEngine.updateNonRevocationEvidence(
+                mockEngine.updateNonRevocationEvidence(EasyMock.eq(USERNAME), 
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class)))
                         .andReturn(cred);
@@ -317,11 +319,11 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerGzipXml());
 
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
-        assertFalse(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs));
+        assertFalse(credMng.hasBeenRevoked(USERNAME, credUri, raparsUid, revokedAttrs));
 
         EasyMock.verify(mockEngine);
     }
@@ -345,7 +347,7 @@ public class CredentialManagerImplTest {
         List<URI> revokedAttrs = new LinkedList<URI>();
         URI revinfouid = new URI("sample-revinfo-uid");
         EasyMock.expect(
-                mockEngine.updateNonRevocationEvidence(
+                mockEngine.updateNonRevocationEvidence(EasyMock.eq(USERNAME), 
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class),
                         EasyMock.eq(revinfouid))).andThrow(
@@ -367,11 +369,11 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerGzipXml());
 
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
-        assertTrue(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs,
+        assertTrue(credMng.hasBeenRevoked(USERNAME, credUri, raparsUid, revokedAttrs,
                 revinfouid));
 
         EasyMock.verify(mockEngine);
@@ -396,7 +398,7 @@ public class CredentialManagerImplTest {
         List<URI> revokedAttrs = new LinkedList<URI>();
         URI revinfouid = new URI("sample-revinfo-uid");
         EasyMock.expect(
-                mockEngine.updateNonRevocationEvidence(
+                mockEngine.updateNonRevocationEvidence(EasyMock.eq(USERNAME), 
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class),
                         EasyMock.eq(revinfouid))).andReturn(cred);
@@ -417,11 +419,11 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerGzipXml());
 
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
-        assertFalse(credMng.hasBeenRevoked(credUri, raparsUid, revokedAttrs,
+        assertFalse(credMng.hasBeenRevoked(USERNAME, credUri, raparsUid, revokedAttrs,
                 revinfouid));
 
         EasyMock.verify(mockEngine);
@@ -449,7 +451,7 @@ public class CredentialManagerImplTest {
 
         random = new Random(42);
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Credential[] creds = new Credential[3];
         creds[0] = new Credential();
@@ -460,7 +462,7 @@ public class CredentialManagerImplTest {
             CredentialDescription credDesc = new CredentialDescription();
             credDesc.setImageReference(ImagePathBuilder.TEST_IMAGE_JPG);
             cred.setCredentialDescription(credDesc);
-            URI expectedValue = credMng.storeCredential(cred);
+            URI expectedValue = credMng.storeCredential(USERNAME, cred);
             assertNotNull(expectedValue);
         }
 
@@ -468,9 +470,9 @@ public class CredentialManagerImplTest {
         expectedValues[0] = URI.create("ba419d35-0dfe-4af7-aee7-bbe10c45c028");
         expectedValues[1] = URI.create("4f083ce3-f12b-4b4b-86ee-9d82b52c856d");
         expectedValues[2] = URI.create("aa616abe-1761-4c9a-a743-67bd738597dc");
-        List<URI> storedCredURIs = credMng.listCredentials();
+        List<URI> storedCredURIs = credMng.listCredentials(USERNAME);
         for (int inx = 0; inx < creds.length; inx++) {
-            Credential credential = credMng.getCredential(storedCredURIs
+            Credential credential = credMng.getCredential(USERNAME, storedCredURIs
                     .get(inx));
             assertEquals(expectedValues[inx], credential
                     .getCredentialDescription()
@@ -498,7 +500,7 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Credential cred = new Credential();
         CredentialDescription credDesc = new CredentialDescription();
@@ -506,7 +508,7 @@ public class CredentialManagerImplTest {
         URI credUid = new URI("Cred-Uri");
         credDesc.setCredentialUID(credUid);
         cred.setCredentialDescription(credDesc);
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
     }
 
@@ -530,7 +532,7 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Pseudonym pseudonym = new Pseudonym();
         final byte[] pseudonymValue = new byte[] { 3, 2, 5 };
@@ -538,10 +540,10 @@ public class CredentialManagerImplTest {
         pseudonym.setPseudonymUID(EXPECTED_UUID);
         PseudonymWithMetadata pseudonymWithMetadata = new PseudonymWithMetadata();
         pseudonymWithMetadata.setPseudonym(pseudonym);
-        credMng.storePseudonym(pseudonymWithMetadata);
+        credMng.storePseudonym(USERNAME, pseudonymWithMetadata);
 
         PseudonymWithMetadata storedPseudonymWithMetaData = credMng
-                .getPseudonymWithMetadata(pseudonym);
+                .getPseudonym(USERNAME, pseudonym.getPseudonymUID());
 
         assertArrayEquals(pseudonymWithMetadata.getPseudonym()
                 .getPseudonymValue(), storedPseudonymWithMetaData
@@ -593,7 +595,7 @@ public class CredentialManagerImplTest {
         revokedAttrs.add(new URI(
                 "http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle"));
         EasyMock.expect(
-                mockEngine.updateNonRevocationEvidence(
+                mockEngine.updateNonRevocationEvidence(EasyMock.eq(USERNAME), 
                         EasyMock.isA(Credential.class),
                         EasyMock.isA(URI.class), EasyMock.isA(List.class)))
                         .andReturn(updatedCred);
@@ -614,14 +616,14 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, mockEngine, random, cardStorage, new CredentialSerializerGzipXml());
 
-        URI credUri = credMng.storeCredential(orginalCred);
+        URI credUri = credMng.storeCredential(USERNAME, orginalCred);
         assertNotNull(credUri);
         //This command updates the old credential. Does not create a new.
-        credMng.updateNonRevocationEvidence();
+        credMng.updateNonRevocationEvidence(USERNAME);
 
-        Credential testCredential = credMng.getCredential(updatedCred
+        Credential testCredential = credMng.getCredential(USERNAME, updatedCred
                 .getCredentialDescription().getCredentialUID());
         assertNotNull(testCredential);
         assertEquals(orginalCred.getCredentialDescription().getCredentialUID(),
@@ -649,16 +651,16 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         URI pseudonymUid = URI.create("foo-bar-pseudonym-uid");
         String scope = "http://universitypatras.gr/issuer";
         PseudonymWithMetadata pwm = this.createPseudonym(pseudonymUid, scope,
                 true);
 
-        credMng.storePseudonym(pwm);
+        credMng.storePseudonym(USERNAME, pwm);
 
-        PseudonymWithMetadata storedPwm = credMng.getPseudonym(pseudonymUid);
+        PseudonymWithMetadata storedPwm = credMng.getPseudonym(USERNAME, pseudonymUid);
         assertNotNull(storedPwm);
 
         assertEquals(pwm.getPseudonym().getScope(), storedPwm.getPseudonym()
@@ -685,24 +687,24 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         URI pseudonymUid = URI.create("foo-bar-pseudonym-uid");
         String scope = "http://universitypatras.gr/issuer";
         PseudonymWithMetadata pwm = this.createPseudonym(pseudonymUid, scope,
                 true);
 
-        credMng.storePseudonym(pwm);
+        credMng.storePseudonym(USERNAME, pwm);
 
-        PseudonymWithMetadata storedPwm = credMng.getPseudonym(pseudonymUid);
+        PseudonymWithMetadata storedPwm = credMng.getPseudonym(USERNAME, pseudonymUid);
         assertNotNull(storedPwm);
 
         assertEquals(pwm.getPseudonym().getScope(), storedPwm.getPseudonym()
                 .getScope());
 
-        credMng.deletePseudonym(pseudonymUid);
+        credMng.deletePseudonym(USERNAME, pseudonymUid);
 
-        storedPwm = credMng.getPseudonym(pseudonymUid);
+        storedPwm = credMng.getPseudonym(USERNAME, pseudonymUid);
     }
 
     private PseudonymWithMetadata createPseudonym(URI pseudonymUid,
@@ -750,7 +752,7 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
 
         PseudonymWithMetadata[] pwms = new PseudonymWithMetadata[3];
@@ -765,7 +767,7 @@ public class CredentialManagerImplTest {
         pwms[2] = this.createPseudonym(p3Uid, p3Scope, true);
 
         for (PseudonymWithMetadata pwm : pwms) {
-            credMng.storePseudonym(pwm);
+            credMng.storePseudonym(USERNAME, pwm);
         }
 
         Pseudonym storedPseudonym = this.getPseudonymFromList(credMng, p2Scope,
@@ -778,7 +780,7 @@ public class CredentialManagerImplTest {
 
     private Pseudonym getPseudonymFromList(CredentialManagerImpl credMng,
             String p2Scope, boolean exlusive) throws CredentialManagerException {
-        List<PseudonymWithMetadata> storedPwms = credMng.listPseudonyms(
+        List<PseudonymWithMetadata> storedPwms = credMng.listPseudonyms(USERNAME, 
                 p2Scope, exlusive);
         assertEquals(1, storedPwms.size());
         PseudonymWithMetadata storedPwm = storedPwms.get(0);
@@ -813,15 +815,15 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Secret sec = new Secret();
         SecretDescription secDesc = new SecretDescription();
         URI secuid = new URI("Sec-Uri");
         secDesc.setSecretUID(secuid);
         sec.setSecretDescription(secDesc);
-        credMng.storeSecret(sec);
-        Secret res = credMng.getSecret(secuid);
+        credMng.storeSecret(USERNAME, sec);
+        Secret res = credMng.getSecret(USERNAME, secuid);
         assertNotNull(res);
     }
 
@@ -845,7 +847,7 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         URI secUid = URI.create("foo-bar-secret-uid");
 
@@ -855,15 +857,15 @@ public class CredentialManagerImplTest {
         secDesc.setSecretUID(secUid);
         sec.setSecretDescription(secDesc);
 
-        credMng.storeSecret(sec);
+        credMng.storeSecret(USERNAME, sec);
 
-        Secret res = credMng.getSecret(secUid);
+        Secret res = credMng.getSecret(USERNAME, secUid);
         assertNotNull(res);
 
 
-        credMng.deleteSecret(secUid);
+        credMng.deleteSecret(USERNAME, secUid);
 
-        res = credMng.getSecret(secUid);
+        res = credMng.getSecret(USERNAME, secUid);
     }
 
     @Test
@@ -884,16 +886,16 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl credMng = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
 
         Credential cred = new Credential();
         CredentialDescription credDesc = new CredentialDescription();
         credDesc.setImageReference(ImagePathBuilder.TEST_IMAGE_JPG);
         cred.setCredentialDescription(credDesc);
-        URI credUri = credMng.storeCredential(cred);
+        URI credUri = credMng.storeCredential(USERNAME, cred);
         assertNotNull(credUri);
         CredentialDescription storedCredDesc = credMng
-                .getCredentialDescription(credUri);
+                .getCredentialDescription(USERNAME, credUri);
         assertTrue(ImageTestUtil.compareImages(new File(ImagePathBuilder.TEST_IMAGE_JPG_STRING),
                 new File(storedCredDesc.getImageReference())));
     }
@@ -916,17 +918,17 @@ public class CredentialManagerImplTest {
         ImageCache imCache = new ImageCacheImpl(imStore);
 
         CredentialManagerImpl cm = new CredentialManagerImpl(credStore,
-                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerSmartcard(keyManager, new ArrayList<String>()));
+                secStore, keyManager, imCache, engine, random, cardStorage, new CredentialSerializerGzipXml());
         Credential cred = new Credential();
         CredentialDescription credDesc = new CredentialDescription();
         credDesc.setImageReference(ImagePathBuilder.TEST_IMAGE_JPG);
         cred.setCredentialDescription(credDesc);
-        URI credUri = cm.storeCredential(cred);
+        URI credUri = cm.storeCredential(USERNAME, cred);
 
-        cm.deleteCredential(credUri);
+        cm.deleteCredential(USERNAME, credUri);
         Credential nullCred = null;
         try{
-            nullCred = cm.getCredential(credUri);
+            nullCred = cm.getCredential(USERNAME, credUri);
         }catch(CredentialNotInStorageException e){
             //Good - it should not be found!
         }

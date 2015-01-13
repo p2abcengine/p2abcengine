@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -50,9 +54,6 @@ import javax.smartcardio.ResponseAPDU;
 
 import org.apache.commons.lang.NotImplementedException;
 
-import eu.abc4trust.cryptoEngine.idemix.user.IdemixCryptoEngineUserImpl;
-import eu.abc4trust.cryptoEngine.uprove.user.ReloadStorageManager;
-import eu.abc4trust.cryptoEngine.uprove.user.UProveCryptoEngineUserImpl;
 import eu.abc4trust.cryptoEngine.user.CredentialSerializer;
 import eu.abc4trust.cryptoEngine.user.PseudonymSerializer;
 import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
@@ -71,6 +72,9 @@ import eu.abc4trust.xml.PseudonymWithMetadata;
  */
 public class HardwareSmartcard implements Smartcard {
 
+	public static final String CREDENTIAL_PREFIX = "device-cred-";
+	static public final String UPROVE_RELOAD_URI_POSTFIX = ":S:UPROVERELOAD";
+	
 	private Card card;
     private CardChannel channel;
     private CardTerminal terminal;
@@ -144,7 +148,8 @@ public class HardwareSmartcard implements Smartcard {
 
     private final int
     backupCredential = 0x80, // pin, password (8 bytes), credentialID - Exteded
-    restoreCredential = 0x82; //pin, password (8 bytes) - NOT Exteded.
+    restoreCredential = 0x82, //pin, password (8 bytes) - NOT Exteded.
+    isAndroid = 0x8E; //only Android smartcard should answer this command with success
     
     private final int ABC4TRUSTCMD = 0xBC,
             STATUS_OK = 0x90,
@@ -160,8 +165,8 @@ public class HardwareSmartcard implements Smartcard {
     		STATUS_BAD_PUK = 0x05,
     		STATUS_CARD_DEAD = 0x06;
 
-    private static final int MAX_CREDENTIALS = 8;
-    public static final int MAX_BLOB_BYTES = 512;
+    private static final int MAX_CREDENTIALS = 3;
+    public  int max_blob_bytes = 512;
 
     private final Random rand; 
 	private static final StaticUriToIDMap staticMap = StaticUriToIDMap.getInstance();
@@ -177,7 +182,12 @@ public class HardwareSmartcard implements Smartcard {
         this.terminal = terminal;
         this.channel = card.getBasicChannel();
         this.card = card;
-        this.rand = rand;                
+        this.rand = rand;
+        
+        if (isAndroid()) {
+        	System.out.println("Running with an Android phone, so we limit the max blob size to 255 bytes");
+        	max_blob_bytes = 253; //Android does not support extended apdu's
+        }
     }    
     
     private ResponseAPDU transmitCommand(CommandAPDU cmd) throws CardException{
@@ -413,6 +423,20 @@ public class HardwareSmartcard implements Smartcard {
     	}
     }
 
+    private boolean isAndroid() {
+        try {
+        	ByteBuffer buf = ByteBuffer.allocate(5);
+        	buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, (byte) this.isAndroid, 0, 0, 0});
+        	buf.position(0);
+        	System.out.println("Input to isAndroid: " + Arrays.toString(buf.array()));
+            ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
+            System.out.println("Reponse from isAndroid: " + response);
+            return (this.evaluateStatus(response) == SmartcardStatusCode.OK);                
+        } catch (CardException e) {
+            return false;
+        }
+    }
+    
     public int getMode(){
         try {
         	ByteBuffer buf = ByteBuffer.allocate(5);
@@ -889,13 +913,13 @@ public class HardwareSmartcard implements Smartcard {
         SystemParameters params = this.getSystemParameters(pin);
         comm.spec = new ZkProofSpecification(params);
         comm.spec.parametersForPseudonyms = params;
-        comm.spec.credentialBases = new HashMap<URI, GroupParameters>();
+        comm.spec.credentialBases = new HashMap<URI, SmartcardParameters>();
         comm.spec.credFragment = new HashMap<URI, BigInteger>();
         for(URI courseId: credentialIds) {
             byte credID = this.getCredentialIDFromUri(pin, courseId);
             byte[] cred = this.readCredential(pin, credID);            
             byte issuerID = cred[0];
-            GroupParameters groupParams = this.getGroupParameters(pin, issuerID); 
+            SmartcardParameters groupParams = this.getGroupParameters(pin, issuerID); 
             comm.spec.credentialBases.put(courseId, groupParams);
             comm.spec.credFragment.put(courseId, this.computeCredentialFragment(pin, courseId));
         }
@@ -904,11 +928,10 @@ public class HardwareSmartcard implements Smartcard {
         byte[] data = new byte[5];
         System.arraycopy(this.pinToByteArr(pin), 0, data, 0, 4);
         data[4] = 1; //ProverID - TODO: hardcoded to 1 as of now. Assuming there can be only 1 for the pilot
-        byte[] proofSession = null;
-        ByteBuffer buf = ByteBuffer.allocate(11);
+        ByteBuffer buf = ByteBuffer.allocate(10);
         buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.startCommitments, 0, 0, 5});
         buf.put(data);
-        buf.put((byte)16);
+        //buf.put((byte)16);
         buf.position(0);
         try {        	
         	if(printInput)
@@ -919,16 +942,13 @@ public class HardwareSmartcard implements Smartcard {
         	TimingsLogger.logTiming("HardwareSmartcard.transmitCommand(startCommitments)", false);
             
             System.out.println("Response from startCommitments: "+response);
-            System.out.println("And this is the output: " + Arrays.toString(response.getData()));
             if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
                 return null;
             }
-            proofSession = response.getData();
         } catch (CardException e) {
             throw new RuntimeException("PrepareZkProof crashed.", e);
         }
         //ProofStatus set to 1        
-        comm.nonceCommitment = proofSession;
 
         if(includeDevicePublicKeyProof){
             comm.spec.devicePublicKey = this.computeDevicePublicKey(pin);
@@ -1003,20 +1023,13 @@ public class HardwareSmartcard implements Smartcard {
         }
     }
 
-    private GroupParameters getGroupParameters(int pin, byte groupID) {
+    private SmartcardParameters getGroupParameters(int pin, byte groupID) {
 		BigInteger g1 = this.getGenerator(pin, groupID, 1);
 		BigInteger g2 = this.getGenerator(pin, groupID, 2);
 		BigInteger n = this.getGroupComponent(pin, groupID, 0);
-		GroupParameters gp;
-		if(g2 == null){
-			//UPROVE
-			BigInteger q = this.getGroupComponent(pin, groupID, 1);
-			gp = new UProveParams(g1, n, q);
-		}else{
-			//IDEMIX
-			gp = new CredentialBases(g1, g2, n);			
-		}
-		return gp;
+		BigInteger q = this.getGroupComponent(pin, groupID, 1);
+		
+		return new SmartcardParameters(n, q, g1, g2);
 	}
 
 	/**
@@ -1140,18 +1153,33 @@ public class HardwareSmartcard implements Smartcard {
         }
     }   
 
+    private byte[] getChallengeBytesFromChallenge(BigInteger c){
+    	byte[] c_bytes = c.toByteArray();
+    	byte[] res = new byte[32];
+    	if(c_bytes.length > 32){
+    		res = this.removeSignBit(c_bytes);
+    	}else if(c_bytes.length == 32){
+    		res = c_bytes;
+    	}else{
+    		System.arraycopy(c_bytes, 0, res, 32-c_bytes.length, c_bytes.length);
+    	}
+    	System.out.println("Challenge comming in: "+c);
+    	System.out.println("Challenge going out: "+new BigInteger(1, res));
+    	System.out.println("The same? "+c.equals(new BigInteger(1, res)));
+    	return res;
+    }
+    
     @Override
     public ZkProofResponse finalizeZkProof(int pin,
-            byte[] challengeHashPreimage, Set<URI> credentialIDs,
-            Set<URI> scopeExclusivePseudonyms, byte[] nonceCommitment) {
-        byte[] data = new byte[4+1+1+16+challengeHashPreimage.length]; //pin, prooverID, d which is the number of proofs, proofsession and h
+            BigInteger challenge, Set<URI> credentialIDs,
+            Set<URI> scopeExclusivePseudonyms) {
+    	byte[] challenge_bytes = this.getChallengeBytesFromChallenge(challenge);
+    	System.out.println("Challenge bytes length after removing sign bit: "+challenge_bytes.length);
+        byte[] data = new byte[4+1+challenge_bytes.length]; //pin, prooverID, challenge
         System.arraycopy(this.pinToByteArr(pin), 0, data, 0, 4);
         data[4] = 1; //TODO: ProoverID - Hardcoded for now
-        data[5] = 1; //number of proofs - hardcoded to 1 for pilot.
-        System.out.println("nonce length: " + nonceCommitment.length);
-        System.out.println("data length: " + data.length);
-        System.arraycopy(nonceCommitment, 0, data, 6, 16);        
-        System.arraycopy(challengeHashPreimage, 0, data, 4+1+1+16, challengeHashPreimage.length);
+        System.out.println("data length: " + data.length);        
+        System.arraycopy(challenge_bytes, 0, data, 4+1, challenge_bytes.length);
         
         ByteBuffer buf = ByteBuffer.allocate(7 + data.length);        
         buf.put(new byte[]{(byte) this.ABC4TRUSTCMD, this.startResponses, 0, 0, 0});
@@ -1210,8 +1238,21 @@ public class HardwareSmartcard implements Smartcard {
                 System.arraycopy(response.getData(), zx.length, zv, 0, zv.length);
                 System.out.println("zx: " + Arrays.toString(zx));
                 System.out.println("zv: " + Arrays.toString(zv));
-                zkpr.responseForCourses.put(uri, new BigInteger(1, zv));
-                zkpr.responseForDeviceSecret = new BigInteger(1, zx);
+                boolean idemix = true;
+                byte issuerID = credInfo[0];
+                byte[] issuerInfo = this.readIssuer(pin, issuerID);
+                byte genID2 = issuerInfo[2];
+                if(genID2 == 0){
+                	idemix = false;
+                }
+                if(idemix){
+                	System.out.println("Info: this is an IDEMIX ISSUER. We thus set zv: " + new BigInteger(1, zv));
+                	zkpr.responseForCourses.put(uri, new BigInteger(1, zv));
+                	zkpr.responseForDeviceSecret = new BigInteger(1, zx);
+                }else{
+                	System.out.println("Info: this is an UPROVE ISSUER. We thus DO NOT set zv to anything. Instead we use the device response as zx");
+                	//Do nothing
+                }                                
             } catch (CardException e) {
                 e.printStackTrace();
                 return null;
@@ -1307,13 +1348,13 @@ public class HardwareSmartcard implements Smartcard {
 		boolean done = false;
 		while(!done){
 			SmartcardBlob blob = new SmartcardBlob();	
-			if(bytesLeft > MAX_BLOB_BYTES){
-				blob.blob = new byte[MAX_BLOB_BYTES];
-				bytesLeft -= MAX_BLOB_BYTES;
-				System.arraycopy(credBytes, i*MAX_BLOB_BYTES, blob.blob, 0, MAX_BLOB_BYTES);
+			if(bytesLeft > max_blob_bytes){
+				blob.blob = new byte[max_blob_bytes];
+				bytesLeft -= max_blob_bytes;
+				System.arraycopy(credBytes, i*max_blob_bytes, blob.blob, 0, max_blob_bytes);
 			}else{
 				blob.blob = new byte[bytesLeft];
-				System.arraycopy(credBytes, i*MAX_BLOB_BYTES, blob.blob, 0, bytesLeft);
+				System.arraycopy(credBytes, i*max_blob_bytes, blob.blob, 0, bytesLeft);
 				done = true; //We know we are done as we put the last bytes in the blob.
 			}
 			URI credUri = URI.create(credentialId.toASCIIString()+"_"+nextCredBlobUri++);  
@@ -1340,13 +1381,13 @@ public class HardwareSmartcard implements Smartcard {
 		boolean done = false;
 		while(!done){
 			SmartcardBlob blob = new SmartcardBlob();	
-			if(bytesLeft > MAX_BLOB_BYTES){
-				blob.blob = new byte[MAX_BLOB_BYTES];
-				bytesLeft -= MAX_BLOB_BYTES;
-				System.arraycopy(pseudoBytes, i*MAX_BLOB_BYTES, blob.blob, 0, MAX_BLOB_BYTES);
+			if(bytesLeft > max_blob_bytes){
+				blob.blob = new byte[max_blob_bytes];
+				bytesLeft -= max_blob_bytes;
+				System.arraycopy(pseudoBytes, i*max_blob_bytes, blob.blob, 0, max_blob_bytes);
 			}else{
 				blob.blob = new byte[bytesLeft];
-				System.arraycopy(pseudoBytes, i*MAX_BLOB_BYTES, blob.blob, 0, bytesLeft);
+				System.arraycopy(pseudoBytes, i*max_blob_bytes, blob.blob, 0, bytesLeft);
 				done = true; //We know we are done as we put the last bytes in the blob.
 			}
 			URI credUri = URI.create(pseudonymId.toASCIIString()+"_"+nextPseudoBlobUri++);  
@@ -1377,7 +1418,7 @@ public class HardwareSmartcard implements Smartcard {
     	}
     	byte[] blob = scBlob.blob;
     	accumulatedPseuBytes.write(blob, 0, blob.length);    	
-    	if(blob.length < MAX_BLOB_BYTES){
+    	if(blob.length < max_blob_bytes){
     		return serializer.unserializePseudonym(accumulatedPseuBytes.toByteArray(), pseudonymUID);
     	}else{
     		//next round
@@ -1415,7 +1456,7 @@ public class HardwareSmartcard implements Smartcard {
     	}
     	byte[] blob = scBlob.blob;
     	accumulatedCredBytes.write(blob, 0, blob.length);
-    	if(blob.length < MAX_BLOB_BYTES){
+    	if(blob.length < max_blob_bytes){
     		//return new CredentialSerializerGzipXml().unserializeCredential(accumulatedCredBytes.toByteArray());
     		return serializer.unserializeCredential(accumulatedCredBytes.toByteArray(), credentialId, this.getDeviceURI(pin));
     	}else{
@@ -1479,8 +1520,8 @@ public class HardwareSmartcard implements Smartcard {
         try {
         	System.out.println("Removing credential with uri: " + credentialId);
         	this.deleteBlob(pin, credentialId);
-        	if(credentialId.toString().startsWith(UProveCryptoEngineUserImpl.UProveCredential)){
-        		URI reloadURI = URI.create(credentialId.toString()+ReloadStorageManager.URI_POSTFIX);
+        	if(credentialId.toString().startsWith(CREDENTIAL_PREFIX)){
+        		URI reloadURI = URI.create(credentialId.toString()+UPROVE_RELOAD_URI_POSTFIX);
         		if(reloadURI.toString().contains(":") && !reloadURI.toString().contains("_")){
         			reloadURI = URI.create(reloadURI.toString().replaceAll(":", "_")); //change all ':' to '_'
                 }
@@ -1878,8 +1919,8 @@ public class HardwareSmartcard implements Smartcard {
         Set<URI> blobs = this.getBlobUris(pin);
         for(URI uri: blobs){
         	String uriString = uri.toString();
-        	if((uriString.startsWith(IdemixCryptoEngineUserImpl.IdmxCredential) || 
-        			uriString.startsWith(UProveCryptoEngineUserImpl.UProveCredential)) &&
+        	System.out.println("Comparing: "+uriString+" to "+CREDENTIAL_PREFIX);
+        	if((uriString.startsWith(CREDENTIAL_PREFIX)) &&
         			uriString.endsWith("_1")){
         		URI credURI = URI.create(uri.toString().substring(0, uri.toString().length()-2));
         		System.out.println("listCredentialUris - added a cred uri: " + credURI);
@@ -1944,29 +1985,18 @@ public class HardwareSmartcard implements Smartcard {
 
     @Override
     public TrustedIssuerParameters getIssuerParameters(int pin, URI paramsUri) {
-    	CryptoEngine engine;
-    	if(paramsUri.toString().endsWith("uprove")){
-    		engine = CryptoEngine.UPROVE;
-    	}else{
-    		engine = CryptoEngine.IDEMIX;
-    	}
         int issuerID = this.getIssuerIDFromUri(pin, paramsUri);
         byte[] issuerData = this.readIssuer(pin, issuerID);
         byte groupID = issuerData[0];
         byte genID1 = issuerData[1];
         byte genID2 = issuerData[2];
         byte counterID = issuerData[4];
-        GroupParameters groupParams;
+
         BigInteger p = this.getGroupComponent(pin, groupID, 0);
-        if(engine == CryptoEngine.IDEMIX){
-        	BigInteger R0 = this.getGenerator(pin, groupID, genID1);
-        	BigInteger S = this.getGenerator(pin, groupID, genID2);
-        	groupParams = new CredentialBases(R0, S, p);
-        }else{
-        	BigInteger g = this.getGenerator(pin, groupID, genID1);
-        	BigInteger q = this.getGroupComponent(pin, groupID, 1);
-        	groupParams = new UProveParams(g, p, q);
-        }
+        BigInteger q = this.getGroupComponent(pin, groupID, 1);
+        BigInteger base1 = this.getGenerator(pin, groupID, genID1);
+        BigInteger base2 = this.getGenerator(pin, groupID, genID2);
+        SmartcardParameters groupParams = new SmartcardParameters(p, q, base1, base2);
 
         if (counterID == 0) {
         	return new TrustedIssuerParameters(paramsUri, groupParams);
@@ -2061,94 +2091,27 @@ public class HardwareSmartcard implements Smartcard {
     public SmartcardBackup backupAttendanceData(int pin, String password) {
         SmartcardBackup backup = new SmartcardBackup();
 
-        ByteBuffer buf = ByteBuffer.allocate(21);
-        buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.backupDevice, 0, 0, 0, 0, 0x0C});
-        buf.put(this.pinToByteArr(pin));
         byte[] password_bytes = Utils.passwordToByteArr(password);
         if(password_bytes == null){
             return null;
         }
-        buf.put(password_bytes);
-        buf.put(new byte[]{0, 0});
-        buf.position(0);
-
         try {
-            //First we backup the device-specific stuff. pin, puk and deviceSecret is encrypted and
-            //deviceID and deviceURI is stored in plain text
-            ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
-            System.out.println("Response from backupDevice: " + response);
-            if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
-                return null;
-            }
-            backup.macDevice = response.getData();
-            backup.deviceID = this.getDeviceID(pin);
-            backup.deviceUri = this.getDeviceURI(pin);
-
-            //Then we backup the counters. counterID, index and cursor is encrypted, but
+            //We backup the counters. counterID, index and cursor is encrypted, but
             //the threshold and keyID is hidden. Thus we need to save those along with the counterID
             //in cleartext. We assume that the key is put on the card in the initialization phase.
-//            buf = ByteBuffer.allocate(18);
-//            buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.backupCounters, 0, 0, 0x0C});
-//            buf.put(this.pinToByteArr(pin));
-//            buf.put(password_bytes);
-//            buf.put((byte)0);
-//            buf.position(0);
-//            response = this.transmitCommand(new CommandAPDU(buf));
-//            System.out.println("Response from backupCounters: " + response);
-//            if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
-//            	backup.macCounters = response.getData();
-//            }else{
-//            	backup.macCounters = null;
-//            }
-//
-//            List<Byte> credentials = this.listCredentialIDs(pin);
-//            for(Byte credID : credentials){
-//            	byte[] credInfo = this.readCredential(pin, credID);
-//            	byte status = credInfo[5];
-//            	System.out.println("backing up credential: "+this.getCredentialUriFromID(pin, credID)+" with status: " + status);
-//            	if(status != 2){
-//            		//Credential is either just created, and thus not backed up, 
-//            		//OR done presenting (limited amount of presentations), thus not backupable.
-//            		continue;
-//            	}
-//                buf = ByteBuffer.allocate(22);
-//                buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, (byte) this.backupCredential, 0, 0, 0, 0, 0x0D});
-//                buf.put(this.pinToByteArr(pin));
-//                buf.put(password_bytes);
-//                buf.put(credID);
-//                buf.put(new byte[]{0, 0});
-//                buf.position(0);
-//                response = this.transmitCommand(new CommandAPDU(buf));
-//                System.out.println("Response from backupCredentials: " + response);
-//                if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
-//                    return null;
-//                }
-//                backup.macCredentials.put(credID, response.getData());
-//            }
-
-            //Create AES key using the PIN and Password of the user
-            final byte[] IV = new byte[16];
-	        new SecureRandom().nextBytes(IV);
-            Cipher cipher = getAESKey(salt, password, IV, true);
-            backup.IV = IV;
-            //finally we backup the blobstore
-            Map<URI, SmartcardBlob> blobs = this.getBlobs(pin);
-            Map<URI, byte[]> encBlobs = new HashMap<URI, byte[]>();
-            try{
-	            for(URI uri : blobs.keySet()){
-	            	String uriString = uri.toString();
-	            	if(uriString.startsWith(IdemixCryptoEngineUserImpl.IdmxCredential) || 
-	                			uriString.startsWith(UProveCryptoEngineUserImpl.UProveCredential)){
-	            		continue;
-	            	}
-	            	byte[] blob = blobs.get(uri).blob;
-	            	encBlobs.put(uri, cipher.doFinal(blob));
-	            }
-            }catch(Exception e){
-            	throw new RuntimeException("Could not encrypt blobstore", e);
-            }
-            backup.blobstore = encBlobs; 
-
+            ByteBuffer buf = ByteBuffer.allocate(18);
+            buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.backupCounters, 0, 0, 0x0C});
+            buf.put(this.pinToByteArr(pin));
+            buf.put(password_bytes);
+            buf.put((byte)0);
+            buf.position(0);
+            ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
+            System.out.println("Response from backupCounters: " + response);
+            if(this.evaluateStatus(response) == SmartcardStatusCode.OK){
+            	backup.macCounters = response.getData();
+            }else{
+            	backup.macCounters = null;
+            }                        
         } catch (CardException e) {
             e.printStackTrace();
             return null;
@@ -2195,16 +2158,7 @@ public class HardwareSmartcard implements Smartcard {
 	}    
 
 	@Override
-    public SmartcardStatusCode restoreAttendanceData(int pin, String password, SmartcardBackup backup) {
-        //restore device URI
-        SmartcardBlob deviceUriBlob = new SmartcardBlob();
-        try {
-			deviceUriBlob.blob = backup.deviceUri.toASCIIString().getBytes("US-ASCII");
-		} catch (UnsupportedEncodingException e1) {
-			return SmartcardStatusCode.BAD_REQUEST;
-		}
-        this.storeBlob(pin, Smartcard.device_name, deviceUriBlob);
-           
+    public SmartcardStatusCode restoreAttendanceData(int pin, String password, SmartcardBackup backup) {           
         try {        	
         	ByteBuffer buf;
             if(backup.macCounters != null && backup.macCounters.length != 0){
@@ -2219,55 +2173,7 @@ public class HardwareSmartcard implements Smartcard {
 	            if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
 	                return this.evaluateStatus(response);
 	            }
-            }
-
-            for(byte credID : backup.macCredentials.keySet()){
-                buf = ByteBuffer.allocate(17);
-                buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, (byte) this.restoreCredential, 0, 0, 0x0C});
-                buf.put(this.pinToByteArr(pin));
-                buf.put(Utils.passwordToByteArr(password));
-                buf.position(0);
-                if(printInput)
-            		System.out.println("Input for for restoreCredential: " + Arrays.toString(buf.array()));
-                this.putData(backup.macCredentials.get(credID));//put the encrypted data in the buffer
-                ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
-                System.out.println("Response from restoreCredential: " + response);
-                if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
-                    return this.evaluateStatus(response);
-                }
-            }
-
-            //restoring the blob-store, but remove the current blob-store first (in particular remove the pseudonym that no longer works.)
-            Set<URI> blobs = this.getBlobUris(pin);
-            for(URI uri : blobs){
-            	this.deleteBlob(pin, uri);
-            }
-            try{
-	            for(URI uri : backup.blobstore.keySet()){
-	            	//decrypt blobs before putting them in.
-	            	byte[] encedBlob = backup.blobstore.get(uri);
-	            	Cipher cipher = getAESKey(salt, password, backup.IV, false);
-	            	byte[] blob  = cipher.doFinal(encedBlob);
-	            	SmartcardBlob SCBlob = new SmartcardBlob();
-	            	SCBlob.blob = blob;
-	                this.storeBlob(pin, uri, SCBlob);
-	            }
-            }catch(Exception e){
-            	throw new RuntimeException("Could not decrypt blobs", e);
-            }
-            //finally restore the device - this means also restoring the pin, so using the provided pin no longer works. 
-            buf = ByteBuffer.allocate(17);
-	        buf.put(new byte[]{(byte)this.ABC4TRUSTCMD, this.restoreDevice, 0, 0, 0x0C});
-	        buf.put(this.pinToByteArr(pin));
-	        buf.put(Utils.passwordToByteArr(password));
-	        buf.position(0);        
-            this.putData(backup.macDevice); //put the encrypted data in the buffer
-            ResponseAPDU response = this.transmitCommand(new CommandAPDU(buf));
-            System.out.println("Response from restoreDevice: " + response);
-            if(this.evaluateStatus(response) != SmartcardStatusCode.OK){
-                return this.evaluateStatus(response);
-            }
-            
+            }        
         } catch (CardException e) {
             e.printStackTrace();
             return SmartcardStatusCode.NOT_FOUND;
@@ -2324,12 +2230,20 @@ public class HardwareSmartcard implements Smartcard {
 
     @Override
     public SmartcardStatusCode addIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
-    		URI parametersUri, int keyIDForCounter, CredentialBases credBases,
+    		URI parametersUri, int keyIDForCounter, SmartcardParameters credBases,
             RSAVerificationKey courseKey, int minimumAttendance) {
         byte issuerID = this.getNewIssuerID(parametersUri);
         byte groupID = issuerID;
-        byte genID1 = 1;
-        byte genID2 = 2;
+        byte genID1 = 1;        
+        byte genID2 = 0;
+        if(parametersUri.toString().contains("idemix")){
+        	System.out.println("Adding Idemix issuer, so adding a secondary generator");
+        	genID2 = 2;
+        	if(credBases.getBaseForCredentialSecretOrNull() == null){
+        		System.err.println("No second generator is found within the credBases.");
+        		return SmartcardStatusCode.NOT_FOUND;
+        	}
+        }
         byte numPres = 0; //unlimited presentations - limit not used in the pilot
         byte counterID = issuerID;
         ByteBuffer buf = ByteBuffer.allocate(11);
@@ -2340,11 +2254,13 @@ public class HardwareSmartcard implements Smartcard {
         buf.position(0);
 
         try {
-            //Before setting the issuer, we must create a group, generators as well as a counter
+            // Before setting the issuer, we must create a group, generators as well as a counter
             int mode = this.getMode();
-            this.setGroupComponent(mode, credBases.n.toByteArray(), groupID, 0, rootKey);
-            this.setGenerator(mode, credBases.R0.toByteArray(), groupID, genID1, rootKey);
-            this.setGenerator(mode, credBases.S.toByteArray(), groupID, genID2, rootKey);
+            SmartcardStatusCode status;            
+            status = setupCredentialBases(rootKey, credBases, groupID, genID1, genID2, mode);
+            if(status != SmartcardStatusCode.OK) {
+              return status;
+            }
             byte[] cursor = this.getNewCursor(0);
 
             //Create a new key with keyID that counter can use.
@@ -2374,7 +2290,48 @@ public class HardwareSmartcard implements Smartcard {
             return SmartcardStatusCode.NOT_FOUND;
         }
     }
+
+    private SmartcardStatusCode setupCredentialBases(RSAKeyPair rootKey,
+        SmartcardParameters credBases, byte groupID, byte genID1, byte genID2, int mode)
+        throws CardException {
+      SmartcardStatusCode status;
+      status =
+          this.setGroupComponent(mode, credBases.getModulus().toByteArray(), groupID, 0, rootKey);
+      if (status != SmartcardStatusCode.OK) {
+        return status;
+      }
+      if (credBases.getOrderOrNull() != null) {
+        status =
+            this.setGroupComponent(mode, credBases.getOrderOrNull().toByteArray(), groupID, 1,
+                rootKey);
+        if (status != SmartcardStatusCode.OK) {
+          return status;
+        }
+        status =
+            this.setGroupComponent(mode, credBases.getCofactorOrNull().toByteArray(), groupID, 2,
+                rootKey);
+        if (status != SmartcardStatusCode.OK) {
+          return status;
+        }
+      }
+      status =
+          this.setGenerator(mode, credBases.getBaseForDeviceSecret().toByteArray(), groupID,
+              genID1, rootKey);
+      if (status != SmartcardStatusCode.OK) {
+        return status;
+      }
+      if (credBases.getBaseForCredentialSecretOrNull() != null) {
+        status =
+            this.setGenerator(mode, credBases.getBaseForCredentialSecretOrNull().toByteArray(),
+                groupID, genID2, rootKey);
+        if (status != SmartcardStatusCode.OK) {
+          return status;
+        }
+      }
+      return status;
+    }
     
+    /*
     public SmartcardStatusCode addUProveIssuerParametersWithAttendanceCheck(RSAKeyPair rootKey, 
             URI parametersUri, int keyIDForCounter, UProveParams uProveParams,
             RSAVerificationKey courseKey, int minimumAttendance) {
@@ -2432,10 +2389,11 @@ public class HardwareSmartcard implements Smartcard {
             return SmartcardStatusCode.NOT_FOUND;
         }
     }
+    */
 
     @Override
     public SmartcardStatusCode addIssuerParameters(RSAKeyPair rootKey,
-            URI parametersUri, CredentialBases credBases) {
+            URI parametersUri, SmartcardParameters credBases) {
     	byte issuerID = this.getNewIssuerID(parametersUri);
         byte groupID = issuerID;
         byte genID1 = 1;//R0
@@ -2453,17 +2411,9 @@ public class HardwareSmartcard implements Smartcard {
             //Before setting the issuer, we must create a group with generators. Idemix uses unknown order.
             int mode = this.getMode();
             SmartcardStatusCode status;
-            status = this.setGroupComponent(mode, credBases.n.toByteArray(), groupID, 0, rootKey);
-            if(status != SmartcardStatusCode.OK){
-            	return status;
-            }
-            status = this.setGenerator(mode, credBases.R0.toByteArray(), groupID, genID1, rootKey);
-            if(status != SmartcardStatusCode.OK){
-            	return status;
-            }
-            status = this.setGenerator(mode, credBases.S.toByteArray(), groupID, genID2, rootKey);
-            if(status != SmartcardStatusCode.OK){
-            	return status;
+            status = setupCredentialBases(rootKey, credBases, groupID, genID1, genID2, mode);
+            if(status != SmartcardStatusCode.OK) {
+              return status;
             }
 
             //prior to the actual command, if we are in working mode,
@@ -2484,6 +2434,7 @@ public class HardwareSmartcard implements Smartcard {
         }
     }
     
+    /*
     @Override
     public SmartcardStatusCode addUProveIssuerParameters(RSAKeyPair rootKey, 
     		URI parametersUri, UProveParams uProveParams){
@@ -2524,6 +2475,7 @@ public class HardwareSmartcard implements Smartcard {
             return SmartcardStatusCode.NOT_FOUND;
         }
     }
+    */
 
     @Override
     public SmartcardStatusCode incrementCourseCounter(int pin, RSAKeyPair key,

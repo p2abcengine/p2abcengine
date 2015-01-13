@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -32,8 +36,10 @@ import java.util.Set;
 
 import org.w3c.dom.Element;
 
-import com.ibm.zurich.idmx.key.IssuerPublicKey;
-import com.ibm.zurich.idmx.utils.Parser;
+import com.ibm.zurich.idmix.abc4trust.facades.IssuerParametersFacade;
+import com.ibm.zurich.idmix.abc4trust.facades.SmartcardParametersFacade;
+import com.ibm.zurich.idmx.buildingBlock.signature.cl.ClPublicKeyWrapper;
+import com.ibm.zurich.idmx.exception.ConfigurationException;
 
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
@@ -75,6 +81,7 @@ public class SecretBasedSmartcard implements BasicSmartcard {
   
   private final CredentialManager credManager;
   private final KeyManager keyManager;
+  private final String username;
   
   public Secret getSecret() {
     Secret s = new Secret();
@@ -95,16 +102,17 @@ public class SecretBasedSmartcard implements BasicSmartcard {
     return s;
   }
 
-  public SecretBasedSmartcard(CredentialManager credManager, KeyManager keyManager) {
-    this(new SecureRandom(), credManager, keyManager);
+  public SecretBasedSmartcard(String username, CredentialManager credManager, KeyManager keyManager) {
+    this(username, new SecureRandom(), credManager, keyManager);
   }
 
-  public SecretBasedSmartcard(Random random, CredentialManager credManager, KeyManager keyManager) {
+  public SecretBasedSmartcard(String username, Random random, CredentialManager credManager, KeyManager keyManager) {
     this.factoryInit = false;
     this.rand = random;
     this.cachedCredentials = new HashMap<URI, URI>();
     this.credManager = credManager;
     this.keyManager = keyManager;
+    this.username = username;
   }
 
   @Override
@@ -176,22 +184,15 @@ public class SecretBasedSmartcard implements BasicSmartcard {
   @Override
   public BigInteger computeCredentialFragment(int pin, URI credentialUri) {
     TrustedIssuerParameters tos = this.getIssuerParameterOfCredential(credentialUri);
-    
-    if(tos.groupParams.isIdemixGroupParameters()){
-    	CredentialBases credBases = (CredentialBases)tos.groupParams;
-    	// R0^deviceSecret * S^v (mod n)
-    	BigInteger R0 = credBases.R0;
-    	BigInteger S = credBases.S;
-    	BigInteger n = credBases.n;    
-    
-	    /*
-	     * The randomizer v is set to 0 for all credentials.
-	     * Idemix will re-randomize this value anyway, so we don't lose security here.
-	     */
-	    BigInteger v = BigInteger.ZERO;
-	    return R0.modPow(this.deviceSecret, n).multiply(S.modPow(v, n)).mod(n);
-    }else{
-    	throw new RuntimeException("UPROVE CRED FRAGMENT NOT IMPLEMENTED YET");
+    SmartcardParameters credBases = tos.groupParams;
+    BigInteger base1 = credBases.getBaseForDeviceSecret();
+    BigInteger base2  = credBases.getBaseForCredentialSecretOrNull();
+    BigInteger p  = credBases.getModulus();
+    if (base2 != null) {
+      BigInteger v = BigInteger.ZERO;
+      return base1.modPow(this.deviceSecret, p).multiply(base2.modPow(v, p)).mod(p);
+    } else {
+      return base1.modPow(this.deviceSecret, p);
     }
   }
 
@@ -201,7 +202,7 @@ public class SecretBasedSmartcard implements BasicSmartcard {
     ZkProofSpecification zkps = new ZkProofSpecification(this.params);
 
     zkps.parametersForPseudonyms = this.params;
-    zkps.credentialBases = new HashMap<URI, GroupParameters>();
+    zkps.credentialBases = new HashMap<URI, SmartcardParameters>();
     zkps.credFragment = new HashMap<URI, BigInteger>();
     for(URI courseId: courseIds) {
       TrustedIssuerParameters tos = this.getIssuerParameterOfCredential(courseId);
@@ -241,7 +242,7 @@ public class SecretBasedSmartcard implements BasicSmartcard {
   }
   
   private TrustedIssuerParameters getIssuerParameterOfCredential(URI credUri) {
-    URI issuerUri = this.getIssuerUriOfCredential(credUri);
+    URI issuerUri = this.getIssuerUriOfCredential(username, credUri);
     if (issuerUri != null) {
       return this.getIssuerParameters(issuerUri);
     }
@@ -251,11 +252,10 @@ public class SecretBasedSmartcard implements BasicSmartcard {
   private TrustedIssuerParameters getIssuerParameters(URI issuer) {
     try {
       IssuerParameters ip = this.keyManager.getIssuerParameters(issuer);
-      Object ipko = ip.getCryptoParams().getAny().get(0);
-     
-      IssuerPublicKey ipk = (IssuerPublicKey) Parser.getInstance().parse((Element) ipko);    
-      CredentialBases cb = new CredentialBases(ipk.getCapR()[0], ipk.getCapS(), ipk.getN());
-      TrustedIssuerParameters tip = new TrustedIssuerParameters(issuer, cb);
+      eu.abc4trust.xml.SystemParameters sp = this.keyManager.getSystemParameters();
+      SmartcardParametersFacade spf = new SmartcardParametersFacade(sp, ip);
+      SmartcardParameters credBases = spf.getSmartcardParameters();
+      TrustedIssuerParameters tip = new TrustedIssuerParameters(issuer, credBases);
       return tip;
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -271,15 +271,15 @@ public class SecretBasedSmartcard implements BasicSmartcard {
 
   @Override
   public boolean credentialExists(int pin, URI credentialUri) {
-    return this.getIssuerUriOfCredential(credentialUri) != null;
+    return this.getIssuerUriOfCredential(username, credentialUri) != null;
   }
   
-  private URI getIssuerUriOfCredential(URI credUri) {
+  private URI getIssuerUriOfCredential(String username, URI credUri) {
     try {
       if (this.cachedCredentials.containsKey(credUri)) {
         return this.cachedCredentials.get(credUri);
       } else {
-        CredentialDescription cd = this.credManager.getCredentialDescription(credUri);
+        CredentialDescription cd = this.credManager.getCredentialDescription(username, credUri);
 
         if ((cd != null) && cd.getSecretReference().equals(this.deviceUri)) {
           return cd.getIssuerParametersUID();
@@ -314,14 +314,13 @@ public class SecretBasedSmartcard implements BasicSmartcard {
     }
     ZkProofWitness wit = this.getZkProofWitness(courseIds, includeDevicePublicKeyProof);
     this.zkProofState = ZkProofSystem.firstMove(spec, wit, this.rand);
-    this.zkProofState.commitment.nonceCommitment = this.zkProofState.nonce;
     
     return this.zkProofState.commitment;
   }
   
   @Override
-  public ZkProofResponse finalizeZkProof(int pin, byte[] challengeHashPreimage, Set<URI> courseIds,
-	      Set<URI> scopeExclusivePseudonyms, byte[] nonce) {
+  public ZkProofResponse finalizeZkProof(int pin, BigInteger challenge, Set<URI> courseIds,
+	      Set<URI> scopeExclusivePseudonyms) {
 
     if(this.zkProofState == null) {
       return null;
@@ -333,7 +332,7 @@ public class SecretBasedSmartcard implements BasicSmartcard {
 //      return null;
 //    }
     
-    ZkProofResponse response = ZkProofSystem.secondMove(this.zkProofState, challengeHashPreimage, nonce, this.rand);
+    ZkProofResponse response = ZkProofSystem.secondMove(this.zkProofState, challenge, this.rand);
     
     this.zkProofState = null;
     return response;
@@ -342,7 +341,7 @@ public class SecretBasedSmartcard implements BasicSmartcard {
 	@Override
 	public PseudonymWithMetadata getPseudonym(int pin, URI pseudonymId, PseudonymSerializer serializer) {
 		try {
-			return this.credManager.getPseudonym(pseudonymId);
+			return this.credManager.getPseudonym(username, pseudonymId);
 		} catch (CredentialManagerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -353,7 +352,7 @@ public class SecretBasedSmartcard implements BasicSmartcard {
 	@Override
 	public Credential getCredential(int pin, URI credentialId, CredentialSerializer serializer) {
 		try {
-			return this.credManager.getCredential(credentialId);
+			return this.credManager.getCredential(username, credentialId);
 		} catch (CredentialManagerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

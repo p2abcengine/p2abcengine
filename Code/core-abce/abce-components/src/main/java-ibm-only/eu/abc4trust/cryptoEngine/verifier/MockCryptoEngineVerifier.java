@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -22,29 +21,42 @@
 
 package eu.abc4trust.cryptoEngine.verifier;
 
+import java.security.SecureRandom;
+
 import com.google.inject.Inject;
 
 import eu.abc4trust.exceptions.TokenVerificationException;
-import eu.abc4trust.keyManager.KeyManager;
+import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationToken;
+import eu.abc4trust.xml.SystemParameters;
+import eu.abc4trust.xml.VerifierParameters;
 
 /*
  * This is a mock implementation of the verifier's crypto engine,
  * which always returns true;
  */
 public class MockCryptoEngineVerifier implements CryptoEngineVerifier {
-
-  private final KeyManager keyManager;
   
   @Inject
-  public MockCryptoEngineVerifier(KeyManager keyManager) {
-    this.keyManager = keyManager;
+  public MockCryptoEngineVerifier() {
     System.out.println("*** Using mock Crypto Engine for Verifier *** DO NOT USE IN PRODUCTION ***");
   }
   
   @Override
-  public boolean verifyToken(PresentationToken t) throws TokenVerificationException {
+  public boolean verifyToken(PresentationToken t, VerifierParameters vp) throws TokenVerificationException {
     return true;
+  }
+
+  @Override
+  public VerifierParameters createVerifierParameters(SystemParameters sp) {
+    return new ObjectFactory().createVerifierParameters();
+  }
+
+  @Override
+  public byte[] createNonce() {
+    byte[] ret = new byte[256 / 8];
+    new SecureRandom().nextBytes(ret);
+    return ret;
   }
 
 }

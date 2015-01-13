@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -49,9 +53,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import com.ibm.zurich.idmx.utils.GroupParameters;
-import com.ibm.zurich.idmx.utils.Parser;
-
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.abce.internal.user.policyCredentialMatcher.PolicyCredentialMatcherImpl;
 import eu.abc4trust.abce.utils.SecretWrapper;
@@ -69,11 +70,10 @@ import eu.abc4trust.ri.servicehelper.AbstractHelper;
 import eu.abc4trust.ri.servicehelper.user.UserHelper;
 import eu.abc4trust.services.helpers.UserDebugger;
 import eu.abc4trust.smartcard.BasicSmartcard;
-import eu.abc4trust.smartcard.SmartcardInitializeTool;
-import eu.abc4trust.util.DummyForNewABCEInterfaces;
 import eu.abc4trust.xml.ABCEBoolean;
 import eu.abc4trust.xml.CredentialDescription;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuanceMessage;
 import eu.abc4trust.xml.IssuanceMessageAndBoolean;
 import eu.abc4trust.xml.IssuerParameters;
@@ -88,7 +88,7 @@ import eu.abc4trust.xml.util.XmlUtils;
 @Path("/user")
 public class UserService {
 
-    private static final CryptoEngine CRYPTO_ENGINE = CryptoEngine.BRIDGED;
+    private static final CryptoEngine CRYPTO_ENGINE = CryptoEngine.IDEMIX;
 
     private final ObjectFactory of = new ObjectFactory();
 
@@ -96,10 +96,12 @@ public class UserService {
 
     private final String fileStoragePrefix = Constants.USER_STORAGE_FOLDER
             + "/";
+    
+    private static final String USERNAME = "default-user";
 
     /**
      * This method, on input a presentation policy p, decides whether the
-     * credentials in the User’s credential store could be used to produce a
+     * credentials in the Users credential store could be used to produce a
      * valid presentation token satisfying the policy p. If so, this method
      * returns true, otherwise, it returns false.
      * 
@@ -111,7 +113,7 @@ public class UserService {
     @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML})
     @Produces(MediaType.TEXT_XML)
     public JAXBElement<ABCEBoolean> canBeSatisfied(
-            PresentationPolicyAlternatives p) {
+            JAXBElement<PresentationPolicyAlternatives> rawPresentationPolicyAlternatives) {
         this.log.info("UserService - canBeSatisfied ");
 
         this.initializeHelper();
@@ -119,13 +121,17 @@ public class UserService {
         UserHelper instance = UserHelper.getInstance();
 
         try {
-            boolean b = instance.getEngine().canBeSatisfied(p);
+        	PresentationPolicyAlternatives p = rawPresentationPolicyAlternatives.getValue();
+            boolean b = instance.getEngine().canBeSatisfied(USERNAME, p);
             ABCEBoolean createABCEBoolean = this.of.createABCEBoolean();
             createABCEBoolean.setValue(b);
             return this.of.createABCEBoolean(createABCEBoolean);
         } catch (CredentialManagerException ex) {
             throw new WebApplicationException(ex,
                     Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (CryptoEngineException ex) {
+          throw new WebApplicationException(ex,
+            Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -158,16 +164,15 @@ public class UserService {
     @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
     @Produces(MediaType.TEXT_XML)
     public JAXBElement<UiPresentationArguments> createPresentationToken(
-            PresentationPolicyAlternatives p) {
+            JAXBElement<PresentationPolicyAlternatives> rawPresentationPolicyAlternatives) {
         this.log.info("UserService - createPresentationToken ");
-
+        PresentationPolicyAlternatives presentationPolicyAlternatives = rawPresentationPolicyAlternatives.getValue();
         this.initializeHelper();
 
         UserHelper instance = UserHelper.getInstance();
 
-        DummyForNewABCEInterfaces d = null;
         try {
-            UiPresentationArguments uiPresentationArguments = instance.getEngine().createPresentationToken(p, d);
+            UiPresentationArguments uiPresentationArguments = instance.getEngine().createPresentationToken(USERNAME, presentationPolicyAlternatives);
             return ObjectFactoryReturnTypes.wrap(uiPresentationArguments);
         } catch (CannotSatisfyPolicyException ex) {
             throw new WebApplicationException(ex,
@@ -178,6 +183,9 @@ public class UserService {
         } catch (KeyManagerException ex) {
             throw new WebApplicationException(ex,
                     Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (CryptoEngineException ex) {
+          throw new WebApplicationException(ex,
+            Response.Status.INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -186,10 +194,11 @@ public class UserService {
     @Path("/createPresentationTokenUi/")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
     @Produces(MediaType.TEXT_XML)
-    public JAXBElement<PresentationToken> createPresentationToken(
-            UiPresentationReturn upr) {
+    public JAXBElement<PresentationToken> createPresentationTokenFromUi(
+            JAXBElement<UiPresentationReturn> rawUpr) {
         this.log.info("UserService - createPresentationTokenUi ");
 
+        UiPresentationReturn uiPresentationReturn = rawUpr.getValue();
         this.initializeHelper();
 
         UserHelper instance = UserHelper.getInstance();
@@ -213,7 +222,7 @@ public class UserService {
 
         try {
             PresentationToken presentationToken = instance.getEngine()
-                    .createPresentationToken(upr);
+                    .createPresentationToken(USERNAME, uiPresentationReturn);
             return this.of.createPresentationToken(presentationToken);
         } catch (CredentialManagerException ex) {
             throw new WebApplicationException(ex,
@@ -275,10 +284,9 @@ public class UserService {
 
         IssuanceMessage m = jm.getValue();
 
-        DummyForNewABCEInterfaces d = null;
         try {
             IssuanceReturn issuanceReturn = instance.getEngine()
-                    .issuanceProtocolStep(m, d);
+                    .issuanceProtocolStep(USERNAME, m);
             return ObjectFactoryReturnTypes.wrap(issuanceReturn);
         } catch (CannotSatisfyPolicyException ex) {
             throw new WebApplicationException(ex,
@@ -312,7 +320,7 @@ public class UserService {
 
         try {
             IssuanceMessage issuanceMessage = instance.getEngine()
-                    .issuanceProtocolStep(uir);
+                    .issuanceProtocolStep(USERNAME, uir);
             return new ObjectFactory().createIssuanceMessage(issuanceMessage);
         } catch (CryptoEngineException ex) {
             throw new WebApplicationException(ex,
@@ -327,7 +335,7 @@ public class UserService {
      * intervals reduces the likelihood of having to update non-revocation
      * evidence at the time of presentation, thereby not only speeding up the
      * presentation process, but also offering improved privacy as the
-     * Revocation Authority is no longer “pinged” at the moment of presentation.
+     * Revocation Authority is no longer pinged at the moment of presentation.
      * 
      */
     @POST()
@@ -342,7 +350,7 @@ public class UserService {
         UserHelper instance = UserHelper.getInstance();
 
         try {
-            instance.credentialManager.updateNonRevocationEvidence();
+            instance.credentialManager.updateNonRevocationEvidence(USERNAME);
         } catch (CredentialManagerException ex) {
             throw new WebApplicationException(ex,
                     Response.Status.INTERNAL_SERVER_ERROR);
@@ -368,7 +376,7 @@ public class UserService {
 
         List<URI> credentialUids;
         try {
-            credentialUids = instance.credentialManager.listCredentials();
+            credentialUids = instance.credentialManager.listCredentials(USERNAME);
 
             URISet uriList = this.of.createURISet();
             uriList.getURI().addAll(credentialUids);
@@ -403,7 +411,7 @@ public class UserService {
 
         try {
             CredentialDescription credDesc = instance.credentialManager
-                    .getCredentialDescription(credUid);
+                    .getCredentialDescription(USERNAME, credUid);
 
             return this.of.createCredentialDescription(credDesc);
 
@@ -412,7 +420,7 @@ public class UserService {
                     Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
-
+ 
     @POST()
     @Path("/createSmartcard/{issuerParametersUid}")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
@@ -426,26 +434,20 @@ public class UserService {
         UserHelper instance = UserHelper.getInstance();
 
         try {
-            Parser xmlSerializer = Parser.getInstance();
-            Random random = new SecureRandom();
+        	   Random random = new SecureRandom();
 
-            KeyManager keyManager = UserStorageManager
-                    .getKeyManager(this.fileStoragePrefix);
-            SystemParameters systemParameters = keyManager
-                    .getSystemParameters();
+               KeyManager keyManager = UserStorageManager
+                       .getKeyManager(this.fileStoragePrefix);
+               SystemParameters systemParameters = keyManager
+                       .getSystemParameters();
 
-            Element gpAsElement = (Element) systemParameters.getAny().get(1);
+               systemParameters.getCryptoParams().getContent().get(1);
+      
 
-            GroupParameters gp = (GroupParameters) xmlSerializer
-                    .parse(gpAsElement);
-
-            systemParameters.getAny().add(1, gp);
-
-            SecretWrapper secretWrapper = new SecretWrapper(
-                    CryptoEngine.IDEMIX, random, systemParameters);
+            SecretWrapper secretWrapper = new SecretWrapper(random, systemParameters);
             IssuerParameters issuerParameters = keyManager
                     .getIssuerParameters(issuerParametersUid);
-            secretWrapper.addIssuerParameters(issuerParameters);
+            secretWrapper.addIssuerParameters(issuerParameters, systemParameters);
             BasicSmartcard softwareSmartcard = secretWrapper
                     .getSoftwareSmartcard();
 
@@ -453,14 +455,14 @@ public class UserService {
 
             File file = new File(this.fileStoragePrefix + File.separatorChar
                     + "smartcard");
-            SmartcardInitializeTool.storeObjectInFile(softwareSmartcard, file);
+      //	TODO verify this is required
+      //    SmartcardInitializeTool.storeObjectInFile(softwareSmartcard, file);
 
         } catch (Exception ex) {
             throw new WebApplicationException(ex,
                     Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * This method deletes the credential with the given identifier from the
@@ -483,7 +485,7 @@ public class UserService {
         UserHelper instance = UserHelper.getInstance();
 
         try {
-            boolean r = instance.credentialManager.deleteCredential(credentialUid);
+            boolean r = instance.credentialManager.deleteCredential(USERNAME, credentialUid);
 
             ABCEBoolean createABCEBoolean = this.of
                     .createABCEBoolean();
@@ -615,6 +617,38 @@ public class UserService {
         }
     }
 
+    @PUT()
+    @Path("/storeInspectorPublicKey/{inspectorPublicKeyUid}")
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces(MediaType.TEXT_XML)
+    public JAXBElement<ABCEBoolean> storeInspectorPublicKey(
+            @PathParam("inspectorPublicKeyUid") URI inspectorPublicKeyUid,
+            InspectorPublicKey inspectorPublicKey) {
+        this.log.info("UserService - storeInspectorPublicKey ");
+
+        this.log.info("UserService - storeInspectorPublicKey - inspectorPublicKeyUid: "
+                + inspectorPublicKeyUid
+                + ", "
+                + inspectorPublicKey.getPublicKeyUID());
+        try {
+            KeyManager keyManager = UserStorageManager
+                    .getKeyManager(this.fileStoragePrefix);
+
+            boolean r = keyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
+
+            ABCEBoolean createABCEBoolean = this.of
+                    .createABCEBoolean();
+            createABCEBoolean.setValue(r);
+
+            this.log.info("UserService - storeInspectorPublicKey - done ");
+
+            return this.of.createABCEBoolean(createABCEBoolean);
+        } catch (Exception ex) {
+            throw new WebApplicationException(ex,
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
 
     private void initializeHelper() {
         this.log.info("UserService loading...");
@@ -628,9 +662,6 @@ public class UserService {
                 AbstractHelper.verifyFiles(false, this.fileStoragePrefix);
             } else {
                 this.log.info("Initializing UserHelper...");
-
-                UProveIntegration uproveIntegration = new UProveIntegration();
-                uproveIntegration.verify();
 
                 UserHelper.initInstanceForService(CRYPTO_ENGINE,
                         this.fileStoragePrefix);
@@ -648,9 +679,6 @@ public class UserService {
             ex.printStackTrace();
         }
         UserHelper instance = UserHelper.getInstance();
-        URI uid = URI
-                .create("http://ticketcompany/MyFavoriteSoccerTeam/issuance:idemix");
-        new UserDebugger(instance).validate(uid);
     }
 
     @POST()
@@ -658,9 +686,10 @@ public class UserService {
     @Consumes({ MediaType.APPLICATION_XML, MediaType.TEXT_XML })
     @Produces(MediaType.TEXT_XML)
     public JAXBElement<IssuanceMessage> extractIssuanceMessage(
-            IssuanceMessageAndBoolean issuanceMessageAndBoolean)
+            JAXBElement<IssuanceMessageAndBoolean> rawIssuanceMessageAndBoolean)
                     throws JAXBException, SAXException, ParserConfigurationException,
                     IOException {
+    	IssuanceMessageAndBoolean issuanceMessageAndBoolean = rawIssuanceMessageAndBoolean.getValue();
         IssuanceMessage issuanceMessage = issuanceMessageAndBoolean
                 .getIssuanceMessage();
 

@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -30,6 +34,8 @@ import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PresentationTokenDescription;
 import eu.abc4trust.xml.RevocationInformation;
+import eu.abc4trust.xml.SystemParameters;
+import eu.abc4trust.xml.VerifierParameters;
 
 public interface VerifierAbcEngine {
 
@@ -53,6 +59,36 @@ public interface VerifierAbcEngine {
     public PresentationTokenDescription verifyTokenAgainstPolicy(
             PresentationPolicyAlternatives p, PresentationToken t, boolean store)
                     throws TokenVerificationException, CryptoEngineException;
+    
+	/**
+	 * This method, on input a presentation token t and verifier parameters
+     * checks the validity of the cryptographic evidence included in token t. 
+     * If the check succeeds and store is set to true, this method stores the token in a dedicated
+     * store and returns a description of the token that includes a unique
+     * identifier by means of which the token can later be retrieved from the
+     * store. If the check fails, this method returns a list of error messages.
+	 * 
+	 * @param t
+	 * @param vp
+	 * @param store
+	 * @return
+	 * @throws TokenVerificationException
+	 * @throws CryptoEngineException
+	 */
+    public PresentationTokenDescription verifyToken(PresentationToken t, VerifierParameters vp, boolean store)
+			throws TokenVerificationException, CryptoEngineException;
+
+    /**
+     *This method, on input a presentation policy alternatives ppa and 
+     * a presentation token description ptd, and
+     * returns the result of the check whether the token t satisfies the policy ppa.
+     * 
+     * @param p
+     * @param ptd
+     * @return
+     */
+	public boolean verifyTokenDescriptionAgainstPolicyAlternatives(
+			PresentationPolicyAlternatives p, PresentationTokenDescription ptd);
 
     /**
      * This method looks up a previously verified presentation token. The unique token identifier
@@ -83,5 +119,20 @@ public interface VerifierAbcEngine {
      */
     public RevocationInformation getLatestRevocationInformation(URI revParamsUid)
             throws CryptoEngineException;
-
+    
+    /**
+     * Generate verifier parameters. Those will have to be added to the presentation or issuance
+     * policy.
+     * Verifier parameters advertise the cryptographic building blocks supported by the verifier as
+     * well as verifier-specific information about some of those building blocks (such as
+     * the list of issuers parameters that contain a safe RSA modulus that
+     * can be used when doing range proofs).
+     * @throws CryptoEngineException 
+     */
+    public VerifierParameters createVerifierParameters(SystemParameters sp) throws CryptoEngineException;
+    
+    /**
+     * Generate a fresh nonce that can be used by a presentation policy
+     */
+    public byte[] createNonce();
 }

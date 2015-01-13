@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!--
+	This is credential specification for the Soderhamn School credential.
+	The owner will have only one credSchool.
+-->
+<!--  TODO: Change revocable to true when implemented -->
+<abc:CredentialSpecification xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0"  Version="Version 1.0" KeyBinding="true" Revocable="false"> <!-- TODO Revocable="true" -->
+    <abc:SpecificationUID>urn:soderhamn:credspec:credSchool24Atts</abc:SpecificationUID>
+    <abc:FriendlyCredentialName lang="en">School Credential with 24 attributes</abc:FriendlyCredentialName>
+    <abc:DefaultImageReference>http://www.m-chair.net/wps/wse_td/Fatbardh_Veseli_140x200.JPG</abc:DefaultImageReference>
+    <abc:AttributeDescriptions MaxLength="256">
+<!-- 
+        <abc:AttributeDescription Type="http://abc4trust.eu/wp2/abcschemav1.0/revocationhandle" DataType="xs:integer" Encoding="urn:abc4trust:1.0:encoding:integer:unsigned"/>
+ -->    
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:firstname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">first name</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:lastname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">last name</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:civicRegistrationNumber" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:utf-8">
+            <abc:FriendlyAttributeName lang="en">civic registration number</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:gender" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">gender</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:birthdate" DataType="xs:date" Encoding="urn:abc4trust:1.0:encoding:date:since1870:unsigned">
+            <abc:FriendlyAttributeName lang="en">birthdate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:spanish" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">spanish</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <!--  
+         <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:schoolname" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">school</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:principal" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">principal</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:director" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">director</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:phonenumber" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">phone number</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:address" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">address</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:city" DataType="xs:string" Encoding="urn:abc4trust:1.0:encoding:string:sha-256">
+            <abc:FriendlyAttributeName lang="en">city</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+         <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:mathematics" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:biology" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:informatics" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:chemistry" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:physics" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:english" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:swedish" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:housework" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:gardening" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:literature" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:arts" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+        <abc:AttributeDescription Type="urn:soderhamn:credspec:credSchool24Atts:gymnastics" DataType="xs:boolean" Encoding="urn:abc4trust:1.0:encoding:boolean:unsigned">
+            <abc:FriendlyAttributeName lang="en">chocolate</abc:FriendlyAttributeName>
+        </abc:AttributeDescription>
+      -->
+    </abc:AttributeDescriptions>
+</abc:CredentialSpecification>
+

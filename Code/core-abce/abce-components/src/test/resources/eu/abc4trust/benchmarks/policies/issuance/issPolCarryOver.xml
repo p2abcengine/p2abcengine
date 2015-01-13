@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<!-- This is the issuance policy for issuance of a credential by carrying two attributes, 
+namely name and lastname, from credSchool. -->
+
+<abc:IssuancePolicy xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0">
+  <abc:PresentationPolicy PolicyUID="urn:soderhamn:policies:issuance:credCarryOver">
+    
+   
+    <abc:Credential Alias="#credSchool">
+      <abc:CredentialSpecAlternatives>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool</abc:CredentialSpecUID>
+        <abc:CredentialSpecUID>urn:soderhamn:credspec:credSchool:idemix</abc:CredentialSpecUID>
+      </abc:CredentialSpecAlternatives>
+      <abc:IssuerAlternatives>
+        <abc:IssuerParametersUID>urn:soderhamn:issuer:credSchool</abc:IssuerParametersUID>
+      </abc:IssuerAlternatives>
+    </abc:Credential>
+
+  </abc:PresentationPolicy>
+
+  <abc:CredentialTemplate>
+
+    <abc:CredentialSpecUID>urn:soderhamn:credspec:credCarryOver</abc:CredentialSpecUID>
+    <abc:IssuerParametersUID>urn:soderhamn:issuer:credCarryOver</abc:IssuerParametersUID>
+
+     <abc:UnknownAttributes>
+      <abc:CarriedOverAttribute TargetAttributeType="urn:soderhamn:credspec:credCarryOver:firstname">
+        <abc:SourceCredentialInfo Alias="#credSchool" AttributeType="urn:soderhamn:credspec:credSchool:firstname"/>
+      </abc:CarriedOverAttribute>
+      
+     </abc:UnknownAttributes>
+
+  </abc:CredentialTemplate>
+</abc:IssuancePolicy>
+

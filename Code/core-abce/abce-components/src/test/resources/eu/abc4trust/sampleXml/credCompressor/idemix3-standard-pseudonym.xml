@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:PseudonymWithMetadata xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0">
+    <abc:Pseudonym Exclusive="false" Scope="nym-scope" PseudonymUID="nym">
+        <abc:PseudonymValue>a8LZteYh7/q+E33qFWKIxF9bMS3ah1fNTwBqIhcMT5TzP9ADwTFgIH44idgWRTUDjB8jO8+tbjlX3dpEAApUQ1W1iCykUiguDm+m2A==</abc:PseudonymValue>
+        <abc:SecretReference>secret</abc:SecretReference>
+    </abc:Pseudonym>
+    <abc:PseudonymMetadata>
+        <abc:HumanReadableData>nym-scope</abc:HumanReadableData>
+        <abc:Metadata/>
+    </abc:PseudonymMetadata>
+    <abc:CryptoParams>
+        <abc:AbstractPseudonym xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:StandardPseudonym">
+            <abc:value>447156505324913160692722084369339273613009174424088888798876140015305653107041169066548427762715672225802782539523637320159615750960851297623086963646631856613447172589530096610551512</abc:value>
+            <abc:deviceUid>secret</abc:deviceUid>
+            <abc:scope>nym-scope</abc:scope>
+            <abc:openingInformation>11390062240801208658884101177791704852412635802729135043388417789558210713742</abc:openingInformation>
+        </abc:AbstractPseudonym>
+    </abc:CryptoParams>
+</abc:PseudonymWithMetadata>

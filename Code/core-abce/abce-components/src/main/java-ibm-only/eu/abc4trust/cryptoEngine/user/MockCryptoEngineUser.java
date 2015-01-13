@@ -1,10 +1,9 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
-//* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
-//* Rights Reserved.                                                  *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
@@ -46,6 +45,7 @@ import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.CryptoParams;
 import eu.abc4trust.xml.IssuanceMessage;
+import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuanceToken;
 import eu.abc4trust.xml.IssuanceTokenDescription;
 import eu.abc4trust.xml.ObjectFactory;
@@ -57,6 +57,7 @@ import eu.abc4trust.xml.PseudonymWithMetadata;
 import eu.abc4trust.xml.Secret;
 import eu.abc4trust.xml.SecretDescription;
 import eu.abc4trust.xml.TestCryptoParams;
+import eu.abc4trust.xml.VerifierParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 public class MockCryptoEngineUser implements CryptoEngineUser {
@@ -85,8 +86,11 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
     }
 
     @Override
-    public IssuanceToken createIssuanceToken(IssuanceTokenDescription itd, List<URI> creduids,
-            List<Attribute> atts, List<URI> pseudonyms, URI ctxt) {
+    public IssuanceMessage createIssuanceToken(String username, IssuanceMessage im,
+                                               IssuanceTokenDescription itd,
+                                               List<URI> creduids,
+             List<URI> pseudonyms, List<Attribute> atts) {
+      URI ctxt = im.getContext();
         this.attributeCache.put(ctxt, atts);
         this.tokenCache.put(ctxt, itd);
         this.credCache.put(ctxt, creduids);
@@ -99,7 +103,10 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
 
         this.updatePseudonyms(ret.getIssuanceTokenDescription().getPresentationTokenDescription());
 
-        return ret;
+        IssuanceMessage newIm = new ObjectFactory().createIssuanceMessage();
+        newIm.setContext(ctxt);
+        newIm.getContent().add(new ObjectFactory().createIssuanceToken(ret));
+        return newIm;
     }
 
     private CryptoParams getBogusCryptoEvidence() {
@@ -107,12 +114,12 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
         CryptoParams cryptoEvidence = of.createCryptoParams();
         TestCryptoParams cryptoParams = of.createTestCryptoParams();
         cryptoParams.getData().add("I am MockCryptoEngineUser, and I approve of this message.");
-        cryptoEvidence.getAny().add(of.createTestCryptoParams(cryptoParams));
+        cryptoEvidence.getContent().add(of.createTestCryptoParams(cryptoParams));
         return cryptoEvidence;
     }
 
     @Override
-    public PresentationToken createPresentationToken(PresentationTokenDescription td,
+    public PresentationToken createPresentationToken(String username, PresentationTokenDescription td, VerifierParameters vp,
             List<URI> creds, List<URI> pseudonyms) {
         ObjectFactory of = new ObjectFactory();
 
@@ -138,7 +145,7 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
     }
 
     @Override
-    public IssuMsgOrCredDesc issuanceProtocolStep(IssuanceMessage m)
+    public IssuMsgOrCredDesc issuanceProtocolStep(String username, IssuanceMessage m)
             throws CryptoEngineException {
 
         ObjectFactory of = new ObjectFactory();
@@ -146,7 +153,7 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
         URI context = m.getContext();
 
         CredentialDescription credDesc =
-                (CredentialDescription) XmlUtils.unwrap(m.getAny(),
+                (CredentialDescription) XmlUtils.unwrap(m.getContent(),
                         CredentialDescription.class);
         IssuanceTokenDescription tokenDesc = this.tokenCache.get(context);
         CredentialSpecification credSpec;
@@ -162,7 +169,7 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
 
         Map<URI, Credential> credentialsFromAlias;
         try {
-            credentialsFromAlias = this.fetchCredentials(tokenDesc,
+            credentialsFromAlias = this.fetchCredentials(username, tokenDesc,
                     this.credCache.get(context));
         } catch (CredentialManagerException ex) {
             throw new CryptoEngineException(ex);
@@ -178,7 +185,7 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
         // TODO(enr): We don't set NonRevocationEvidenceUID
         URI credentialUri;
         try {
-            credentialUri = this.credManager.storeCredential(cred);
+            credentialUri = this.credManager.storeCredential(username, cred);
         } catch (CredentialManagerException ex) {
             throw new CryptoEngineException(ex);
         }
@@ -190,7 +197,7 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
         return ret;
     }
 
-    private Map<URI, Credential> fetchCredentials(IssuanceTokenDescription tokenDesc,
+    private Map<URI, Credential> fetchCredentials(String username, IssuanceTokenDescription tokenDesc,
             List<URI> credentialAssignment) throws CredentialManagerException {
         Map<URI, Credential> ret = new HashMap<URI, Credential>();
 
@@ -199,26 +206,26 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
                 .getCredential()) {
             URI credentialAlias = cd.getAlias();
             URI credentialUri = credIterator.next();
-            Credential c = this.credManager.getCredential(credentialUri);
+            Credential c = this.credManager.getCredential(username, credentialUri);
             ret.put(credentialAlias, c);
         }
         return ret;
     }
 
     @Override
-    public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
+    public Credential updateNonRevocationEvidence(String username, Credential cred, URI raparsuid,
             List<URI> revokedatts) {
         return cred;
     }
 
     @Override
-    public Credential updateNonRevocationEvidence(Credential cred, URI raparsuid,
+    public Credential updateNonRevocationEvidence(String username, Credential cred, URI raparsuid,
             List<URI> revokedatts, URI revinfouid) {
         return cred;
     }
 
     @Override
-    public PseudonymWithMetadata createPseudonym(URI pseudonymUri, String scope, boolean exclusive,
+    public PseudonymWithMetadata createPseudonym(String username, URI pseudonymUri, String scope, boolean exclusive,
             URI secretReference) {
         PseudonymWithMetadata pwm = new PseudonymWithMetadata();
         Pseudonym p = new Pseudonym();
@@ -231,16 +238,13 @@ public class MockCryptoEngineUser implements CryptoEngineUser {
     }
 
     @Override
-    public Secret createSecret() {
-        Secret s = new Secret();
-        s.setSecretDescription(new SecretDescription());
-        s.getSecretDescription().setSecretUID(URI.create("secret-uid"));
-        return s;
+    public boolean isRevoked(String username, Credential cred) throws CryptoEngineException {     	
+         throw new UnsupportedOperationException();                   
     }
     
     @Override
-    public boolean isRevoked(Credential cred) throws CryptoEngineException {     	
-         throw new UnsupportedOperationException();                   
+    public IssuancePolicy extractIssuancePolicy(IssuanceMessage issuanceMessage) {
+      return (IssuancePolicy) XmlUtils.unwrap(issuanceMessage.getContent().get(0), IssuancePolicy.class);
     }
 
 }

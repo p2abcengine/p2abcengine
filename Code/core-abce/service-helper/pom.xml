@@ -4,7 +4,7 @@
   <parent>
     <artifactId>pom</artifactId>
     <groupId>eu.abc4trust.ri</groupId>
-    <version>patras-1.0.14-SNAPSHOT</version>
+    <version>1.1.36</version>
   </parent>
   <artifactId>service-helper</artifactId>
   <name>service-helper</name>
@@ -15,14 +15,6 @@
     <!-- ABC4 Trust -->
     <dependency>
       <groupId>eu.abc4trust.ri</groupId>
-      <artifactId>abc4trust-xml</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>eu.abc4trust.ri</groupId>
-      <artifactId>abce-interfaces</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>eu.abc4trust.ri</groupId>
       <artifactId>abce-components</artifactId>
     </dependency>
     <dependency>
@@ -30,11 +22,6 @@
       <artifactId>abce-components</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
-    </dependency>
-    <!-- -->
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-bundle</artifactId>
     </dependency>
     <!-- -->
     <dependency>
@@ -53,6 +40,14 @@
             <manifestFile>META-INF/MANIFEST.MF</manifestFile>
           </archive>
         </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.felix</groupId>
@@ -70,6 +65,6 @@
           </execution>
         </executions>
       </plugin>
-    </plugins>
+     </plugins>
   </build>
 </project>

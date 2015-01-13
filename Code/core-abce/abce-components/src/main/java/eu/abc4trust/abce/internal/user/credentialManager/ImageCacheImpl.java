@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -33,6 +37,7 @@ import java.util.logging.Logger;
 import com.google.inject.Inject;
 
 import eu.abc4trust.util.StorageUtil;
+import eu.abc4trust.util.TimingsLogger;
 
 public class ImageCacheImpl implements ImageCache {
 
@@ -56,11 +61,12 @@ public class ImageCacheImpl implements ImageCache {
     @Override
     public URL storeImage(URI image) throws ImageCacheException {
         try  {
+        	TimingsLogger.logTiming("storeImage", true);
             URL url = image.toURL();
             URLConnection connection = url
                     .openConnection();
             
-            connection.setConnectTimeout(10000);
+            connection.setConnectTimeout(5000);            
             connection.connect();
 
             InputStream reader = connection.getInputStream();
@@ -69,9 +75,11 @@ public class ImageCacheImpl implements ImageCache {
             URL imageUrl = this.imStore.store(filetype, reader);
 
             StorageUtil.closeIgnoringException(reader);
+            TimingsLogger.logTiming("storeImage", false);
             return imageUrl;
         } catch (IOException ex) {
             logger.warning("storeImage - failed : " + image + " - exception : " + ex);
+            TimingsLogger.logTiming("storeImage", false);
             return this.DEFAULT_IMAGE;
         } catch (Exception ex) {
             throw new ImageCacheException(ex);

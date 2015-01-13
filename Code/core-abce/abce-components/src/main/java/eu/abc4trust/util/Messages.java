@@ -1,9 +1,11 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -45,6 +47,26 @@ public class Messages {
     public static final String GREATEREQ_DATE = "DateGreaterOrEqualTo";
     public static final String LESS_DATE = "DateLessThan";
     public static final String LESSEQ_DATE = "DateLessOrEqualTo";
+    public static final String BIRTHDATE="DateOfBirth";
+
+	public static final String USING = "Using";
+
+	public static final String EXPIRES = "Expires";
+	public static final String EXPIRESINHOURS = "Expires";
+	public static final String EXPIRESINMINUTES = "Expires";
+	public static final String YOUR = "Your";
+	public static final String MINUTES = "Minutes";
+	public static final String HOURS = "Hours";
+	
+	public static final String POSSESSIONOF = "Possession";
+
+	public static final String YOU_WILL_BE_ISSUED = "YouWillBeIssued";
+	public static final String YOU_ARE_OLDER = "YouAreOlder";
+	public static final String IS_VALID = "IsValid";
+
+	public static final String WOULD_LIKE_TO_DELIVER = "WouldLikeToDeliver";
+
+	public static final String TO_YOUR_CREDENTIAL_WALLET = "ToYourCredentialWallet";
 
 
     private Messages() {

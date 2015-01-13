@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<abc:SystemParameters xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="3.0.0" SystemParametersUID="d0851d2a-1b9a-466c-a9b4-f816ad00cef1">
+    <abc:CryptoParams>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:UriParameter" Name="urn:idmx:3.0.0:systemParameters:spId">
+            <abc:Value>d0851d2a-1b9a-466c-a9b4-f816ad00cef1</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:securityLevel">
+            <abc:Value>103</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:StringParameter" Name="urn:idmx:3.0.0:systemParameters:hashFunction">
+            <abc:Value>urn:abc4trust:1.0:hashalgorithm:sha-256</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:rsaModulusLength">
+            <abc:Value>2048</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:StringParameter" Name="urn:idmx:3.0.0:systemParameters:hashFunction">
+            <abc:Value>urn:abc4trust:1.0:hashalgorithm:sha-256</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:rsaModulusLength">
+            <abc:Value>2048</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:attributeLength">
+            <abc:Value>256</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:dhModulusLength">
+            <abc:Value>2048</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:dhSubgroupLength">
+            <abc:Value>264</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:statisticalZk">
+            <abc:Value>80</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:IntegerParameter" Name="urn:idmx:3.0.0:systemParameters:primeProb">
+            <abc:Value>80</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:systemParameters:dhModulus">
+            <abc:Value>16325395780465067105949744089181680323901899657722825598170143582568850665037402303924833585431632150041255887012815851904878354350096569513314205461257464123074447359897433696078914274052127667301055195121588557086057786761387589445817835810448102361917817726235980948588705831493473681419295999274972676772878652014649936966348574717387708836245142462541323041057864754813172154962777759688409438958988000626597298618050679783644883945724578710841105784377018202445974798459124858944469471761161688685064414897674610536005677258811995812077885696183982686763128969519658172775294631319775168680829253178202547032301</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:systemParameters:dhSubgroupOrder">
+            <abc:Value>21866947936802684440874157838040773274697537512560767325059105797163626336052083</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:systemParameters:dhGen-1">
+            <abc:Value>14964171190852088001449495132091796800562847476683340268376260945156775867422139117814286726512336148649758385956908006050917019447534142461148981918710170465663062132868964135306665870203575921420122739614167401752410075359124566027533828864822240984224817622553542025186096435622548179773403580693010725235997134296164004778117484428154954008505745724788361855793090904391259766845903542790813183139941017094617347324968926136135386224987266609027788302859228054720150444480936382193382298360511905996673613345397767535871028621611220484951907579296635935167002874273413970829120588407462048535879303597302091100498</abc:Value>
+        </abc:Parameter>
+        <abc:Parameter xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="abc:BigIntegerParameter" Name="urn:idmx:3.0.0:systemParameters:dhGen-2">
+            <abc:Value>6091770795569390592231643255582094190628944965488341884223814517804521541952512695592125691695885083930200396015437610064493368416054943208471117467168992420172601384013617082896062142576127235235714630207352620870646557091523900708798035762762563205685669464316492454262897628517047741180680411114977983566675457774085165389604170601301586135773276734831021999805943763204135305962778655944260803508369992370481126238315075571262436060455330179066030516448749249881577823894260469979107311162895122803780134630462496012873321793036126764263857727016017715297190911548139049494687588216418791803005601217292459199848</abc:Value>
+        </abc:Parameter>
+    </abc:CryptoParams>
+</abc:SystemParameters>
