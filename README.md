@@ -28,13 +28,15 @@ Usage
 
 NOTE: The java-ui component (and possibly other components) refer to an older version of core-abce. We are currently working on a fix for this, as well as updating documentation.
 
-
-See the page on integration for information on how to [integrate the
-ABCE][wikiintegration]. Or the page on how to build the ABCE for information on [how to build the ABCE for development][wikihowtobuild].
+The p2abcengine can be used as either a series of platform independant web services or be integrated directly into a Java codebase.
+For instructions on how to build the ABCE, look at the wiki page [how to build the ABCE for development][wikihowtobuild].
+To set up the web services, refer to the wiki page [creating an ABC system using web services][wikiwebservices].
+To integrate directly, see the page  [integrating the ABCE][wikiintegration]. 
 
 [wikihome]: https://github.com/p2abcengine/p2abcengine/wiki
 [wikiintegration]: https://github.com/p2abcengine/p2abcengine/wiki/Integrating%20the%20ABC-Engine
 [wikihowtobuild]: https://github.com/p2abcengine/p2abcengine/wiki/How-to-Build-the-ABC-Engine
+[wikiwebservices]: https://github.com/p2abcengine/p2abcengine/wiki/Creating-an-ABC-system-using-web-services
 
 License
 ===========
