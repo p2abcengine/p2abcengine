@@ -1,9 +1,13 @@
-//* Licensed Materials - Property of IBM, Miracle A/S, and            *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Miracle A/S                                                       *
 //* Alexandra Instituttet A/S                                         *
-//* eu.abc4trust.pabce.1.0                                            *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
-//* (C) Copyright Miracle A/S, Denmark. 2012. All Rights Reserved.    *
-//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2012. All       *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2014. All Rights Reserved.                *
+//* (C) Copyright Miracle A/S, Denmark. 2014. All Rights Reserved.    *
+//* (C) Copyright Alexandra Instituttet A/S, Denmark. 2014. All       *
 //* Rights Reserved.                                                  *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
@@ -23,13 +27,14 @@
 package eu.abc4trust.abce.integrationtests;
 
 import static eu.abc4trust.abce.internal.revocation.RevocationConstants.REVOCATION_HANDLE_STR;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,617 +44,538 @@ import java.util.Random;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.JAXBException;
 
+import junit.framework.Assert;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.ibm.zurich.idmix.abc4trust.facades.InspectorParametersFacade;
+import com.ibm.zurich.idmix.abc4trust.facades.IssuerParametersFacade;
+import com.ibm.zurich.idmx.buildingBlock.systemParameters.EcryptSystemParametersWrapper;
+import com.ibm.zurich.idmx.exception.ConfigurationException;
+import com.ibm.zurich.idmx.exception.NotEnoughTokensException;
+import com.ibm.zurich.idmx.interfaces.util.Pair;
+import com.ibm.zurich.idmx.parameters.system.SystemParametersWrapper;
 
-import edu.rice.cs.plt.tuple.Pair;
+import eu.abc4trust.TestConfiguration;
 import eu.abc4trust.abce.external.issuer.IssuerAbcEngine;
-import eu.abc4trust.abce.external.user.UserAbcEngine;
 import eu.abc4trust.abce.internal.issuer.tokenManagerIssuer.TokenStorageIssuer;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory;
-import eu.abc4trust.abce.testharness.BridgingModuleFactory.IssuerCryptoEngine;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
 import eu.abc4trust.abce.testharness.PolicySelector;
 import eu.abc4trust.abce.utils.SecretWrapper;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
-import eu.abc4trust.cryptoEngine.idemix.user.IdemixCryptoEngineUserImpl;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveBindingManager;
-import eu.abc4trust.cryptoEngine.uprove.util.UProveUtils;
+import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
 import eu.abc4trust.cryptoEngine.util.SystemParametersUtil;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.smartcard.CardStorage;
 import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
+import eu.abc4trust.xml.InspectorPublicKey;
 import eu.abc4trust.xml.IssuancePolicy;
 import eu.abc4trust.xml.IssuerParameters;
 import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PseudonymWithMetadata;
-import eu.abc4trust.xml.Secret;
 import eu.abc4trust.xml.SystemParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 /**
- * Patras scenario, iterated loops over generation of credtoken with pseudonnym.
+ * Patras scenario.
  */
 public class UProveReuseTokensTest {
-    //    private static final String URN_ABC4TRUST_1_0_ALGORITHM_UPROVE = "urn:abc4trust:1.0:algorithm:uprove";
+  
+  private static final String USERNAME = "username";
+
+  @SuppressWarnings("unused")
+  private static final String URN_ABC4TRUST_1_0_ALGORITHM_BRIDGING =
+  "urn:abc4trust:1.0:algorithm:bridging";
+
+  private static final String CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY =
+      "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasUniversity.xml";
+
+  private static final String ISSUANCE_POLICY_PATRAS_UNIVERSITY =
+      "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasUniversity.xml";
+
+  private static final String CREDENTIAL_SPECIFICATION_PATRAS_COURSE =
+      "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasCourse.xml";
+
+  private static final String ISSUANCE_POLICY_PATRAS_COURSE =
+      "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasCourse.xml";
+
+  private static final String PRESENTATION_POLICY_PATRAS_COURSE_EVALUATION =
+      "/eu/abc4trust/sampleXml/patras/presentationPolicyPatrasCourseEvaluation.xml";
+
+  private static final String ISSUANCE_POLICY_PATRAS_TOMBOLA =
+      "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasTombola.xml";
+
+  private static final String CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA =
+      "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasTombola.xml";
+
+  private Random rand = new Random(1235);
+
+  // TODO: Backup and restore of attendance credentials.
+
+  private static final String COURSE_UID = "23330E";
+  @SuppressWarnings("unused")
+  private static final String SHA256 = "urn:abc4trust:1.0:encoding:string:sha-256";
+  private static final String NAME = "John";
+  private static final String LASTNAME = "Doe";
+  private static final String UNIVERSITYNAME = "Patras";
+  private static final String DEPARTMENTNAME = "CS";
+  private static final int MATRICULATIONNUMBER = 1235332;
+  @SuppressWarnings("unused")
+  private static final String ATTENDANCE_UID = "attendance";
+  @SuppressWarnings("unused")
+  private static final String LECTURE_UID = "lecture";  
+  
+  /**
+   * Tests issuance of UProve credentials, using all tokens in the "course" 
+   * credential. 
+   * @throws Exception
+   */
+  @Test(timeout = TestConfiguration.TEST_TIMEOUT)
+  public void UseTokens() throws Exception {
+    URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+    int keyLength = 1024;
+
+    Entities entities = new Entities();
+
+    entities.addEntity("UNIVERSITY", uprove_technology, false);
+    entities.addEntity("COURSE", uprove_technology, false);
+    entities.addEntity("USER");
+    entities.addEntity("VERIFIER");
+
+    setupScenario(keyLength, entities);
+    
+    IssuanceHelper issuanceHelper = new IssuanceHelper();
+    
+    issueCredentials(issuanceHelper, entities);
+    
+    for(int i = 0; i < 5; i++){
+      useToken(issuanceHelper, entities);
+    }    
+    
+    try{
+      useToken(issuanceHelper, entities);
+      Assert.fail();
+    }catch(CryptoEngineException e){
+      if(e.getCause().getCause() instanceof NotEnoughTokensException){
+        //correct behavior
+        System.out.println("No more tokens - correct!");
+        /*
+         * Outcommented should work, but is random - 
+         * it might happen that there seemingly is no more tokens.
+         *  
+        this.issueAndStoreCourseCredential(entities.getInjector("COURSE"),
+          entities.getInjector("USER"), issuanceHelper);
+        
+        for(int i = 0; i < 5; i++){
+          useToken(issuanceHelper, entities);
+        }    
+        
+        try{
+          useToken(issuanceHelper, entities);
+          Assert.fail();
+        }catch(CryptoEngineException ex){
+          if(ex.getCause().getCause() instanceof NotEnoughTokensException){
+            //correct behavior
+            System.out.println("No more tokens - correct!");            
+          }
+          
+        }catch(Exception ex){
+          throw ex;
+        }
+        */
+      }      
+    }catch(Exception ex){
+      throw ex;
+    }
+  }
+  
+  @Ignore
+  @Test
+  public void reuseToken() throws Exception{
+    URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
+    int keyLength = 1024;
+
+    Entities entities = new Entities();
+
+    entities.addEntity("UNIVERSITY", uprove_technology, false);
+    entities.addEntity("COURSE", uprove_technology, false);
+    entities.addEntity("USER");
+    entities.addEntity("VERIFIER");
+
+    setupScenario(keyLength, entities);
+    
+    IssuanceHelper issuanceHelper = new IssuanceHelper();
+    
+    issueCredentials(issuanceHelper, entities);
+    
+    //informUserCryptoEngineReuseTokens(entities.getInjector("USER"));
+    //TODO: Check somehow that we do not re-issue the credential instead 
+    //of just using the same token
+    
+    for(int i = 0; i < 11; i++){
+      useToken(issuanceHelper, entities);
+    }        
+  }
+
+  private void setupScenario(int keyLength, Entities entities) throws KeyManagerException,
+  CryptoEngineException, UnsupportedEncodingException, JAXBException, SAXException,
+  URISyntaxException, ConfigurationException, CredentialManagerException, IOException,
+  Exception, eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManagerException{
+
+    List<Object> parametersList = new ArrayList<Object>();
+    
+    // Setup system by generating entities and system parameters
+    Collection<Injector> injectors = createEntities(entities);
+    SystemParameters systemParameters = setupSystemParameters(entities, keyLength);
+
+    // Setup university issuer
+    URI credentialTechnology = entities.getTechnology("UNIVERSITY");
+    URI issuerParametersUID =
+        getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_PATRAS_UNIVERSITY);
+    URI revocationAuthorityUID = new URI("revocationUID1");
+    parametersList.add(setupIssuer(entities.getInjector("UNIVERSITY"), systemParameters,
+      credentialTechnology, issuerParametersUID, revocationAuthorityUID, 10));
+
+    // Setup course credential issuer
+    credentialTechnology = entities.getTechnology("COURSE");
+    issuerParametersUID = getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_PATRAS_COURSE);
+    revocationAuthorityUID = new URI("revocationUID2");
+    parametersList.add(setupIssuer(entities.getInjector("COURSE"), systemParameters,
+      credentialTechnology, issuerParametersUID, revocationAuthorityUID, 10));
+
+    // Setup tombola credential issuer
+    if (entities.contains("TOMBOLA")) {
+      credentialTechnology = entities.getTechnology("TOMBOLA");
+      issuerParametersUID =
+          getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_PATRAS_TOMBOLA);
+      revocationAuthorityUID = new URI("revocationUID3");
+      parametersList.add(setupIssuer(entities.getInjector("TOMBOLA"), systemParameters,
+        credentialTechnology, issuerParametersUID, revocationAuthorityUID, 10));
+    }
+
+    // Store all issuer parameters to all key managers
+    storePublicParametersToKeyManagers(injectors, parametersList);
+
+    // Store all credential specifications to all key managers
+    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY);
+    storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PATRAS_COURSE);
+    if (entities.contains("TOMBOLA")) {
+      storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA);
+    }
+
+    // Setup user (generate secret and pseudonym)
+    PseudonymWithMetadata pwm =
+        setupUser(entities.getInjector("USER"), systemParameters, parametersList);
+
+
+    // This is a hack since the TokenManagerIssuer does not allow us to add a pseudonym.
+    TokenStorageIssuer universityTokenStorageManager =
+        entities.getInjector("UNIVERSITY").getInstance(TokenStorageIssuer.class);
+    String primaryKey = DatatypeConverter.printBase64Binary(pwm.getPseudonym().getPseudonymValue());
+    universityTokenStorageManager.addPseudonymPrimaryKey(primaryKey);
+    TokenStorageIssuer courseTokenStorageManager =
+        entities.getInjector("COURSE").getInstance(TokenStorageIssuer.class);
+    primaryKey = DatatypeConverter.printBase64Binary(pwm.getPseudonym().getPseudonymValue());
+    courseTokenStorageManager.addPseudonymPrimaryKey(primaryKey);
+  }
+  
+  private void issueCredentials(IssuanceHelper issuanceHelper, Entities entities) throws KeyManagerException,
+  CryptoEngineException, UnsupportedEncodingException, JAXBException, SAXException,
+  URISyntaxException, ConfigurationException, CredentialManagerException, IOException,
+  Exception, eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManagerException {
+
+    // Step 1. Login with pseudonym.
+    //System.out.println(">> Login with pseudonym.");
+    //this.loginWithPseudonym(entities.getInjector("UNIVERSITY"), entities.getInjector("USER"),
+    //  issuanceHelper);
+    // Step 1. Get university credential.
+    System.out.println(">> Get university credential.");
+    this.issueAndStoreUniversityCredential(entities.getInjector("UNIVERSITY"),
+      entities.getInjector("USER"), issuanceHelper);
+    // Step 2. Get course credential.
+    System.out.println(">> Get course credential.");
+    this.issueAndStoreCourseCredential(entities.getInjector("COURSE"),
+      entities.getInjector("USER"), issuanceHelper);
+    // Verify against course evaluation using the course credential.    
+  }
+  
+  private void useToken(IssuanceHelper issuanceHelper, Entities entities) throws Exception{
+    System.out.println(">> Verify.");
+    PresentationToken pt =
+        this.logIntoCourseEvaluation(issuanceHelper, entities.getInjector("VERIFIER"),
+          entities.getInjector("USER"));
+    assertNotNull(pt);
+  }
+
+  private Collection<Injector> createEntities(Entities entities) {
+
+    // Assert that required entities are present
+    assert (entities.contains("UNIVERSITY"));
+    assert (entities.contains("COURSE"));
+    assert (entities.contains("USER"));
+    assert (entities.contains("VERIFIER"));
+
+
+    entities.initInjectors();
+
+    return entities.getInjectors();
+  }
+
+  private SystemParameters setupSystemParameters(Entities entities, int keyLength)
+      throws KeyManagerException, CryptoEngineException {
+    // Generate system parameters and load them into the key managers of all parties
+    SystemParameters systemParameters;
+    if(keyLength == 1024){
+      systemParameters = SystemParametersUtil.getDefaultSystemParameters_1024();
+    }else{
+      systemParameters = SystemParametersUtil.getDefaultSystemParameters_2048();
+    }
+    loadSystemParametersIntoEntityKeyManagers(systemParameters, entities.getInjectors());
+    return systemParameters;
+  }
+
+  private void loadSystemParametersIntoEntityKeyManagers(SystemParameters systemParameters,
+                                                         Collection<Injector> injectors) throws KeyManagerException {
+
+    for (Injector injector : injectors) {
+      KeyManager keyManager = injector.getInstance(KeyManager.class);
+      keyManager.storeSystemParameters(systemParameters);
+    }
+  }
+
+  /*
+   * NOTE: This does normally not need to be done. Rather, the issuer parameters UID are taken from
+   * the issuer parameters and fed into the issuance policy.
+   */
+  private URI getIssuanceParametersUIDFromIssuancePolicy(String pathToIssuancePolicy)
+      throws UnsupportedEncodingException, JAXBException, SAXException {
+    // Load issuance policy
+    IssuancePolicy issuancePolicy =
+        (IssuancePolicy) XmlUtils.getObjectFromXML(
+          this.getClass().getResourceAsStream(pathToIssuancePolicy), true);
+
+    // Get issuer parameters UID from credential template
+    return issuancePolicy.getCredentialTemplate().getIssuerParametersUID();
+  }
+
+  private IssuerParameters setupIssuer(Injector issuerInjector, SystemParameters systemParameters,
+                                       URI credentialTechnology, URI issuanceParametersUID, URI revocationId,
+                                       int maximalNumberOfAttributes) throws CryptoEngineException {
+    // Generate issuer parameters.
+    SystemParametersWrapper spWrapper = new SystemParametersWrapper(systemParameters);
+
+    IssuerAbcEngine issuerEngine = issuerInjector.getInstance(IssuerAbcEngine.class);
+
+    IssuerParameters issuerParameters =
+        issuerEngine.setupIssuerParameters(spWrapper.getSystemParameters(),
+          maximalNumberOfAttributes, credentialTechnology, issuanceParametersUID, revocationId,
+          null);
+
+    return issuerParameters;
+  }
+
+
+  private PseudonymWithMetadata setupUser(Injector userInjector, SystemParameters systemParameters,
+                                          List<Object> parametersList) throws UnsupportedEncodingException, JAXBException,
+                                          SAXException, ConfigurationException, CredentialManagerException {
+
+    SystemParametersWrapper spWrapper = new SystemParametersWrapper(systemParameters);
+
+    // Generate a secret and load it to the appropriate places
+    SecretWrapper secretWrapper = getSecretWrapper(systemParameters, rand);
+
+    CredentialManager userCredentialManager = userInjector.getInstance(CredentialManager.class);
+    if (!secretWrapper.isSecretOnSmartcard()) {
+      userCredentialManager.storeSecret(USERNAME, secretWrapper.getSecret());
+    } else {
+      CardStorage cardStorage = userInjector.getInstance(CardStorage.class);
+
+      int pin = 1234;
+      cardStorage.addSmartcard(secretWrapper.getSoftwareSmartcard(), pin);
+
+      // sign issuer attributes and add to smartcard
+      // NOTE: we assume the system parameters in the issuer parameters to match!
+      for (Object parameters : parametersList) {
+        if (IssuerParameters.class.isAssignableFrom(parameters.getClass())) {
+          secretWrapper.addIssuerParameters((IssuerParameters) parameters,
+            spWrapper.getSystemParameters());
+        }
+      }
+    }
+
+    // Create a pseudonym
+    PseudonymWithMetadata pwm =
+        this.createPseudonym(secretWrapper.getSecretUID(),
+          userInjector.getInstance(CryptoEngineUser.class), systemParameters);
+
+    // Store it in the user credential manager.
+    userCredentialManager.storePseudonym(USERNAME, pwm);
+
+    return pwm;
+  }
+
+  private SecretWrapper getSecretWrapper(SystemParameters systemParameters, Random random)
+      throws JAXBException, UnsupportedEncodingException, SAXException, ConfigurationException {
+
+    EcryptSystemParametersWrapper spWrapper = new EcryptSystemParametersWrapper(systemParameters);
+
+    // TODO remove this code as long as the system parameters are generated
+    // Secret secret = (Secret) XmlUtils.getObjectFromXML(
+    // this.getClass().getResourceAsStream(
+    // "/eu/abc4trust/sampleXml/smartcard/sampleSecret_patras.xml"),
+    // true);
     //
-    //    private static final String URN_ABC4TRUST_1_0_ALGORITHM_IDEMIX = "urn:abc4trust:1.0:algorithm:idemix";
+    // if (!spWrapper.getDHModulus().getValue()
+    // .equals(secret.getSystemParameters().getPrimeModulus())
+    // || !spWrapper
+    // .getDHSubgroupOrder()
+    // .getValue()
+    // .equals(secret.getSystemParameters().getSubgroupOrder())) {
 
-    @SuppressWarnings("unused")
-    private static final String URN_ABC4TRUST_1_0_ALGORITHM_BRIDGING = "urn:abc4trust:1.0:algorithm:bridging";
+    // Secret needs to be newly generated
+    SecretWrapper secretWrapper = new SecretWrapper(random, spWrapper.getSystemParameters());
 
-    private static final String PRESENTATION_POLICY_PATRAS_UNIVERSITY_LOGIN = "/eu/abc4trust/sampleXml/patras/presentationPolicyPatrasUniversityLogin.xml";
-
-    private static final String CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY = "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasUniversity.xml";
-
-    private static final String ISSUANCE_POLICY_PATRAS_UNIVERSITY = "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasUniversity.xml";
-
-    private static final String CREDENTIAL_SPECIFICATION_PATRAS_COURSE = "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasCourse.xml";
-
-    private static final String ISSUANCE_POLICY_PATRAS_COURSE = "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasCourse.xml";
-
-    private static final String PRESENTATION_POLICY_PATRAS_COURSE_EVALUATION = "/eu/abc4trust/sampleXml/patras/presentationPolicyPatrasCourseEvaluation.xml";
-
-
-
-    // TODO: Backup and restore of attendance credentials.
-
-    private static final String COURSE_UID = "23330E";
-
-    private static final String NAME = "John";
-    private static final String LASTNAME = "Dow";
-    private static final String UNIVERSITYNAME = "Patras";
-    private static final String DEPARTMENTNAME = "CS";
-    private static final int MATRICULATIONNUMBER = 1235332;
+    return secretWrapper;
+    // TODO remove this code as long as the system parameters are generated
+    // } else {
+    // return new SecretWrapper(secret);
+    // }
+  }
 
 
+  private void storePublicParametersToKeyManagers(Collection<Injector> injectors,
+                                                  List<Object> publicParameters) throws KeyManagerException, ConfigurationException {
 
+    // Iterate over all key managers
+    for (Injector injector : injectors) {
+      KeyManager keyManager = injector.getInstance(KeyManager.class);
 
-    // @Ignore
-    @Test
-    public void reuseTokensTest() throws Exception {
-        int idemixKeyLength = 2048;
-        int uproveKeylength = 2048;
-        SecretWrapper uproveSecretWrapper = new SecretWrapper(this.getUProveSecret());
-        SecretWrapper idemixSecretWrapper = new SecretWrapper(this.getIdemixSecret());
+      // Iterate over all parameters
+      for (Object parameters : publicParameters) {
 
-        UProveUtils uproveUtils = new UProveUtils();
+        // Check for issuer parameters
+        if (IssuerParameters.class.isAssignableFrom(parameters.getClass())) {
+          IssuerParametersFacade ipWrapper =
+              new IssuerParametersFacade((IssuerParameters) parameters);
+          keyManager.storeIssuerParameters(ipWrapper.getIssuerParametersId(),
+            ipWrapper.getIssuerParameters());
 
-        // Get Injectors,
-        Injector userInjector = Guice.createInjector(BridgingModuleFactory.newModule(
-                new Random(1231), uproveUtils.getUserServicePort()));
-        Injector universityInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231), IssuerCryptoEngine.UPROVE,
-                        uproveUtils.getIssuerServicePort()));
-        Injector courseEvaluationInjector = Guice
-                .createInjector(BridgingModuleFactory.newModule(new Random(1231), IssuerCryptoEngine.IDEMIX,
-                        uproveUtils.getVerifierServicePort()));
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
-
-        IssuerAbcEngine universityEngine = universityInjector
-                .getInstance(IssuerAbcEngine.class);
-
-
-        // We must instantiate a delegatorengine in order to workaround circular dependencies
-        // since we need an instance of the idemixengine
-        @SuppressWarnings("unused")
-        UserAbcEngine userAbcEngine = userInjector.getInstance(UserAbcEngine.class);
-
-        IssuerAbcEngine courseEngine = courseEvaluationInjector.getInstance(IssuerAbcEngine.class);
-
-        IdemixCryptoEngineUserImpl userIdemixEngine = userInjector
-                .getInstance(IdemixCryptoEngineUserImpl.class);
-
-        // Load secret and store it.
-        CredentialManager userCredentialManager = userInjector
-                .getInstance(CredentialManager.class);
-        if (!idemixSecretWrapper.isSecretOnSmartcard()) {
-            userCredentialManager.storeSecret(idemixSecretWrapper.getSecret());
         }
-        /*
-        SystemParameters idemixSystemParameters = courseEngine
-                .setupSystemParameters(keyLength, CryptoUriUtil.getIdemixMechanism());
-
-        //	Change here if we want dynamic system parameters for uprove
-        SystemParameters uproveSystemParameters = this.getUProveSystemParameters(universityInjector);
-         */
-
-        SystemParameters sysParam = SystemParametersUtil
-                .generatePilotSystemParameters_WithIdemixSpecificKeySize(
-                        idemixKeyLength, uproveKeylength);
-
-        IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(sysParam);
+        // Check for inspector parameters
+        else if (InspectorPublicKey.class.isAssignableFrom(parameters.getClass())) {
+          InspectorParametersFacade ipWrapper =
+              new InspectorParametersFacade((InspectorPublicKey) parameters);
+          keyManager.storeInspectorPublicKey(ipWrapper.getInspectorId(),
+            ipWrapper.getInspectorParameters());
 
 
-
-
-
-        PseudonymWithMetadata upwm = this.getUProvePseudonym(uproveSecretWrapper.getSecretUID(), userInjector);
-        /*    PseudonymWithMetadata ipwm = this.getIdemixPseudonym(
-                idemixSecretWrapper.getSecretUID(), userEngine, idemixSystemParameters); */
-
-
-
-
-        KeyManager issuerKeyManager = universityInjector
-                .getInstance(KeyManager.class);
-        KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
-        KeyManager verifierKeyManager = courseEvaluationInjector
-                .getInstance(KeyManager.class);
-
-
-        issuerKeyManager.storeSystemParameters(sysParam);
-        //        userKeyManager.storeSystemParameters(idemixSystemParameters);
-        userKeyManager.storeSystemParameters(sysParam);
-        verifierKeyManager.storeSystemParameters(sysParam);
-
-        // Setup issuance policies.
-        IssuancePolicy issuancePolicyUniversity = (IssuancePolicy) XmlUtils
-                .getObjectFromXML(
-                        this.getClass()
-                        .getResourceAsStream(
-                                ISSUANCE_POLICY_PATRAS_UNIVERSITY),
-                                true);
-
-        IssuancePolicy issuancePolicyCredCourse = (IssuancePolicy) XmlUtils
-                .getObjectFromXML(
-                        this.getClass()
-                        .getResourceAsStream(
-                                ISSUANCE_POLICY_PATRAS_COURSE),
-                                true);
-
-        URI universityIssuancePolicyUid = issuancePolicyUniversity.getCredentialTemplate()
-                .getIssuerParametersUID();
-        URI courseIssuancePolicyUid = issuancePolicyCredCourse
-                .getCredentialTemplate()
-                .getIssuerParametersUID();
-
-        // Load credential specifications.
-        CredentialSpecification universityCredSpec = (CredentialSpecification) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY),
-                                true);
-        CredentialSpecification credCourseSpec = (CredentialSpecification) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                CREDENTIAL_SPECIFICATION_PATRAS_COURSE), true);
-
-        // Store credential specifications.
-        URI universitySpecificationUID = universityCredSpec
-                .getSpecificationUID();
-        issuerKeyManager.storeCredentialSpecification(
-                universitySpecificationUID, universityCredSpec);
-
-        URI credCourseSpecificationUID = credCourseSpec.getSpecificationUID();
-        userKeyManager.storeCredentialSpecification(credCourseSpecificationUID,
-                credCourseSpec);
-
-        // Generate issuer parameters.
-        URI hash = new URI("urn:abc4trust:1.0:hashalgorithm:sha-256");
-        URI revocationId = new URI("revocationUID1");
-        IssuerParameters universityIssuerParameters = universityEngine
-                .setupIssuerParameters(universityCredSpec, sysParam,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
-
-        // ObjectFactory of = new ObjectFactory();
-        // System.out.println(" - universityParameters : "
-        // + XmlUtils.toXml(of
-        // .createIssuerParameters(universityIssuerParameters)));
-
-        revocationId = new URI("revocationUID2");
-        IssuerParameters credCourseIssuerParameters = universityEngine
-                .setupIssuerParameters(credCourseSpec, sysParam,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
-
-        issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
-                universityIssuerParameters);
-        userKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
-                universityIssuerParameters);
-        verifierKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
-                universityIssuerParameters);
-
-        issuerKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
-                credCourseIssuerParameters);
-        userKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
-                credCourseIssuerParameters);
-        verifierKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
-                credCourseIssuerParameters);
-
-        // Load secret and store it.
-        //   CredentialManager userCredentialManager = userInjector
-        //           .getInstance(CredentialManager.class);
-
-        if (uproveSecretWrapper.isSecretOnSmartcard()) {
-            // add smartcard to manager
-            CardStorage cardStorage = userInjector
-                    .getInstance(CardStorage.class);
-            cardStorage.addSmartcard(
-                    uproveSecretWrapper.getSoftwareSmartcard(),
-                    uproveSecretWrapper.getPin());
-
-            // sign issuer attributes and add to smartcard
-            uproveSecretWrapper.addIssuerParameters(universityIssuerParameters);
-            uproveSecretWrapper.addIssuerParameters(credCourseIssuerParameters);
-        } else {
-            userCredentialManager.storeSecret(uproveSecretWrapper.getSecret());
-            // URI secretUid = secret.getSecretDescription().getSecretUID();
+          // userKeyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
+          // inspectorKeyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
         }
-
-        if (idemixSecretWrapper.isSecretOnSmartcard()) {
-            // add smartcard to manager
-            CardStorage cardStorage = userInjector
-                    .getInstance(CardStorage.class);
-            cardStorage.addSmartcard(
-                    idemixSecretWrapper.getSoftwareSmartcard(),
-                    idemixSecretWrapper.getPin());
-
-            // sign issuer attributes and add to smartcard
-            idemixSecretWrapper.addIssuerParameters(universityIssuerParameters);
-            idemixSecretWrapper.addIssuerParameters(credCourseIssuerParameters);
-        } else {
-            userCredentialManager.storeSecret(idemixSecretWrapper.getSecret());
-            // URI secretUid = secret.getSecretDescription().getSecretUID();
-        }
-
-
-        // Step 0. Create a pseudonym and store it in the user credential
-        // manager.
-        userCredentialManager.storePseudonym(upwm);
-        // we only store the uprove pseudonym as a start
-
-        // This is a hack since the TokenManagerIssuer does not allow us to add
-        // a pseudonym.
-        TokenStorageIssuer universityTokenStorageManager = universityInjector
-                .getInstance(TokenStorageIssuer.class);
-        String primaryKey = DatatypeConverter.printBase64Binary(upwm.getPseudonym().getPseudonymValue());
-        universityTokenStorageManager.addPseudonymPrimaryKey(primaryKey);
-
-        this.runTests(userInjector, universityInjector, courseEvaluationInjector, issuanceHelper);
-        // System.out.println("Test done");
-//        int exitCode = userInjector.getInstance(UProveBindingManager.class)
-//                .stop();
-//        assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        exitCode = universityInjector.getInstance(UProveBindingManager.class)
-//                .stop();
-//        assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
-//        exitCode = courseEvaluationInjector.getInstance(
-//                UProveBindingManager.class).stop();
-//        assertEquals("U-Prove exe must have exit code 0", 0, exitCode);
+      }
     }
+  }
 
-    private void setupEngines(Injector courseEvaluationInjector, int keyLength,
-            URI cryptoMechanism, PseudonymWithMetadata pwm, SecretWrapper secretWrapper,
-            SystemParameters systemParameters, Injector universityInjector,
-            Injector userInjector)
-                    throws KeyManagerException, JAXBException,
-                    UnsupportedEncodingException, SAXException, URISyntaxException,
-                    Exception, CredentialManagerException {
-        IssuanceHelper issuanceHelper = new IssuanceHelper();
+  private void storeCredentialSpecificationToKeyManagers(Collection<Injector> injectors,
+                                                         String pathToCredentialSpecification) throws KeyManagerException,
+                                                         UnsupportedEncodingException, JAXBException, SAXException {
 
-        IssuerAbcEngine universityEngine = universityInjector
-                .getInstance(IssuerAbcEngine.class);
+    // Load credential specifications.
+    CredentialSpecification universityCredSpec =
+        (CredentialSpecification) XmlUtils.getObjectFromXML(
+          this.getClass().getResourceAsStream(pathToCredentialSpecification), true);
 
-        KeyManager issuerKeyManager = universityInjector
-                .getInstance(KeyManager.class);
-        KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
-        KeyManager verifierKeyManager = courseEvaluationInjector
-                .getInstance(KeyManager.class);
-
-
-        issuerKeyManager.storeSystemParameters(systemParameters);
-        userKeyManager.storeSystemParameters(systemParameters);
-        verifierKeyManager.storeSystemParameters(systemParameters);
-
-        // Setup issuance policies.
-        IssuancePolicy issuancePolicyUniversity = (IssuancePolicy) XmlUtils
-                .getObjectFromXML(
-                        this.getClass()
-                        .getResourceAsStream(
-                                ISSUANCE_POLICY_PATRAS_UNIVERSITY),
-                                true);
-
-        IssuancePolicy issuancePolicyCredCourse = (IssuancePolicy) XmlUtils
-                .getObjectFromXML(
-                        this.getClass()
-                        .getResourceAsStream(
-                                ISSUANCE_POLICY_PATRAS_COURSE),
-                                true);
-
-        URI universityIssuancePolicyUid = issuancePolicyUniversity.getCredentialTemplate()
-                .getIssuerParametersUID();
-        URI courseIssuancePolicyUid = issuancePolicyCredCourse
-                .getCredentialTemplate()
-                .getIssuerParametersUID();
-
-        // Load credential specifications.
-        CredentialSpecification universityCredSpec = (CredentialSpecification) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY),
-                                true);
-        CredentialSpecification credCourseSpec = (CredentialSpecification) XmlUtils
-                .getObjectFromXML(
-                        this.getClass().getResourceAsStream(
-                                CREDENTIAL_SPECIFICATION_PATRAS_COURSE), true);
-
-        // Store credential specifications.
-        URI universitySpecificationUID = universityCredSpec
-                .getSpecificationUID();
-        issuerKeyManager.storeCredentialSpecification(
-                universitySpecificationUID, universityCredSpec);
-
-        URI credCourseSpecificationUID = credCourseSpec.getSpecificationUID();
-        userKeyManager.storeCredentialSpecification(credCourseSpecificationUID,
-                credCourseSpec);
-
-        // Generate issuer parameters.
-        URI hash = new URI("urn:abc4trust:1.0:hashalgorithm:sha-256");
-        URI revocationId = new URI("revocationUID1");
-        IssuerParameters universityIssuerParameters = universityEngine
-                .setupIssuerParameters(universityCredSpec, systemParameters,
-                        universityIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
-
-        // ObjectFactory of = new ObjectFactory();
-        // System.out.println(" - universityParameters : "
-        // + XmlUtils.toXml(of
-        // .createIssuerParameters(universityIssuerParameters)));
-
-        revocationId = new URI("revocationUID2");
-        IssuerParameters credCourseIssuerParameters = universityEngine
-                .setupIssuerParameters(credCourseSpec, systemParameters,
-                        courseIssuancePolicyUid, hash, URI.create("uprove"),revocationId, null);
-
-        issuerKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
-                universityIssuerParameters);
-        userKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
-                universityIssuerParameters);
-        verifierKeyManager.storeIssuerParameters(universityIssuancePolicyUid,
-                universityIssuerParameters);
-
-        issuerKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
-                credCourseIssuerParameters);
-        userKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
-                credCourseIssuerParameters);
-        verifierKeyManager.storeIssuerParameters(courseIssuancePolicyUid,
-                credCourseIssuerParameters);
-
-        // Load secret and store it.
-        CredentialManager userCredentialManager = userInjector
-                .getInstance(CredentialManager.class);
-
-        if (secretWrapper.isSecretOnSmartcard()) {
-            // add smartcard to manager
-            CardStorage cardStorage = userInjector
-                    .getInstance(CardStorage.class);
-            cardStorage.addSmartcard(secretWrapper.getSoftwareSmartcard(),
-                    secretWrapper.getPin());
-
-            // sign issuer attributes and add to smartcard
-            secretWrapper.addIssuerParameters(universityIssuerParameters);
-            secretWrapper.addIssuerParameters(credCourseIssuerParameters);
-        } else {
-            userCredentialManager.storeSecret(secretWrapper.getSecret());
-            // URI secretUid = secret.getSecretDescription().getSecretUID();
-        }
-
-
-        // Step 0. Create a pseudonym and store it in the user credential
-        // manager.
-        userCredentialManager.storePseudonym(pwm);
-
-        // This is a hack since the TokenManagerIssuer does not allow us to add
-        // a pseudonym.
-        TokenStorageIssuer universityTokenStorageManager = universityInjector
-                .getInstance(TokenStorageIssuer.class);
-        String primaryKey = DatatypeConverter.printBase64Binary(pwm.getPseudonym().getPseudonymValue());
-        universityTokenStorageManager.addPseudonymPrimaryKey(primaryKey);
-
-        this.runTests(userInjector, universityInjector, courseEvaluationInjector, issuanceHelper);
+    // Store credential specifications.
+    URI universitySpecificationUID = universityCredSpec.getSpecificationUID();
+    for (Injector injector : injectors) {
+      KeyManager keyManager = injector.getInstance(KeyManager.class);
+      keyManager.storeCredentialSpecification(universitySpecificationUID, universityCredSpec);
     }
+  }
+  
+  private void issueAndStoreUniversityCredential(Injector issuerInjector, Injector userInjector,
+                                                 IssuanceHelper issuanceHelper) throws Exception {
+    Map<String, Object> atts = this.populateUniveristyAttributes();
+    issuanceHelper.issueCredential(USERNAME, issuerInjector, userInjector,
+      CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY, ISSUANCE_POLICY_PATRAS_UNIVERSITY, atts);
+  }
 
-    private void runTests(Injector userInjector, Injector universityInjector, Injector courseEvaluationInjector, IssuanceHelper issuanceHelper) throws Exception{
+  private void issueAndStoreCourseCredential(Injector issuerInjector, Injector userInjector,
+                                             IssuanceHelper issuanceHelper) throws Exception {
+    Map<String, Object> atts = this.populateCourseAttributes();
+    issuanceHelper.issueCredential(USERNAME, issuerInjector, userInjector,
+      CREDENTIAL_SPECIFICATION_PATRAS_COURSE, ISSUANCE_POLICY_PATRAS_COURSE, atts);
 
-        // Step 1. Login with pseudonym.
-        System.out.println(">> Login with pseudonym.");
-        this.loginWithPseudonym(universityInjector, userInjector,
-                issuanceHelper);
-        // Works until here
-        // Step 1. Get university credential.
-        System.out.println(">> Get university credential.");
-        this.issueAndStoreUniversityCredential(universityInjector,
-                userInjector, issuanceHelper);
-        // this also seems to be working
-        // Step 2. Get course credential.
-        System.out.println(">> Get course credential.");
-        this.issueAndStoreCourseCredential(universityInjector, userInjector,
-                issuanceHelper);
-        //also seems ok
-        // Verify against course evaluation using the course credential.
-        System.out.println(">> Verify.");
-        for(int i = 0; i< 20; i++){
-            PresentationToken pt = this.logIntoCourseEvaluation(issuanceHelper,
-                    courseEvaluationInjector, userInjector);
-            assertNotNull(pt);
-        }
+  }
+
+  private PresentationToken logIntoCourseEvaluation(IssuanceHelper issuanceHelper,
+                                                    Injector verifierInjector, Injector userInjector) throws Exception {
+    /*
+     * Verify for poll. The user must have: 1) A non-revoked university credential 2) A course
+     * credential with the same matriculation number as the university credential 3) A certain
+     * number of attendance credentials, which must be higher than a certain threshold 4) All
+     * attendance credentials must have the same matriculation number as the university credential
+     * 5) All attendance credentials must have a unique UID.
+     */
+    return this.login(issuanceHelper, verifierInjector, userInjector);
+  }
+
+  private PresentationToken login(IssuanceHelper issuanceHelper, Injector verifierInjector,
+                                  Injector userInjector) throws Exception {
+    Pair<PresentationToken, PresentationPolicyAlternatives> p =
+        issuanceHelper.createPresentationToken(USERNAME, userInjector,
+          PRESENTATION_POLICY_PATRAS_COURSE_EVALUATION, null, null);
+
+    // Store all required cred specs in the verifier key manager.
+    KeyManager hotelKeyManager = verifierInjector.getInstance(KeyManager.class);
+    KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
+
+    PresentationToken pt = p.first;
+    assertNotNull(pt);
+    for (CredentialInToken cit : pt.getPresentationTokenDescription().getCredential()) {
+      hotelKeyManager.storeCredentialSpecification(cit.getCredentialSpecUID(),
+        userKeyManager.getCredentialSpecification(cit.getCredentialSpecUID()));
     }
+    return issuanceHelper.verify(verifierInjector, p.second, p.first);
+  }
 
-    private void loginWithPseudonym(Injector universityInjector,
-            Injector userInjector, IssuanceHelper issuanceHelper)
-                    throws Exception {
-        int presentationTokenChoice = 0;
-        int pseudonymChoice = 0;
-        PresentationToken t = this.loginWithPseudonym(issuanceHelper,
-                universityInjector,
-                userInjector, presentationTokenChoice, pseudonymChoice);
-        assertNotNull(t);
+  private PseudonymWithMetadata createPseudonym(URI secretUid, CryptoEngineUser cryptoEngineUser,
+                                                SystemParameters systemParameters) {
+    String scope = "urn:patras:registration";
+    PseudonymWithMetadata pwm;
+    try {
+      pwm =
+          cryptoEngineUser.createPseudonym(USERNAME, URI.create("patrasdemo-idemix-uri"), scope, true,
+            secretUid);
+    } catch (CryptoEngineException e) {
+      throw new RuntimeException(e);
     }
+    return pwm;
+  }
 
-    private PresentationToken loginWithPseudonym(IssuanceHelper issuanceHelper,
-            Injector universityInjector, Injector userInjector,
-            int presentationTokenChoice, int pseudonymChoice) throws Exception {
-        List<URI> chosenInspectors = new LinkedList<URI>();
-        chosenInspectors.add(URI
-                .create("http://patras.gr/inspector/pub_key_v1"));
-        System.out.println("test, logingwithPseudonym, pre token generation");
-        Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                .createPresentationToken(universityInjector, userInjector,
-                        PRESENTATION_POLICY_PATRAS_UNIVERSITY_LOGIN,
-                        new PolicySelector(presentationTokenChoice,
-                                chosenInspectors, pseudonymChoice));
-        System.out.println("test, logingwithPseudonym, now we verify");
-        return issuanceHelper.verify(universityInjector, p.second(), p.first());
-    }
+  private Map<String, Object> populateCourseAttributes() {
+    Map<String, Object> att = new HashMap<String, Object>();
+    att.put("urn:patras:credspec:credCourse:courseid", COURSE_UID);
+    att.put(REVOCATION_HANDLE_STR, URI.create("urn:patras:revocation:handle2"));
+    return att;
+  }
 
-    private Secret getIdemixSecret() throws JAXBException,
-    UnsupportedEncodingException, SAXException {
-        Secret secret = (Secret) XmlUtils.getObjectFromXML(
-                this.getClass().getResourceAsStream(
-                        "/eu/abc4trust/sampleXml/smartcard/sampleSecret.xml"),
-                        true);
-        return secret;
-    }
-
-    private Secret getUProveSecret() throws JAXBException,
-    UnsupportedEncodingException, SAXException {
-        Secret secret = (Secret) XmlUtils.getObjectFromXML(
-                this.getClass().getResourceAsStream(
-                        "/eu/abc4trust/sampleXml/patras/uprove-secret.xml"),
-                        true);
-        return secret;
-    }
-
-    private void issueAndStoreUniversityCredential(Injector issuerInjector,
-            Injector userInjector, IssuanceHelper issuanceHelper)
-                    throws Exception {
-        Map<String, Object> atts = this.populateUniveristyAttributes();
-        issuanceHelper.issueCredential(issuerInjector, userInjector,
-                CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY,
-                ISSUANCE_POLICY_PATRAS_UNIVERSITY, atts);
-    }
-
-    private void issueAndStoreCourseCredential(Injector issuerInjector,
-            Injector userInjector, IssuanceHelper issuanceHelper)
-                    throws Exception {
-        Map<String, Object> atts = this.populateCourseAttributes();
-        issuanceHelper.issueCredential(issuerInjector, userInjector,
-                CREDENTIAL_SPECIFICATION_PATRAS_COURSE,
-                ISSUANCE_POLICY_PATRAS_COURSE, atts);
-
-    }
-
-    private PresentationToken logIntoCourseEvaluation(
-            IssuanceHelper issuanceHelper, Injector verifierInjector,
-            Injector userInjector) throws Exception {
-        /*
-         * Verify for poll. The user must have:
-         * 1) A nonrevoked university credential
-         * 2) A course credential with the same matriculation number
-         * as the university credential
-         * 3) A certain number of attendance credentials, which must be higher than a certain threshold
-         * 4) All attendance credentials must have the same matriculation number as the
-         * university credential
-         * 5) All attendance credentials must have a unique UID.
-         */
-        int presentationTokenChoice = 0;
-        int pseudonymChoice = 0;
-        return this.login(issuanceHelper, verifierInjector, userInjector,
-                presentationTokenChoice, pseudonymChoice);
-    }
-
-    private PresentationToken login(IssuanceHelper issuanceHelper,
-            Injector verifierInjector, Injector userInjector,
-            int presentationTokenChoice, int pseudonymChoice) throws Exception {
-        List<URI> chosenInspectors = new LinkedList<URI>();
-        chosenInspectors.add(URI
-                .create("http://thebestbank.com/inspector/pub_key_v1"));
-        Pair<PresentationToken, PresentationPolicyAlternatives> p = issuanceHelper
-                .createPresentationToken(userInjector, userInjector,
-                        PRESENTATION_POLICY_PATRAS_COURSE_EVALUATION,
-                        new PolicySelector(presentationTokenChoice,
-                                chosenInspectors, pseudonymChoice));
-
-        // Store all required cred specs in the verifier key manager.
-        KeyManager hotelKeyManager = verifierInjector
-                .getInstance(KeyManager.class);
-        KeyManager userKeyManager = userInjector.getInstance(KeyManager.class);
-
-        PresentationToken pt = p.first();
-        assertNotNull(pt);
-        for (CredentialInToken cit: pt.getPresentationTokenDescription().getCredential()){
-            hotelKeyManager.storeCredentialSpecification(
-                    cit.getCredentialSpecUID(),
-                    userKeyManager.getCredentialSpecification(cit.getCredentialSpecUID()));
-        }
-        return issuanceHelper.verify(verifierInjector, p.second(), p.first());
-    }
-
-    private PseudonymWithMetadata getUProvePseudonym(URI secretUid,
-            Injector userInjector) throws Exception {
-        PseudonymWithMetadata pwm = (PseudonymWithMetadata) XmlUtils
-                .getObjectFromXML(
-                        this.getClass()
-                        .getResourceAsStream(
-                                "/eu/abc4trust/sampleXml/patras/uprove-pseudonym.xml"),
-                                true);
-        return pwm;
-    }
-
-    private SystemParameters getUProveSystemParameters(
-            Injector universityInjector) throws Exception {
-        SystemParameters sysParams = (SystemParameters) XmlUtils
-                .getObjectFromXML(
-                        this.getClass()
-                        .getResourceAsStream(
-                                //                                "/eu/abc4trust/sampleXml/patras/uprove-systemParameters.xml"),
-                                "/eu/abc4trust/systemparameters/bridged-systemParameters.xml"),
-                                true);
-        return sysParams;
-    }
-
-    private PseudonymWithMetadata getIdemixPseudonym(URI secretUid,
-            IdemixCryptoEngineUserImpl idemixUser,
-            SystemParameters systemParameters) {
-        String scope = "urn:patras:registration";
-        try {
-            IdemixCryptoEngineUserImpl.loadIdemixSystemParameters(systemParameters);
-        } catch (CryptoEngineException ex) {
-            ex.printStackTrace();
-            fail(ex.getLocalizedMessage());
-        }
-        PseudonymWithMetadata pwm = idemixUser.createPseudonym(
-                URI.create("patrasdemo-idemix-uri"), scope, true, secretUid);
-        return pwm;
-    }
-
-    private Map<String, Object> populateCourseAttributes() {
-        Map<String, Object> att = new HashMap<String, Object>();
-        att.put("urn:patras:credspec:credCourse:courseid", COURSE_UID);
-        att.put("urn:patras:credspec:credCourse:matriculationnr",
-                MATRICULATIONNUMBER);
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:patras:revocation:handle2"));
-        return att;
-    }
-
-    private Map<String, Object> populateUniveristyAttributes() {
-        Map<String, Object> att = new HashMap<String, Object>();
-        att.put("urn:patras:credspec:credUniv:firstname", NAME);
-        att.put("urn:patras:credspec:credUniv:lastname", LASTNAME);
-        att.put(REVOCATION_HANDLE_STR,
-                URI.create("urn:patras:revocation:handle1"));
-        att.put("urn:patras:credspec:credUniv:university", UNIVERSITYNAME);
-        att.put("urn:patras:credspec:credUniv:department", DEPARTMENTNAME);
-        att.put("urn:patras:credspec:credUniv:matriculationnr",
-                MATRICULATIONNUMBER);
-        return att;
-    }
+  private Map<String, Object> populateUniveristyAttributes() {
+    Map<String, Object> att = new HashMap<String, Object>();
+    att.put("urn:patras:credspec:credUniv:firstname", NAME);
+    att.put("urn:patras:credspec:credUniv:lastname", LASTNAME);
+    att.put(REVOCATION_HANDLE_STR, URI.create("urn:patras:revocation:handle1"));
+    att.put("urn:patras:credspec:credUniv:university", UNIVERSITYNAME);
+    att.put("urn:patras:credspec:credUniv:department", DEPARTMENTNAME);
+    att.put("urn:patras:credspec:credUniv:matriculationnr", MATRICULATIONNUMBER);
+    return att;
+  }
 }
