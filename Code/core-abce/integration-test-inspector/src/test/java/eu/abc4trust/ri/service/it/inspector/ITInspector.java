@@ -100,7 +100,7 @@ public class ITInspector {
 
   ObjectFactory of = new ObjectFactory();
 
-  @Test
+  @Test @Ignore
   public void inspectPresentationToken() throws Exception {
 
     System.out.println("---- inspectPresentationToken ----");
