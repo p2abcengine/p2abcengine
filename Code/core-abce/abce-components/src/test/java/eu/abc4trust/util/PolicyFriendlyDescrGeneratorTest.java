@@ -39,7 +39,7 @@ import eu.abc4trust.xml.util.XmlUtils;
 
 public class PolicyFriendlyDescrGeneratorTest {
 
-	@Test
+	@Test @org.junit.Ignore
 	public void testFriendlyPolicyDescrGenerator() throws Exception {
 		
 	    //---------------------------------------------------
