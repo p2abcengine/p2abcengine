@@ -58,12 +58,12 @@ curl -X PUT --header 'Content-Type: text/xml' -d @revocationAuthorityParameters.
 
 # Store System parameters at Inspector.
 # This method is not specified in H2.2.
-echo "Store System parameters at Inspector"
+echo "Store System parameters at inspector"
 curl -X POST --header 'Content-Type: text/xml' -d @systemparameters.xml 'http://localhost:9400/inspector/storeSystemParameters/' > storeSystemParametersResponceAtInspector.xml
 
 # Store credential specification at Inspector.
 # This method is not specified in H2.2.
-echo "Store credential specification at user"
+echo "Store credential specification at inspector"
 curl -X PUT --header 'Content-Type: text/xml' -d @tutorial-resources/credentialSpecificationVIPSoccerTicket.xml 'http://localhost:9400/inspector/storeCredentialSpecification/http%3A%2F%2FMyFavoriteSoccerTeam%2Ftickets%2Fvip' > storeCredentialSpecificationAtInspectorResponce.xml
 
 

@@ -203,35 +203,36 @@ public class RevealedAttrsAndFactsdDescrGenerator {
     			attrLangDescMap.put(attrFrDescription.getLang(), attrFrDescription);
     		}
     	}
-		
-    	for (String lang:attrLangDescMap.keySet()){
-    	
-    			FriendlyDescription frednlyDescription = of.createFriendlyDescription();
-    			//COMPOSE THE RETURN STRING:
-    			StringBuilder sb = new StringBuilder();
-    			
-    			//check for predefined predicates
-    			sb = handlePredefinedPredicates(attribute, constant, date, mp, credLangDescMap, issLangDescMap, lang);
-    			if (sb.toString() == "") {   			
-    				sb.append(translateTheValueOfLang(lang) +" "); 
-    				sb.append(attrLangDescMap.get(lang).getValue()+ " ");
-    				sb.append(translateFromToLang(lang)+" ");
-    			if (credLangDescMap.get(lang)!=null){
-    				sb.append(credLangDescMap.get(lang).getValue());
-    			} else {
-    				sb.append(Messages.getString(Messages.NO_FRIENDLY_DESCRIPTION,lang)); //$NON-NLS-1$
-    			}
+
+		for (String lang:attrLangDescMap.keySet()){
+
+			FriendlyDescription frednlyDescription = of.createFriendlyDescription();
+			//COMPOSE THE RETURN STRING:
+			StringBuilder sb = new StringBuilder();
+
+			//check for predefined predicates
+			sb = handlePredefinedPredicates(attribute, constant, date, mp, credLangDescMap, issLangDescMap, lang);
+			if (sb.toString().equals("")) {			
+				sb.append(translateTheValueOfLang(lang) +" "); 
+				sb.append(attrLangDescMap.get(lang).getValue()+ " ");
+				sb.append(translateFromToLang(lang)+" ");
+				if (credLangDescMap.get(lang)!=null){
+
+					sb.append(credLangDescMap.get(lang).getValue());
+				} else {
+					sb.append(Messages.getString(Messages.NO_FRIENDLY_DESCRIPTION,lang)); //$NON-NLS-1$
+				}
 				try {
 					sb.append(" "+getFriendlyFunction(mp.getFunction(), lang, mp.getTypeOfArguments())+" ");
 				} catch (Exception e) {
 					sb.append(Messages.NO_FRIENDLY_DESCRIPTION); //$NON-NLS-1$
 				}  
 				sb.append(constant);  	
-    			}
+			}
 
-				frednlyDescription.setLang(lang);
-				frednlyDescription.setValue(sb.toString());
-				ret.descriptions.add(frednlyDescription);
+			frednlyDescription.setLang(lang);
+			frednlyDescription.setValue(sb.toString());
+			ret.descriptions.add(frednlyDescription);
     		}
 		}
     	return ret;

@@ -27,6 +27,9 @@ package eu.abc4trust.util;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+
+import junit.framework.Assert;
+
 import org.junit.Test;
 import eu.abc4trust.returnTypes.ui.RevealedAttributeValue;
 import eu.abc4trust.returnTypes.ui.RevealedFact;
@@ -41,67 +44,90 @@ public class RevealedAttrsAndFactsdDescrGeneratorTest {
 	@Test
 	public void testFriendlyTokenDescriptionGenerator() throws Exception {
 
-        //---------------------------------------------------
-        //Store credential specifications
-        //---------------------------------------------------
-        
-        Map<URI,CredentialSpecification> uriCredspecs = new HashMap<URI, CredentialSpecification>();
+		//---------------------------------------------------
+		//Store credential specifications
+		//---------------------------------------------------
 
-        CredentialSpecification creditCardSpec =
-                (CredentialSpecification) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
-                        "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationCreditcardVisaForFriendlyGenTest.xml"), true);
+		Map<URI,CredentialSpecification> uriCredspecs = new HashMap<URI, CredentialSpecification>();
 
-        if (creditCardSpec !=null){
-        	uriCredspecs.put(creditCardSpec.getSpecificationUID(), creditCardSpec);
-        }
-        
-        CredentialSpecification passportSpec =
-                (CredentialSpecification) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
-                        "/eu/abc4trust/sampleXml/credspecs/credentialSpecificationPassport.xml"), true);
+		CredentialSpecification creditCardSpec =
+				(CredentialSpecification) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
+						"/eu/abc4trust/sampleXml/credspecs/credentialSpecificationCreditcardVisaForFriendlyGenTest.xml"), true);
 
-        if (passportSpec !=null){
-        	uriCredspecs.put(passportSpec.getSpecificationUID(), passportSpec);
-        }
-        
-        //---------------------------------------------------
-        //Retrieve presentation tokens
-        //---------------------------------------------------
-	
+		if (creditCardSpec !=null){
+			uriCredspecs.put(creditCardSpec.getSpecificationUID(), creditCardSpec);
+		}
+
+		CredentialSpecification passportSpec =
+				(CredentialSpecification) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
+						"/eu/abc4trust/sampleXml/credspecs/credentialSpecificationPassport.xml"), true);
+
+		if (passportSpec !=null){
+			uriCredspecs.put(passportSpec.getSpecificationUID(), passportSpec);
+		}
+
+		//---------------------------------------------------
+		//Retrieve presentation tokens
+		//---------------------------------------------------
+
 		PresentationToken ptCard =
-	                (PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
-	                        "/eu/abc4trust/sampleXml/presentationTokens/presentationTokenCreditCardForFriendlyGenTest.xml"), true);
+				(PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
+						"/eu/abc4trust/sampleXml/presentationTokens/presentationTokenCreditCardForFriendlyGenTest.xml"), true);
 
 		PresentationToken ptHotel =
-                (PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
-                        "/eu/abc4trust/sampleXml/presentationTokens/presentationTokenHotelOption1.xml"), true);
+				(PresentationToken) XmlUtils.getObjectFromXML(this.getClass().getResourceAsStream(
+						"/eu/abc4trust/sampleXml/presentationTokens/presentationTokenHotelOption1.xml"), true);
 
-		
-	    //---------------------------------------------------
-        //Generate friendly descriptions of revealed facts and attribute values
-        //---------------------------------------------------
+
+		//---------------------------------------------------
+		//Generate friendly descriptions of revealed facts and attribute values
+		//---------------------------------------------------
 
 		RevealedFactsAndAttributeValues rvs = RevealedAttrsAndFactsdDescrGenerator.generateFriendlyDesciptions(ptCard.getPresentationTokenDescription(),uriCredspecs);
-		printRevealedAttributes(rvs);
-		printRevealedFacts(rvs);
-				
+		printRevealedAttributes(rvs,
+				new String[][] {
+				{ "en: The value of Card Type from Visa Credit Card: gold" }
+				, {"sv: Värdet av Status från INGEN VÄNLIG BESKRIVNING: 123123"
+					, "en: The value of Status from Visa Credit Card: 123123" }
+		});
+		printRevealedFacts(rvs
+				, new String[][] {
+				{ "sv: Värdet av Utgångsdatum från INGEN VÄNLIG BESKRIVNING är efter eller lika med 06.01.2012 01:00"
+					,"en: The value of Expiration Date from Visa Credit Card is after or on 06.01.2012 01:00" }
+				,{"sv: Värdet av Utgångsdatum från INGEN VÄNLIG BESKRIVNING är före eller lika med 06.01.2014 01:00"
+					, "en: The value of Expiration Date from Visa Credit Card is before or on 06.01.2014 01:00"
+				}});
+
 		RevealedFactsAndAttributeValues rvs2 = RevealedAttrsAndFactsdDescrGenerator.generateFriendlyDesciptions(ptHotel.getPresentationTokenDescription(), uriCredspecs);
-		printRevealedAttributes(rvs2);
-		printRevealedFacts(rvs2);
+		printRevealedAttributes(rvs2, new String[][] {{}, {}});
+		printRevealedFacts(rvs2, new String[][] { 
+				{ "sv: Värdet av Utgångsdatum från INGEN VÄNLIG BESKRIVNING är efter eller lika med 06.01.2012",
+				"en: The value of Expiration Date from Visa Credit Card is after or on 06.01.2012" }
+		});
 	}
-	
-	private void printRevealedFacts(RevealedFactsAndAttributeValues revAttsAndValues){
-		for(RevealedFact rf: revAttsAndValues.revealedFacts){
-			for(FriendlyDescription fd: rf.descriptions){
-				System.out.println(fd.getLang()+": "+fd.getValue());
-			}			
+
+	private void printRevealedAttributes(RevealedFactsAndAttributeValues revAttsAndValues, String[][] assertions){
+		System.out.println("printRevealedAttributes ");
+		for(int i=0; i<revAttsAndValues.revealedAttributeValues.size(); i++) {
+			RevealedAttributeValue ra = revAttsAndValues.revealedAttributeValues.get(i);
+			for(int j=0; j<ra.descriptions.size(); j++) {
+				FriendlyDescription fd = ra.descriptions.get(j);
+				String langDesc = fd.getLang()+": "+fd.getValue();
+				System.out.println(langDesc);
+				Assert.assertEquals(langDesc, assertions[i][j]);
+			}
 		}
 	}
-	
-	private void printRevealedAttributes(RevealedFactsAndAttributeValues revAttsAndValues){
-		for(RevealedAttributeValue ra: revAttsAndValues.revealedAttributeValues){
-			for(FriendlyDescription fd: ra.descriptions){
-				System.out.println(fd.getLang()+": "+fd.getValue());
-			}			
+	private void printRevealedFacts(RevealedFactsAndAttributeValues revAttsAndValues, String[][] assertions){
+		System.out.println("printRevealedFacts ");
+		for(int i=0; i<revAttsAndValues.revealedFacts.size(); i++) {
+			RevealedFact rf = revAttsAndValues.revealedFacts.get(i);
+			for(int j=0; j<rf.descriptions.size(); j++){
+				FriendlyDescription fd = rf.descriptions.get(j);
+				String langRevealed = fd.getLang()+": "+fd.getValue();
+				System.out.println(langRevealed);
+				Assert.assertEquals(langRevealed, assertions[i][j]);
+			}           
 		}
 	}
 

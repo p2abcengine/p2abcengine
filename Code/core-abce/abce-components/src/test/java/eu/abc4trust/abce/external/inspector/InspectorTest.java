@@ -61,69 +61,69 @@ public class InspectorTest {
             Guice.createInjector(IntegrationModuleFactory.newModule(InspectorTest.random,
                     InspectorTest.cryptoEngine));
 
-  private void setupSystemParameters() {
-      KeyManager keyManager = InspectorTest.injector.getInstance(KeyManager.class);
-      try {
-        // First see if we have created this.
-        if (keyManager.hasSystemParameters()) {
-          return;
+    private SystemParameters setupSystemParameters() throws KeyManagerException {
+        KeyManager keyManager = InspectorTest.injector.getInstance(KeyManager.class);
+        try {
+          // First see if we have created this.
+          if (keyManager.hasSystemParameters()) {
+            return keyManager.getSystemParameters();
+          }
+          SystemParameters sp = SystemParametersUtil.getDefaultSystemParameters_1024();
+          keyManager.storeSystemParameters(sp);
+          return sp;
+        } catch (KeyManagerException e) {
+          // ignore for now.
+      	throw e;
         }
-        SystemParameters sp = SystemParametersUtil.getDefaultSystemParameters_1024();
-        keyManager.storeSystemParameters(sp);
-      } catch (KeyManagerException e) {
-        // ignore for now.
       }
-    }
 
-    @Test (expected=IllegalArgumentException.class, timeout=TestConfiguration.TEST_TIMEOUT)
-    public void testSupportedCryptoMech() throws URISyntaxException, Exception {
-        InspectorAbcEngine engine = InspectorTest.injector.getInstance(InspectorAbcEngine.class);
-        SystemParameters sp = SystemParametersUtil.getDefaultSystemParameters_2048();
-        List<FriendlyDescription> friendlyDescription = Collections.emptyList();
-        @SuppressWarnings("unused")
-        InspectorPublicKey key = engine.setupInspectorPublicKey(sp,
-                URI.create("not used"),
-                InspectorTest.sampleURI,
-                friendlyDescription);
-        // We should not get here.
-        assertFalse(true);
+      @Test (expected=IllegalArgumentException.class, timeout=TestConfiguration.TEST_TIMEOUT)
+      public void testSupportedCryptoMech() throws URISyntaxException, Exception {
+          InspectorAbcEngine engine = InspectorTest.injector.getInstance(InspectorAbcEngine.class);
+          SystemParameters sp = setupSystemParameters();
+          List<FriendlyDescription> friendlyDescription = Collections.emptyList();
+          @SuppressWarnings("unused")
+          InspectorPublicKey key = engine.setupInspectorPublicKey(sp,
+                  URI.create("not used"),
+                  InspectorTest.sampleURI,
+                  friendlyDescription);
+          // We should not get here.
+          assertFalse(true);
 
-    }
+      }
 
 
-    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
-    public void getInspectorPublicKey() throws URISyntaxException, Exception {
-        this.setupSystemParameters();
-        InspectorAbcEngine engine = InspectorTest.injector.getInstance(InspectorAbcEngine.class);
-        SystemParameters sp = SystemParametersUtil.getDefaultSystemParameters_2048();
-        List<FriendlyDescription> friendlyDescription = Collections.emptyList();
-        // First we ensure that we create a new public key.
-        InspectorPublicKey key = engine.setupInspectorPublicKey(sp,
-                InspectorTest.cryptoMech,
-                InspectorTest.sampleURI, friendlyDescription);
-        // Ensure we get the same key if we call again
-        InspectorPublicKey key1 = engine.setupInspectorPublicKey(sp,
-                InspectorTest.cryptoMech,
-                InspectorTest.sampleURI,friendlyDescription);
-        // test that we get the keys and they are not null
-        assertNotNull("New created key failed", key);
-        assertNotNull("Get the new key failed", key1);
-        // test that we get same algo ID
-        assertEquals(key.getAlgorithmID(), key1.getAlgorithmID());
-        // test that the URI is the same
-        assertEquals(key.getPublicKeyUID(), key1.getPublicKeyUID());
-    }
+      @Test(timeout=TestConfiguration.TEST_TIMEOUT)
+      public void getInspectorPublicKey() throws URISyntaxException, Exception {
+          SystemParameters sp = setupSystemParameters();
+          InspectorAbcEngine engine = InspectorTest.injector.getInstance(InspectorAbcEngine.class);
+          List<FriendlyDescription> friendlyDescription = Collections.emptyList();
+          // First we ensure that we create a new public key.
+          InspectorPublicKey key = engine.setupInspectorPublicKey(sp,
+                  InspectorTest.cryptoMech,
+                  InspectorTest.sampleURI, friendlyDescription);
+          // Ensure we get the same key if we call again
+          InspectorPublicKey key1 = engine.setupInspectorPublicKey(sp,
+                  InspectorTest.cryptoMech,
+                  InspectorTest.sampleURI,friendlyDescription);
+          // test that we get the keys and they are not null
+          assertNotNull("New created key failed", key);
+          assertNotNull("Get the new key failed", key1);
+          // test that we get same algo ID
+          assertEquals(key.getAlgorithmID(), key1.getAlgorithmID());
+          // test that the URI is the same
+          assertEquals(key.getPublicKeyUID(), key1.getPublicKeyUID());
+      }
 
-    @Test(timeout=TestConfiguration.TEST_TIMEOUT)
-    public void testContentOfInspectorPublicKey() throws URISyntaxException, Exception {
-        this.setupSystemParameters();
-        InspectorAbcEngine engine = InspectorTest.injector.getInstance(InspectorAbcEngine.class);
-        SystemParameters sp = SystemParametersUtil.getDefaultSystemParameters_2048();
-        List<FriendlyDescription> friendlyDescription = Collections.emptyList();
-        // First we ensure that we create a new public key.
-        InspectorPublicKey key = engine.setupInspectorPublicKey(sp,
-                InspectorTest.cryptoMech,
-                InspectorTest.sampleURI, friendlyDescription);
-        assertNotNull("Key key failed", key);
-    }
-}
+      @Test(timeout=TestConfiguration.TEST_TIMEOUT)
+      public void testContentOfInspectorPublicKey() throws URISyntaxException, Exception {
+          SystemParameters sp = setupSystemParameters();
+          InspectorAbcEngine engine = InspectorTest.injector.getInstance(InspectorAbcEngine.class);
+          List<FriendlyDescription> friendlyDescription = Collections.emptyList();
+          // First we ensure that we create a new public key.
+          InspectorPublicKey key = engine.setupInspectorPublicKey(sp,
+                  InspectorTest.cryptoMech,
+                  InspectorTest.sampleURI, friendlyDescription);
+          assertNotNull("Key key failed", key);
+      }
+  }

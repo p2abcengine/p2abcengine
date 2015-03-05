@@ -152,7 +152,7 @@
         <configuration>
           <scanIntervalSeconds>0</scanIntervalSeconds>
           <stopKey>foo</stopKey>
-          <stopPort>9990</stopPort>
+          <stopPort>9199</stopPort>
           <webAppSourceDirectory>${basedir}/src/main/webapp</webAppSourceDirectory>
           <connectors>
             <connector implementation="org.mortbay.jetty.nio.SelectChannelConnector">

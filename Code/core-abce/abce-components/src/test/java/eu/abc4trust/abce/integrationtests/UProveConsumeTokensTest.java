@@ -36,7 +36,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -46,7 +45,6 @@ import javax.xml.bind.JAXBException;
 
 import junit.framework.Assert;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -65,7 +63,6 @@ import eu.abc4trust.abce.internal.issuer.tokenManagerIssuer.TokenStorageIssuer;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManager;
 import eu.abc4trust.abce.internal.user.credentialManager.CredentialManagerException;
 import eu.abc4trust.abce.testharness.IssuanceHelper;
-import eu.abc4trust.abce.testharness.PolicySelector;
 import eu.abc4trust.abce.utils.SecretWrapper;
 import eu.abc4trust.cryptoEngine.CryptoEngineException;
 import eu.abc4trust.cryptoEngine.user.CryptoEngineUser;
@@ -82,18 +79,15 @@ import eu.abc4trust.xml.PresentationPolicyAlternatives;
 import eu.abc4trust.xml.PresentationToken;
 import eu.abc4trust.xml.PseudonymWithMetadata;
 import eu.abc4trust.xml.SystemParameters;
+import eu.abc4trust.xml.VerifierParameters;
 import eu.abc4trust.xml.util.XmlUtils;
 
 /**
  * Patras scenario.
  */
-public class UProveReuseTokensTest {
+public class UProveConsumeTokensTest {
   
   private static final String USERNAME = "username";
-
-  @SuppressWarnings("unused")
-  private static final String URN_ABC4TRUST_1_0_ALGORITHM_BRIDGING =
-  "urn:abc4trust:1.0:algorithm:bridging";
 
   private static final String CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY =
       "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasUniversity.xml";
@@ -110,36 +104,22 @@ public class UProveReuseTokensTest {
   private static final String PRESENTATION_POLICY_PATRAS_COURSE_EVALUATION =
       "/eu/abc4trust/sampleXml/patras/presentationPolicyPatrasCourseEvaluation.xml";
 
-  private static final String ISSUANCE_POLICY_PATRAS_TOMBOLA =
-      "/eu/abc4trust/sampleXml/patras/issuancePolicyPatrasTombola.xml";
-
-  private static final String CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA =
-      "/eu/abc4trust/sampleXml/patras/credentialSpecificationPatrasTombola.xml";
-
   private Random rand = new Random(1235);
 
-  // TODO: Backup and restore of attendance credentials.
-
   private static final String COURSE_UID = "23330E";
-  @SuppressWarnings("unused")
-  private static final String SHA256 = "urn:abc4trust:1.0:encoding:string:sha-256";
   private static final String NAME = "John";
   private static final String LASTNAME = "Doe";
   private static final String UNIVERSITYNAME = "Patras";
   private static final String DEPARTMENTNAME = "CS";
   private static final int MATRICULATIONNUMBER = 1235332;
-  @SuppressWarnings("unused")
-  private static final String ATTENDANCE_UID = "attendance";
-  @SuppressWarnings("unused")
-  private static final String LECTURE_UID = "lecture";  
   
   /**
    * Tests issuance of UProve credentials, using all tokens in the "course" 
-   * credential. 
+   * credential and expecting an exception after last token is consumed. 
    * @throws Exception
    */
   @Test(timeout = TestConfiguration.TEST_TIMEOUT)
-  public void UseTokens() throws Exception {
+  public void consumeAllTokens() throws Exception {
     URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
     int keyLength = 1024;
 
@@ -165,64 +145,11 @@ public class UProveReuseTokensTest {
       Assert.fail();
     }catch(CryptoEngineException e){
       if(e.getCause().getCause() instanceof NotEnoughTokensException){
-        //correct behavior
-        System.out.println("No more tokens - correct!");
-        /*
-         * Outcommented should work, but is random - 
-         * it might happen that there seemingly is no more tokens.
-         *  
-        this.issueAndStoreCourseCredential(entities.getInjector("COURSE"),
-          entities.getInjector("USER"), issuanceHelper);
-        
-        for(int i = 0; i < 5; i++){
-          useToken(issuanceHelper, entities);
-        }    
-        
-        try{
-          useToken(issuanceHelper, entities);
-          Assert.fail();
-        }catch(CryptoEngineException ex){
-          if(ex.getCause().getCause() instanceof NotEnoughTokensException){
-            //correct behavior
-            System.out.println("No more tokens - correct!");            
-          }
-          
-        }catch(Exception ex){
-          throw ex;
-        }
-        */
+        // No more tokens - correct!
       }      
     }catch(Exception ex){
       throw ex;
     }
-  }
-  
-  @Ignore
-  @Test
-  public void reuseToken() throws Exception{
-    URI uprove_technology = Helper.getSignatureTechnologyURI("brands");
-    int keyLength = 1024;
-
-    Entities entities = new Entities();
-
-    entities.addEntity("UNIVERSITY", uprove_technology, false);
-    entities.addEntity("COURSE", uprove_technology, false);
-    entities.addEntity("USER");
-    entities.addEntity("VERIFIER");
-
-    setupScenario(keyLength, entities);
-    
-    IssuanceHelper issuanceHelper = new IssuanceHelper();
-    
-    issueCredentials(issuanceHelper, entities);
-    
-    //informUserCryptoEngineReuseTokens(entities.getInjector("USER"));
-    //TODO: Check somehow that we do not re-issue the credential instead 
-    //of just using the same token
-    
-    for(int i = 0; i < 11; i++){
-      useToken(issuanceHelper, entities);
-    }        
   }
 
   private void setupScenario(int keyLength, Entities entities) throws KeyManagerException,
@@ -251,25 +178,12 @@ public class UProveReuseTokensTest {
     parametersList.add(setupIssuer(entities.getInjector("COURSE"), systemParameters,
       credentialTechnology, issuerParametersUID, revocationAuthorityUID, 10));
 
-    // Setup tombola credential issuer
-    if (entities.contains("TOMBOLA")) {
-      credentialTechnology = entities.getTechnology("TOMBOLA");
-      issuerParametersUID =
-          getIssuanceParametersUIDFromIssuancePolicy(ISSUANCE_POLICY_PATRAS_TOMBOLA);
-      revocationAuthorityUID = new URI("revocationUID3");
-      parametersList.add(setupIssuer(entities.getInjector("TOMBOLA"), systemParameters,
-        credentialTechnology, issuerParametersUID, revocationAuthorityUID, 10));
-    }
-
     // Store all issuer parameters to all key managers
     storePublicParametersToKeyManagers(injectors, parametersList);
 
     // Store all credential specifications to all key managers
     storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY);
     storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PATRAS_COURSE);
-    if (entities.contains("TOMBOLA")) {
-      storeCredentialSpecificationToKeyManagers(injectors, CREDENTIAL_SPECIFICATION_PATRAS_TOMBOLA);
-    }
 
     // Setup user (generate secret and pseudonym)
     PseudonymWithMetadata pwm =
@@ -292,10 +206,6 @@ public class UProveReuseTokensTest {
   URISyntaxException, ConfigurationException, CredentialManagerException, IOException,
   Exception, eu.abc4trust.abce.internal.inspector.credentialManager.CredentialManagerException {
 
-    // Step 1. Login with pseudonym.
-    //System.out.println(">> Login with pseudonym.");
-    //this.loginWithPseudonym(entities.getInjector("UNIVERSITY"), entities.getInjector("USER"),
-    //  issuanceHelper);
     // Step 1. Get university credential.
     System.out.println(">> Get university credential.");
     this.issueAndStoreUniversityCredential(entities.getInjector("UNIVERSITY"),
@@ -316,16 +226,13 @@ public class UProveReuseTokensTest {
   }
 
   private Collection<Injector> createEntities(Entities entities) {
-
-    // Assert that required entities are present
+	// Assert that required entities are present
     assert (entities.contains("UNIVERSITY"));
     assert (entities.contains("COURSE"));
     assert (entities.contains("USER"));
     assert (entities.contains("VERIFIER"));
 
-
     entities.initInjectors();
-
     return entities.getInjectors();
   }
 
@@ -427,27 +334,10 @@ public class UProveReuseTokensTest {
 
     EcryptSystemParametersWrapper spWrapper = new EcryptSystemParametersWrapper(systemParameters);
 
-    // TODO remove this code as long as the system parameters are generated
-    // Secret secret = (Secret) XmlUtils.getObjectFromXML(
-    // this.getClass().getResourceAsStream(
-    // "/eu/abc4trust/sampleXml/smartcard/sampleSecret_patras.xml"),
-    // true);
-    //
-    // if (!spWrapper.getDHModulus().getValue()
-    // .equals(secret.getSystemParameters().getPrimeModulus())
-    // || !spWrapper
-    // .getDHSubgroupOrder()
-    // .getValue()
-    // .equals(secret.getSystemParameters().getSubgroupOrder())) {
-
     // Secret needs to be newly generated
     SecretWrapper secretWrapper = new SecretWrapper(random, spWrapper.getSystemParameters());
 
     return secretWrapper;
-    // TODO remove this code as long as the system parameters are generated
-    // } else {
-    // return new SecretWrapper(secret);
-    // }
   }
 
 
@@ -475,10 +365,6 @@ public class UProveReuseTokensTest {
               new InspectorParametersFacade((InspectorPublicKey) parameters);
           keyManager.storeInspectorPublicKey(ipWrapper.getInspectorId(),
             ipWrapper.getInspectorParameters());
-
-
-          // userKeyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
-          // inspectorKeyManager.storeInspectorPublicKey(inspectorPublicKeyUid, inspectorPublicKey);
         }
       }
     }
@@ -505,14 +391,14 @@ public class UProveReuseTokensTest {
                                                  IssuanceHelper issuanceHelper) throws Exception {
     Map<String, Object> atts = this.populateUniveristyAttributes();
     issuanceHelper.issueCredential(USERNAME, issuerInjector, userInjector,
-      CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY, ISSUANCE_POLICY_PATRAS_UNIVERSITY, atts);
+      CREDENTIAL_SPECIFICATION_PATRAS_UNIVERSITY, ISSUANCE_POLICY_PATRAS_UNIVERSITY, atts, null);
   }
 
   private void issueAndStoreCourseCredential(Injector issuerInjector, Injector userInjector,
                                              IssuanceHelper issuanceHelper) throws Exception {
     Map<String, Object> atts = this.populateCourseAttributes();
     issuanceHelper.issueCredential(USERNAME, issuerInjector, userInjector,
-      CREDENTIAL_SPECIFICATION_PATRAS_COURSE, ISSUANCE_POLICY_PATRAS_COURSE, atts);
+      CREDENTIAL_SPECIFICATION_PATRAS_COURSE, ISSUANCE_POLICY_PATRAS_COURSE, atts, null);
 
   }
 

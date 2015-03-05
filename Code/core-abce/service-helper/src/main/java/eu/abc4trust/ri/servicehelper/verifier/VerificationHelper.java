@@ -43,23 +43,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-
-import org.xml.sax.SAXException;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.util.Modules;
 
 import eu.abc4trust.abce.external.verifier.SynchronizedVerifierAbcEngineImpl;
 import eu.abc4trust.abce.external.verifier.VerifierAbcEngine;
 import eu.abc4trust.abce.internal.verifier.tokenManager.TokenStorage;
 import eu.abc4trust.exceptions.TokenVerificationException;
 import eu.abc4trust.guice.ProductionModuleFactory;
-import eu.abc4trust.guice.ProductionModuleFactory.CryptoEngine;
-import eu.abc4trust.guice.configuration.AbceConfigurationImpl;
 import eu.abc4trust.keyManager.KeyManager;
 import eu.abc4trust.keyManager.KeyManagerException;
 import eu.abc4trust.ri.servicehelper.AbstractHelper;
@@ -82,6 +74,7 @@ import eu.abc4trust.xml.RevocationAuthorityParameters;
 import eu.abc4trust.xml.RevocationInformation;
 import eu.abc4trust.xml.SystemParameters;
 import eu.abc4trust.xml.util.XmlUtils;
+import eu.abc4trust.xml.VerifierParameters;
 
 /**
  * @author hgk
@@ -96,6 +89,7 @@ public class VerificationHelper extends AbstractHelper {
 	public VerifierAbcEngine engine;
 	private Random random;
 	private TokenStorage tokenStorage;
+	private VerifierParameters verifierParameters = null;
 
 	/**
 	 * holds map resources by filename (without path) and the bytes of resource
@@ -221,7 +215,7 @@ public class VerificationHelper extends AbstractHelper {
 	 * @param presentationPolicyResourceList
 	 */
 	public void addPresentationPolicy(String[] presentationPolicyResourceList) {
-		log.info("VerificationHelper addPresentationPolicy from resoucres : "
+		log.info("VerificationHelper addPresentationPolicy from resources : "
 				+ presentationPolicyResourceList);
 		ArrayList<String> list = new ArrayList<String>();
 		for (String r : presentationPolicyResourceList) {
@@ -244,6 +238,9 @@ public class VerificationHelper extends AbstractHelper {
 			for (String resource : presentationPolicyResourceList) {
 				current = resource;
 				int ix = resource.lastIndexOf("/");
+				if (ix == -1) {
+					ix = resource.lastIndexOf("\\");
+				}
 				String key = resource;
 				if (ix != -1) {
 					key = resource.substring(ix + 1);
@@ -340,6 +337,9 @@ public class VerificationHelper extends AbstractHelper {
 				for (URI uri : credSpecURIList) {
 					try {
 						credSpec = this.keyManager.getCredentialSpecification(uri);
+						if (credSpec== null) {
+							throw new IllegalStateException("CredentialSpecification : " + uri + " - is in policy BUT is not registered in ABCE");
+						}
 						if (credSpec.isRevocable()) {
 							containsRevoceableCredential = true;
 							break;
@@ -413,6 +413,9 @@ public class VerificationHelper extends AbstractHelper {
 					}
 				}
 			}
+		}
+		if(pp_alternatives.getVerifierParameters()==null) {
+			pp_alternatives.setVerifierParameters(getVerifierParameters());
 		}
 		log.fine(" - presentationPolicy created");
 
@@ -568,4 +571,17 @@ public class VerificationHelper extends AbstractHelper {
 		super.setSystemParams(syspar);
 	}
 
+
+	public VerifierParameters getVerifierParameters() throws Exception {
+		if(verifierParameters == null) {
+			try {
+				SystemParameters sp = keyManager.getSystemParameters();
+				verifierParameters = engine.createVerifierParameters(sp);
+			} catch(Exception e) {
+				log.log(Level.WARNING, "Failed to generate VerifierParameters : " + e.getMessage());
+			}
+		}
+		return verifierParameters;
+	}
+	
 }
