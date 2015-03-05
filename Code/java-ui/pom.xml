@@ -4,12 +4,19 @@
   <prerequisites>
     <maven>3.0</maven>
   </prerequisites>
-  
   <groupId>eu.abc4trust.ui</groupId>
   <artifactId>ui-project-pom</artifactId>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.1.36</version>
   <packaging>pom</packaging>
   
+  <licenses>
+    <license>
+      <name>Apache License Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
   <modules>
     <module>parent</module>
     <module>parent/parent</module>
@@ -20,46 +27,44 @@
     <module>eu.abc4trust.ri.ui.user.feature</module>
     <module>eu.abc4trust.ri.ui.user.product</module>
     <module>user-abce-service</module>
-<!--
-    <module>uprove-redistribution</module>
--->
+    <module>windows-tray-app</module>
+    <module>windows-installer</module>
+    <module>user-service-executable</module>
+    <module>user-service-installation-package</module>
   </modules>
-  
   <properties>
-    <abc4trust.version>1.1.13</abc4trust.version>
+    <abc4trust.version>1.1.36</abc4trust.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-  
   <dependencyManagement>
     <dependencies>
-	    <!-- This Project -->
+      <!-- This Project -->
       <dependency>
         <groupId>eu.abc4trust.ui</groupId>
         <artifactId>idselect-user-service</artifactId>
-   	    <version>1.1.0-SNAPSHOT</version>
+        <version>1.1.36</version>
         <type>war</type>
       </dependency>
       <dependency>
         <groupId>eu.abc4trust.ui</groupId>
         <artifactId>eu.abc4trust.ri.ui.user.product</artifactId>
-   	    <version>1.1.0.qualifier</version>
+        <version>1.1.36</version>
         <type>war</type>
       </dependency>
-
-	    <!-- for ABCE service -->
+      <dependency>
+        <groupId>eu.abc4trust.ui</groupId>
+        <artifactId>user-service-executable</artifactId>
+        <version>1.1.36</version>
+        <type>jar</type>
+      </dependency>
+      <!-- for ABCE service -->
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>service-helper</artifactId>
         <version>${abc4trust.version}</version>
       </dependency>
-<!--
-      <dependency>
-        <groupId>eu.abc4trust.ri</groupId>
-        <artifactId>uprove</artifactId>
-        <version>${abc4trust.version}</version>
-      </dependency>
--->
-	    <!-- for UI service -->
+
+      <!-- for UI service -->
       <dependency>
         <groupId>eu.abc4trust.ri</groupId>
         <artifactId>ui-osgi-dependencies</artifactId>
@@ -81,7 +86,6 @@
         <artifactId>abce-interfaces</artifactId>
         <version>${abc4trust.version}</version>
       </dependency>
-
       <!-- Jersey -->
       <dependency>
         <groupId>com.sun.jersey</groupId>
@@ -102,43 +106,28 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-  
   <repositories>
-    <repository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public/</url>
-    </repository>
+	<repository>
+		<id>maven2-repository.dev.java.net</id>
+		<name>Java.net Maven 2 Repository</name>
+		<url>http://download.java.net/maven/2</url>
+	</repository>
   </repositories>
-  
+  <!-- Plugin Repository - use default Maven for now -->
   <pluginRepositories>
-    <pluginRepository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/groups/public</url>
-    </pluginRepository>
+	<pluginRepository>
+		<id>maven2-repository.dev.java.net</id>
+		<name>Java.net Maven 2 Repository</name>
+		<url>http://download.java.net/maven/2</url>
+	</pluginRepository>
   </pluginRepositories>
-  
+  <!-- SCM -->
   <scm>
-    <connection>scm:git:https://abc4trust.miracleas.dk/git/WP4_Reference_Implementation/user-client.git</connection>
-    <developerConnection>scm:git:https://abc4trust.miracleas.dk/git/WP4_Reference_Implementation/user-client.git</developerConnection>
-    <tag>HEAD</tag>
+	<connection>scm:git:git://github.com/p2abcengine/p2abcengine.git</connection>
+	<developerConnection>scm:git:git://github.com/p2abcengine/p2abcengine.git</developerConnection>
+	<tag>HEAD</tag>
   </scm>
-  
-  <distributionManagement>
-    <downloadUrl>https://abc4trust.miracleas.dk/nexus/content/groups/public</downloadUrl>
-    <repository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.releases</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/releases/</url>
-    </repository>
-    <snapshotRepository>
-      <id>maven.abc4trust.miracleas.dk</id>
-      <name>ABC4Trust Maven repository hosted at Miracle/MCL : nexus.snapshots</name>
-      <url>https://abc4trust.miracleas.dk/nexus/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-  
+
   <!-- BUILD -->
   <build>
     <pluginManagement>
@@ -150,7 +139,7 @@
           <configuration>
             <pushChanges>false</pushChanges>
             <localCheckout>true</localCheckout>
-<!--
+            <!--
             <autoVersionSubmodules>true</autoVersionSubmodules>
 -->
             <arguments>-DskipTests</arguments>
@@ -184,7 +173,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
-          <version>1.7</version>
+          <version>1.9</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

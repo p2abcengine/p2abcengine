@@ -37,6 +37,8 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -76,6 +78,7 @@ import eu.abc4trust.ri.ui.user.utils.ResourceRegistryStore;
 import eu.abc4trust.ri.ui.user.utils.UIMode;
 import eu.abc4trust.ri.ui.user.utils.UIProperties;
 import eu.abc4trust.ri.ui.user.utils.UIUtil;
+import eu.abc4trust.xml.ApplicationData;
 import eu.abc4trust.xml.Attribute;
 import eu.abc4trust.xml.AttributeDescription;
 import eu.abc4trust.xml.CarriedOverAttribute;
@@ -84,6 +87,7 @@ import eu.abc4trust.xml.CredentialInToken;
 import eu.abc4trust.xml.CredentialSpecification;
 import eu.abc4trust.xml.FriendlyDescription;
 import eu.abc4trust.xml.JointlyRandomAttribute;
+import eu.abc4trust.xml.ObjectFactory;
 import eu.abc4trust.xml.PresentationPolicy;
 import eu.abc4trust.xml.Pseudonym;
 import eu.abc4trust.xml.PseudonymInPolicy;
@@ -105,6 +109,7 @@ public class IdentitySelectionView extends ViewPart {
 	private ScrolledComposite scrolledContent;
 	private Text generalInfoText;
 	private Label arrowLabel = null;
+    private Group applicationDataGroup;
 	private Group revealedInfoSummaryGroup;
 	private Group newCredentialPropertiesGroup;
 	private Button submitButton;
@@ -664,10 +669,11 @@ public class IdentitySelectionView extends ViewPart {
 	 * Subsequently determines the token description for the current selection and shows the corresponding information that would be revealed.
 	 */
 	private void updateRevealedInfoContent() {
-        final List<Combo> inspectorCombos = new ArrayList<Combo>();
+        final List<Control> inspectorControls = new ArrayList<Control>();
 	    
 		// Dispose the previous disclosure info
 		if (arrowLabel!=null && !arrowLabel.isDisposed()) arrowLabel.dispose(); 
+        if (applicationDataGroup!=null && !applicationDataGroup.isDisposed()) applicationDataGroup.dispose();
 		if (revealedInfoSummaryGroup!=null && !revealedInfoSummaryGroup.isDisposed()) revealedInfoSummaryGroup.dispose();
 		if (newCredentialPropertiesGroup!=null && !newCredentialPropertiesGroup.isDisposed()) newCredentialPropertiesGroup.dispose();
 		if (submitButton!=null && !submitButton.isDisposed()) submitButton.dispose();
@@ -702,14 +708,63 @@ public class IdentitySelectionView extends ViewPart {
         // ##########################################################
         // ##########################################################
 		// Composite for revealed info and properties of new credential
-		Composite revealInfoAndNewCredPropertiesComposite = new Composite(content, SWT.NONE);
+		Composite rightSideComposite = new Composite(content, SWT.NONE);
+//		rightSideComposite.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_GREY));
 		formData = new FormData();
         formData.left = new FormAttachment(arrowLabel);
         formData.top = new FormAttachment(selectedPolicyComposite, 0, SWT.TOP); // , 0, SWT.CENTER
-        revealInfoAndNewCredPropertiesComposite.setLayoutData(formData);
+        rightSideComposite.setLayoutData(formData);
+
 		FormLayout formLayout = new FormLayout();
         formLayout.spacing = 5;
+        rightSideComposite.setLayout(formLayout);
+
+        //
+        Composite applicationDataComposite = new Composite(rightSideComposite, SWT.NONE);
+        formData = new FormData();
+//        formData.left = new FormAttachment(arrowLabel);
+//        formData.top = new FormAttachment(selectedPolicyComposite, 0, SWT.TOP); // , 0, SWT.CENTER
+        formData.top = new FormAttachment(applicationDataComposite, 0, SWT.TOP);
+        applicationDataComposite.setLayoutData(formData);
+        formLayout = new FormLayout();
+        formLayout.spacing = 5;
+        applicationDataComposite.setLayout(formLayout);
+
+        Composite revealInfoAndNewCredPropertiesComposite = new Composite(rightSideComposite, SWT.NONE);
+        formData = new FormData();
+//        formData.left = new FormAttachment(arrowLabel);
+//        formData.top = new FormAttachment(selectedPolicyComposite, 0, SWT.TOP); // , 0, SWT.CENTER
+        formData.top = new FormAttachment(applicationDataComposite, 0, SWT.BOTTOM);
+        revealInfoAndNewCredPropertiesComposite.setLayoutData(formData);
+        formLayout = new FormLayout();
+        formLayout.spacing = 5;
         revealInfoAndNewCredPropertiesComposite.setLayout(formLayout);
+
+        // app data...
+        String applicationData = null;
+        if(selectedPolicy.getMessage()!=null && selectedPolicy.getMessage().getApplicationData()!=null) {
+          ApplicationData ad = selectedPolicy.getMessage().getApplicationData();
+          try {
+            applicationData = XmlUtils.toXml(new ObjectFactory().createApplicationData(ad), true);
+          } catch (Exception e1) {
+            applicationData = "Failed to create Description : " + e1.getMessage();
+            e1.printStackTrace();
+          }
+//        if(ad.getContent()!=null && ad.getContent().size()>0) {
+//          applicationData
+//        }
+        } else {
+          switch (sessionParams.getUIMode()) {
+            case ISSUANCE:
+              applicationData = "No description supplied by Issuer";
+              break;
+            case PRESENTATION:
+              applicationData = "No description supplied by Verifier";
+              break;
+            default :
+              applicationData = "No description...";
+          }
+        }
         
         final boolean isInformationDisclosed;
         if (selectedPolicy.getPseudonym().size()>0 ||
@@ -724,6 +779,63 @@ public class IdentitySelectionView extends ViewPart {
         }
         
         if (isInformationDisclosed) {
+
+            // Summary of which information is revealed
+            applicationDataGroup = new Group(applicationDataComposite, SWT.NONE);
+            applicationDataGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+            // Layout of the group
+            formData = new FormData();
+            formData.left = new FormAttachment(0);
+            formData.right = new FormAttachment(100);
+            formData.top = new FormAttachment(0);
+            applicationDataGroup.setLayoutData(formData);
+            // Layout for the group's children
+            formLayout = new FormLayout();
+            formLayout.marginHeight = 0;
+            formLayout.marginWidth = 0;
+            formLayout.spacing = 0;
+            applicationDataGroup.setLayout(formLayout);
+          
+            Label headingApplicationDataLabel = new Label(applicationDataGroup, SWT.NONE);
+            headingApplicationDataLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+            headingApplicationDataLabel.setText(Messages.get().IdentitySelectionView_heading_presentationDescription);
+            changeFont(headingApplicationDataLabel, SWT.BOLD, +3);
+
+            final Group applicationDataTextGroup = new Group(applicationDataGroup, SWT.NONE);
+            applicationDataTextGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+            // applicationDataTextGroup.setText("ApplicationData");
+            
+            // Layout of the group
+            formData = new FormData();
+            formData.left = new FormAttachment(0);
+            formData.right = new FormAttachment(100);
+            formData.top = new FormAttachment(headingApplicationDataLabel);
+            applicationDataTextGroup.setLayout(new FormLayout());
+            applicationDataTextGroup.setLayoutData(formData);
+
+//            applicationDataTextGroup.setLayout(new GridLayout());
+//            applicationDataTextGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));            
+
+            // Layout for the group's children
+            formLayout = new FormLayout();
+            formLayout.marginHeight = 0;
+            formLayout.marginWidth = 0;
+            formLayout.spacing = 2;
+            applicationDataTextGroup.setLayout(formLayout);
+
+            //
+            formData = new FormData();
+            formData.left = new FormAttachment(applicationDataTextGroup, 0, SWT.CENTER);
+            formData.top = new FormAttachment(0);
+            headingApplicationDataLabel.setLayoutData(formData);
+            
+            //
+            Label applicationDataCLabel = new Label(applicationDataTextGroup, SWT.LEFT | SWT.WRAP);
+            applicationDataCLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+            applicationDataCLabel.setText(applicationData);
+            applicationDataCLabel.setData(RWT.MARKUP_ENABLED, Boolean.TRUE);
+
+            
     		// Summary of which information is revealed
     		revealedInfoSummaryGroup = new Group(revealInfoAndNewCredPropertiesComposite, SWT.NONE);
     		revealedInfoSummaryGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
@@ -739,12 +851,14 @@ public class IdentitySelectionView extends ViewPart {
     		formLayout.marginWidth = 0;
     		formLayout.spacing = 0;
     		revealedInfoSummaryGroup.setLayout(formLayout);
+
     		
             Label headingInfoToBeDisclosedLabel = new Label(revealedInfoSummaryGroup, SWT.NONE);
             headingInfoToBeDisclosedLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
             headingInfoToBeDisclosedLabel.setText(Messages.get().IdentitySelectionView_heading_adaptedCard);
             changeFont(headingInfoToBeDisclosedLabel, SWT.BOLD, +3);
-    		
+
+            
     		//////////////////////////////////////////////////////////////
     		//////////////////////////////////////////////////////////////
     		// Ownership notes ///////////////////////////////////////////
@@ -769,6 +883,7 @@ public class IdentitySelectionView extends ViewPart {
     		formData.left = new FormAttachment(proofOfOwnershipGroup, 0, SWT.CENTER);
     		formData.top = new FormAttachment(0);
     		headingInfoToBeDisclosedLabel.setLayoutData(formData);
+    		
     		
     		List<Label> revealedInfoLabels = new ArrayList<Label>();
     		// Ownership notes for pseudonyms
@@ -963,34 +1078,92 @@ public class IdentitySelectionView extends ViewPart {
     				}
     				inspectionGroundsCLabel.setLayoutData(formData);
     				
-    				// Combo box to allow the user to select the inspector for the inspectable attribute
-    				Combo inspectorCombo = new Combo(inspectableAttributesGroup, SWT.BORDER | SWT.DROP_DOWN | SWT.READ_ONLY);
-    				inspectorCombo.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
-    				inspectorCombo.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
-    				for (InspectorInUi inspector : inspectableAttribute.inspectorAlternatives) {
-    					inspectorCombo.setData(Integer.toString(inspectorCombo.getItemCount()), inspector);
-    					if (inspector!=null) {
-    						inspectorCombo.add(UIUtil.getHumanReadable(inspector.description, inspector.uri)); 
-    					} else {
-    						inspectorCombo.add("<"+Messages.get().IdentitySelectionView_error_missingInspectorInfo+">"); //$NON-NLS-1$ //$NON-NLS-2$
-    					}
+    				// Display inspector(s)
+    				Control inspectorControl;
+    				if (inspectableAttribute.inspectorAlternatives.size() > 1) {
+                        // Combo box to allow the user to select the inspector for the inspectable attribute
+                        Combo inspectorCombo = new Combo(inspectableAttributesGroup, SWT.BORDER | SWT.DROP_DOWN | SWT.READ_ONLY);
+                        inspectorCombo.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+                        inspectorCombo.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
+                        for (InspectorInUi inspector : inspectableAttribute.inspectorAlternatives) {
+                            inspectorCombo.setData(Integer.toString(inspectorCombo.getItemCount()), inspector);
+                            if (inspector!=null) {
+                                inspectorCombo.add(UIUtil.getHumanReadable(inspector.description, inspector.uri)); 
+                            } else {
+                                inspectorCombo.add("<"+Messages.get().IdentitySelectionView_error_missingInspectorInfo+">"); //$NON-NLS-1$ //$NON-NLS-2$
+                            }
+                        }
+                        inspectorCombo.select(0);
+                        inspectorControl = inspectorCombo;
+                        
+    				} else {
+    				    InspectorInUi inspector = inspectableAttribute.inspectorAlternatives.get(0);
+    				    // Text box to display the inspector for the inspectable attribute
+    				    Label inspectorLabel = new Label(inspectableAttributesGroup, SWT.NONE);
+    				    inspectorLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+    				    inspectorLabel.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
+    				    if (inspector!=null) {
+    				        inspectorLabel.setText(UIUtil.getHumanReadable(inspector.description, inspector.uri)); //$NON-NLS-1$
+    				    } else {
+    				        inspectorLabel.setText("<"+Messages.get().IdentitySelectionView_error_missingInspectorInfo+">"); //$NON-NLS-1$ //$NON-NLS-2$
+    				    }
+    				    inspectorLabel.setData(inspector);
+    				    inspectorControl = inspectorLabel;
     				}
-    				inspectorCombo.select(0);
-    				inspectorCombos.add(inspectorCombo);
+    				inspectorControls.add(inspectorControl);
     				
-    				// Layout for the combo
-    				formData = new FormData();
-    				formData.left = new FormAttachment(revealedInfoLabel);
-    				formData.top = new FormAttachment(revealedInfoLabel, 0, SWT.CENTER);
-    				formData.width = 250;
-    				formData.height = 20;
-    				inspectorCombo.setLayoutData(formData);
+    				 // Layout for the inspector control
+                    formData = new FormData();
+                    formData.left = new FormAttachment(revealedInfoLabel);
+                    formData.top = new FormAttachment(revealedInfoLabel, 0, SWT.CENTER);
+                    formData.width = 250;
+                    formData.height = 20;
+                    inspectorControl.setLayoutData(formData);
     			}
     			previousGroupInUi = inspectableAttributesGroup;
     		}
     		
-    		// TODO Consent section that shows the message to be signed given in the <ApplicationData> element (and extend calculation of isInformationDisclosed flag accordingly)
-		
+    		// TODO Consent section that shows the message to be signed given in the <ApplicationData> 
+    		// element (and extend calculation of isInformationDisclosed flag accordingly)
+    		if(applicationData!=null) {
+//              final Group applicationDataGroup = new Group(revealedInfoSummaryGroup, SWT.NONE);
+//              applicationDataGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+//              applicationDataGroup.setText("ApplicationData");
+//              
+//              // Layout of the group
+//              formData = new FormData();
+//              formData.left = new FormAttachment(0);
+//              formData.right = new FormAttachment(100);
+//              formData.top = new FormAttachment(previousGroupInUi);
+//              applicationDataGroup.setLayoutData(formData);
+//              applicationDataGroup.setLayout(new FormLayout());
+//              // Layout for the group's children
+//              formLayout = new FormLayout();
+//              formLayout.marginHeight = 0;
+//              formLayout.marginWidth = 0;
+//              formLayout.spacing = 2;
+//              applicationDataGroup.setLayout(formLayout);
+//
+//              
+//              Label inspectionGroundsCLabel = new Label(applicationDataGroup, SWT.NONE);
+//              inspectionGroundsCLabel.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE001));
+//              inspectionGroundsCLabel.setText("APPLICATIONDATA:" + applicationData);
+//              inspectionGroundsCLabel.setData(RWT.MARKUP_ENABLED, Boolean.TRUE);
+//              inspectionGroundsCLabel.setForeground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_RED001));
+
+              
+              //
+//              Group policyGroup = new Group(applicationDataGroup, SWT.NONE);
+//              policyGroup.setText("APPLICATION DATA : " + applicationData);
+////            policyGroup.setBackground(ResourceRegistryStore.getColor(ResourceRegistryStore.COL_BLUE002));
+//              // Layout for the group's children
+//              formLayout =  new FormLayout();
+//              formLayout.marginHeight = 0;
+//              formLayout.marginWidth = 0;
+//              formLayout.marginBottom = 0;
+//              formLayout.spacing = 0;
+//              policyGroup.setLayout(formLayout);
+    		}
         }
 
         // ##########################################################
@@ -1157,7 +1330,7 @@ public class IdentitySelectionView extends ViewPart {
         // ##########################################################
         // ##########################################################
 		// Submit Button
-		submitButton = new Button(content, SWT.PUSH);
+		submitButton = new Button(rightSideComposite, /*content, */SWT.PUSH);
 		submitButton.setSize(new Point(100, 100));
 		if (sessionParams.getUIMode().equals(UIMode.ISSUANCE)) {
 		    if (isInformationDisclosed) {
@@ -1194,9 +1367,16 @@ public class IdentitySelectionView extends ViewPart {
 
 				// chosenInspectors
 				List<String> chosenInspectors = new ArrayList<String>();
-				for (Combo inspectorCombo : inspectorCombos) {
-					String selectionIndexAsString = Integer.toString(inspectorCombo.getSelectionIndex());
-					InspectorInUi inspector = (InspectorInUi) inspectorCombo.getData(selectionIndexAsString);
+				for (Control inspectorWidget : inspectorControls) {
+				    InspectorInUi inspector;
+				    if (inspectorWidget instanceof Combo) {
+				        Combo inspectorCombo = (Combo) inspectorWidget;
+				        String selectionIndexAsString = Integer.toString(inspectorCombo.getSelectionIndex());
+	                    inspector = (InspectorInUi) inspectorCombo.getData(selectionIndexAsString);
+				    } else {
+				        Label inspectorLabel = (Label) inspectorWidget;
+				        inspector = (InspectorInUi) inspectorLabel.getData();
+				    }					
 					
 					if (inspector!=null) {
 						chosenInspectors.add(inspector.uri);

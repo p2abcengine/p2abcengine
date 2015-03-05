@@ -1,0 +1,63 @@
+#################################################################################################
+# Note: For all dependencies that are dual-licensed, we choose the non-GPL/non-LGPL license.
+#
+# Some modules in this project make use of OSGI dependencies, rather than standard Maven
+# dependencies. These OSGI dependencies are not covered in the file LICENSES-OF-DEPENDENCIES.txt
+# because the Maven License Plugin cannot handle such kind of dependencies. Therefore, this file
+# lists these OSGI dependencies and their licenses.
+#
+# The content of this file was generated with the command
+# $ mvn dependency:list | grep ':system' | sort | uniq
+# and then *manually* augmented with the licenses of the respective dependencies.
+#################################################################################################
+
+[INFO]    p2.eclipse-plugin:com.google.inject:jar:3.0.0.v201203062045:system                                    -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:com.ibm.icu.base:jar:4.4.2.v20110831:system                                         -> EPL 1.0. Dependencies with ICU License
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.abc4trust-xml:jar:1.1.13:system                                     -> Apache 2.0
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.abce-interfaces:jar:1.1.13:system                                   -> Apache 2.0
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.ui-osgi-dependencies:jar:jars/aopalliance-1.0.jar:1.1.13:system     -> Public Domain
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.ui-osgi-dependencies:jar:jars/guice-3.0.jar:1.1.13:system           -> Apache 2.0
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.ui-osgi-dependencies:jar:jars/javax.inject-1.jar:1.1.13:system      -> Apache 2.0
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.ui-osgi-dependencies:jar:jars/jersey-client-1.10.jar:1.1.13:system  -> Dual license: CDDL 1.1 or GPL 2 with classpath exception
+[INFO]    p2.eclipse-plugin:eu.abc4trust.ri.ui-osgi-dependencies:jar:jars/jersey-core-1.10.jar:1.1.13:system    -> Dual license: CDDL 1.1 or GPL 2 with classpath exception
+[INFO]    p2.eclipse-plugin:javax.activation:jar:1.1.0.v201108011116:system                                     -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:javax.mail:jar:1.4.0.v201005080615:system                                           -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:javax.servlet:jar:3.0.0.v201112011016:system                                        -> EPL 1.0. Dependencies with CDDL 1
+[INFO]    p2.eclipse-plugin:org.apache.commons.fileupload:jar:1.2.2.v20111214-1400:system                       -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.apache.commons.io:jar:2.4.0:system                                              -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.apache.felix.gogo.command:jar:0.8.0.v201108120515:system                        -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.apache.felix.gogo.runtime:jar:0.8.0.v201108120515:system                        -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.apache.felix.gogo.shell:jar:0.8.0.v201110170705:system                          -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.commands:jar:3.6.2.v20130123-162658:system                         -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.contenttype:jar:3.4.200.v20120523-2004:system                      -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.databinding.beans:jar:1.2.200.v20120523-1955:system                -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.databinding.observable:jar:1.4.1.v20120521-2329:system             -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.databinding.property:jar:1.4.100.v20120523-1955:system             -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.databinding:jar:1.4.1.v20120912-132807:system                      -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.expressions:jar:3.4.401.v20120912-155018:system                    -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.jobs:jar:3.5.300.v20120912-155018:system                           -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.core.runtime:jar:3.8.0.v20120912-155025:system                          -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.app:jar:1.3.100.v20120522-1841:system                           -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.common:jar:3.6.100.v20120522-1841:system                        -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.console:jar:1.0.0.v20120522-1841:system                         -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.ds:jar:1.4.1.v20120926-201320:system                            -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.http.registry:jar:1.1.200.v20120912-130548:system               -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.http.servlet:jar:1.1.300.v20120912-130548:system                -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.http.servletbridge:jar:1.0.300.v20120912-130548:system          -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.preferences:jar:3.5.1.v20121031-182809:system                   -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.registry:jar:3.5.200.v20120522-1841:system                      -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.servletbridge.extensionbundle:jar:1.2.100.v20120522-2049:system -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.simpleconfigurator:jar:1.0.301.v20120914-163612:system          -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.equinox.util:jar:1.0.400.v20120917-192807:system                        -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.help:jar:3.6.0.v20120912-134126:system                                  -> EPL 1.0. Dependencies with W3C License
+[INFO]    p2.eclipse-plugin:org.eclipse.osgi.services:jar:3.3.100.v20120522-1822:system                         -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.osgi:jar:3.8.2.v20130124-134944:system                                  -> EPL 1.0. Dependencies with Apache 2.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.design.example:jar:1.5.2.20130205-2012:system                       -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.jface.databinding:jar:1.5.2.20130205-2012:system                    -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.jface:jar:1.5.2.20130205-2012:system                                -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.rwt.osgi:jar:1.5.2.20130205-2012:system                             -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.rwt.supplemental.filedialog:jar:1.5.0.20120220-1720:system          -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.rwt.supplemental.fileupload:jar:1.5.0.20120220-1720:system          -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.rwt:jar:1.5.2.20130205-2012:system                                  -> EPL 1.0. Dependencies with Apache 2.0, W3C License, Mozilla Public License 1.1, New BSD License, MIT License, EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.ui.workbench:jar:1.5.2.20130205-2012:system                         -> EPL 1.0
+[INFO]    p2.eclipse-plugin:org.eclipse.rap.ui:jar:1.5.2.20130205-2012:system                                   -> EPL 1.0

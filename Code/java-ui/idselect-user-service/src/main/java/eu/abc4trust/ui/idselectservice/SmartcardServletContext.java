@@ -26,7 +26,7 @@ import eu.abc4trust.smartcard.CardStorage;
 
 public class SmartcardServletContext implements ServletContextListener {
     private static final int TIMEOUT = 3000;
-    private static AbcSmartcardDetector detector;
+//    private static AbcSmartcardDetector detector;
     private static Thread thread;
     private static Random random = new SecureRandom();
     public static AtomicReference<CardStorage> cardStorageReference;
@@ -35,28 +35,28 @@ public class SmartcardServletContext implements ServletContextListener {
         cardStorageReference = new AtomicReference<CardStorage>();
     }
 
-    public static boolean startDetector() {
-        CardStorage cardStorage = cardStorageReference.get();
-        if ((detector == null)
-                || (!detector.isAlive() && (cardStorage != null))) {
-            AbcTerminalFactory terminalFactory = new AbcTerminalFactoryImpl();
-
-            AbcSmartcardRemovalDetectorFactory abcSmartcardRemovalDetectorFactory = new AbcSmartcardRemovalDetectorFactory(
-                    cardStorage);
-            detector = new AbcSmartcardDetector(terminalFactory,
-                    cardStorage,
-                    abcSmartcardRemovalDetectorFactory,
-                    TIMEOUT, random);
-            thread = new Thread(detector);
-            thread.start();
-            return true;
-        }
-        return false;
-    }    
+//    public static boolean startDetector() {
+//        CardStorage cardStorage = cardStorageReference.get();
+//        if ((detector == null)
+//                || (!detector.isAlive() && (cardStorage != null))) {
+//            AbcTerminalFactory terminalFactory = new AbcTerminalFactoryImpl();
+//
+//            AbcSmartcardRemovalDetectorFactory abcSmartcardRemovalDetectorFactory = new AbcSmartcardRemovalDetectorFactory(
+//                    cardStorage);
+//            detector = new AbcSmartcardDetector(terminalFactory,
+//                    cardStorage,
+//                    abcSmartcardRemovalDetectorFactory,
+//                    TIMEOUT, random);
+//            thread = new Thread(detector);
+//            thread.start();
+//            return true;
+//        }
+//        return false;
+//    }    
 
     public void contextDestroyed(ServletContextEvent event) {
-        if (detector != null) {
-            detector.stop();
-        }
+//        if (detector != null) {
+//            detector.stop();
+//        }
     }
 }

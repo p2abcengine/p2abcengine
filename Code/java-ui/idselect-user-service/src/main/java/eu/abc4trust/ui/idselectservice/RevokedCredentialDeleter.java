@@ -43,11 +43,11 @@ public class RevokedCredentialDeleter implements Runnable {
             try {
                 this.logger.log(Level.INFO, "Checking for revoked credentials");
                 try {
-                    for (URI credUri : this.engine.listCredentials()) {
-                        if (this.engine.isRevoked(credUri)) {
+                    for (URI credUri : this.engine.listCredentials(UserService.USER_NAME)) {
+                        if (this.engine.isRevoked(UserService.USER_NAME, credUri)) {
                             this.logger.log(Level.INFO,
                                     "Deleting revoked credential: " + credUri);
-                            this.engine.deleteCredential(credUri);
+                            this.engine.deleteCredential(UserService.USER_NAME, credUri);
                             this.logger.log(Level.INFO,
                                     "Deleted revoked credential: " + credUri);
                         }

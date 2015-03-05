@@ -4,12 +4,12 @@
   <parent>
     <artifactId>ui-project-pom</artifactId>
     <groupId>eu.abc4trust.ui</groupId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.1.36</version>
   </parent>
   <groupId>eu.abc4trust.ui</groupId>
   <artifactId>firefox-extension</artifactId>
   <name>firefox-extension</name>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.1.36</version>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

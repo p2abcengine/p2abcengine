@@ -2,7 +2,7 @@
 <feature
       id="eu.abc4trust.ri.ui.user.feature"
       label="ABC4Trust UI User RAP Feature"
-      version="1.1.0.qualifier">
+      version="1.1.36">
 
    <description url="http://www.example.com/description">
       [Enter Feature Description here.]

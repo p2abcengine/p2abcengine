@@ -1,0 +1,39 @@
+abcetray_app ICON "graphics/abc4trust.ico"
+abce_disabled ICON "graphics/abce-disabled.ico"
+abce_enabled ICON "graphics/abce-enabled.ico"
+abce_working ICON "graphics/abce-working.ico"
+
+#define CREATEPROCESS_MANIFEST_RESOURCE_ID 1
+#define RT_MANIFEST 24
+#ifdef _WIN64
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "include/x64.exe.manifest"
+#else
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "include/x86.exe.manifest"
+#endif
+
+#define VS_VERSION_INFO 1
+VS_VERSION_INFO VERSIONINFO
+	FILEVERSION 1,0,0,0
+	PRODUCTVERSION 1,0,0,0
+	FILEFLAGSMASK 0x3fL
+	FILEFLAGS 0x0L
+	FILEOS 0x40004L
+	FILETYPE 0x1L
+	FILESUBTYPE 0x0L
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "080904E4"
+		BEGIN
+			VALUE "FileDescription", "ABCETray"
+			VALUE "FileVersion", "1.0"
+			VALUE "InternalName", "abcetray"
+			VALUE "OriginalFilename", "ABCETray.exe"
+			VALUE "CompanyName", "ABC4Trust"
+		END
+	END
+	BLOCK "VarFileInfo"
+	BEGIN
+		VALUE "Translation", 0x809, 1252
+	END
+END

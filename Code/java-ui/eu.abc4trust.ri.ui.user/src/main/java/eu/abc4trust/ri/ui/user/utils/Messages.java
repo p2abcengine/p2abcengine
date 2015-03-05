@@ -33,6 +33,9 @@ public class Messages {
     public String IdentitySelectionView_scope;
     public String IdentitySelectionView_or;
     
+
+    public String IdentitySelectionView_heading_presentationDescription;
+    
     public String IdentitySelectionView_heading_adaptedCard;
     public String IdentitySelectionView_heading_pseudonymGroup;
     public String IdentitySelectionView_heading_ownershipGroup;

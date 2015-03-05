@@ -8,6 +8,7 @@
 package eu.abc4trust.ri.ui.user;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -20,6 +21,7 @@ import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -264,4 +266,22 @@ public class XmlUtils {
             return null; // TODO(enr): Throw an exception here
         }
     }
+    
+    public static ByteArrayOutputStream toXmlAsBaos(JAXBElement<?> element, boolean validate) throws JAXBException, SAXException {
+      JAXBContext jaxbcontext = getContext();
+      Marshaller marshaller = jaxbcontext.createMarshaller();
+      marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+      marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+      if (validate) {
+          marshaller.setSchema(getSchema());
+      }
+      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      marshaller.marshal(element, byteArrayOutputStream);
+      return byteArrayOutputStream;
+    }
+    
+    public static String toXml(JAXBElement<?> element, boolean validate) throws JAXBException, SAXException {
+      return new String(toXmlAsBaos(element, validate).toByteArray());
+    }
+    
 }
