@@ -1,6 +1,11 @@
-//* Licensed Materials - Property of IBM                              *
-//* eu.abc4trust.pabce.1.14                                           *
-//* (C) Copyright IBM Corp. 2012. All Rights Reserved.                *
+//* Licensed Materials - Property of                                  *
+//* IBM                                                               *
+//* Nokia                                                             *
+//*                                                                   *
+//* eu.abc4trust.pabce.1.34                                           *
+//*                                                                   *
+//* (C) Copyright IBM Corp. 2015. All Rights Reserved.                *
+//* (C) Copyright Nokia. 2015. All Rights Reserved.                   *
 //* US Government Users Restricted Rights - Use, duplication or       *
 //* disclosure restricted by GSA ADP Schedule Contract with IBM Corp. *
 //*                                                                   *
