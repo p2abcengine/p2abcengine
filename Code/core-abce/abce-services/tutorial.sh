@@ -153,17 +153,17 @@ echo "Create presentation token"
 curl -X POST --header 'Content-Type: text/xml' -d @uiPresentationReturn.xml 'http://localhost:9200/user/createPresentationTokenUi/' > presentationToken.xml
 
 # Setup presentationPolicyAlternativesAndPresentationToken.xml.
-#This part is broken. the <?xml version...> of the ppa and pt needs to be stripped
-presentationPolicy=`cat presentationPolicyAlternatives.xml | sed 's/^.*<abc:PresentationPolicyAlternatives xmlns:xs="http:\/\/www.w3.org\/2001\/XMLSchema" xmlns:abc="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" xmlns:idmx="http:\/\/zurich.ibm.com" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance" Version="1.0">//'`
 
-presentationToken=`cat presentationToken.xml | sed 's/^.*<abc:PresentationToken xmlns:xs="http:\/\/www.w3.org\/2001\/XMLSchema" xmlns:abc="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" xmlns:idmx="http:\/\/zurich.ibm.com" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance" Version="3.0.0">//'`
+presentationPolicy=`cat presentationPolicyAlternatives.xml | sed 's@<?xml version[^>]*?>@@' | sed 's/^.*<abc:PresentationPolicyAlternatives xmlns:xs="http:\/\/www.w3.org\/2001\/XMLSchema" xmlns:abc="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" xmlns:idmx="http:\/\/zurich.ibm.com" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance" Version="1.0">//'`
+
+presentationToken=`cat presentationToken.xml | sed 's@<?xml version[^>]*?>@@' | sed 's/^.*<abc:PresentationToken xmlns:xs="http:\/\/www.w3.org\/2001\/XMLSchema" xmlns:abc="http:\/\/abc4trust.eu\/wp2\/abcschemav1.0" xmlns:idmx="http:\/\/zurich.ibm.com" xmlns:xsi="http:\/\/www.w3.org\/2001\/XMLSchema-instance" Version="3.0.0">//'`
 # echo "${presentationPolicy}"
 # echo "${presentationToken}"
 echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' > presentationPolicyAlternativesAndPresentationToken.xml
-echo '<abc:PresentationPolicyAlternativesAndPresentationToken xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0"> <abc:PresentationPolicyAlternatives>' >> presentationPolicyAlternativesAndPresentationToken.xml
+echo '<abc:PresentationPolicyAlternativesAndPresentationToken xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:abc="http://abc4trust.eu/wp2/abcschemav1.0" Version="1.0">' >> presentationPolicyAlternativesAndPresentationToken.xml
 echo "${presentationPolicy}" >> presentationPolicyAlternativesAndPresentationToken.xml
 #echo '</PresentationPolicyAlternatives>' >> presentationPolicyAlternativesAndPresentationToken.xml
-echo '<abc:PresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
+#echo '<abc:PresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
 echo "${presentationToken}" >> presentationPolicyAlternativesAndPresentationToken.xml
 #echo '</PresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
 echo '</abc:PresentationPolicyAlternativesAndPresentationToken>' >> presentationPolicyAlternativesAndPresentationToken.xml
